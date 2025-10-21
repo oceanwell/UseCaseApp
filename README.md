@@ -386,7 +386,7 @@ UseCaseApplication/
 ```
 MIT License
 
-Copyright (c) 2024 UseCase Application
+Copyright (c) 2024-2025 UseCase Application
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -406,20 +406,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
-
----
-
-## 📞 Поддержка
-
-### 🆘 Получение помощи
-- **GitHub Issues** — для багов и предложений
-- **Discussions** — для общих вопросов
-- **Wiki** — для документации и примеров
-
-### 📧 Контакты
-- **Email**: support@usecaseapp.com
-- **GitHub**: [@usecaseapp](https://github.com/usecaseapp)
-- **Twitter**: [@UseCaseApp](https://twitter.com/UseCaseApp)
 
 ---
 
