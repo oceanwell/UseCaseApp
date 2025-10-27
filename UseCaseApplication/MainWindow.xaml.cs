@@ -110,14 +110,14 @@ namespace UseCaseApplication
             var animatsiyaX = new System.Windows.Media.Animation.DoubleAnimation
             {
                 To = mashtab,
-                Duration = TimeSpan.FromMilliseconds(150),
+                Duration = TimeSpan.FromMilliseconds(50),
                 EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
             };
             
             var animatsiyaY = new System.Windows.Media.Animation.DoubleAnimation
             {
                 To = mashtab,
-                Duration = TimeSpan.FromMilliseconds(150),
+                Duration = TimeSpan.FromMilliseconds(50),
                 EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
             };
             
@@ -647,6 +647,22 @@ namespace UseCaseApplication
         {
             MessageBox.Show("Функция 'Сохранить как' пока не реализована", "Информация", 
                 MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void DecreaseZoom_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (PolzunokMashtaba != null && PolzunokMashtaba.Value > PolzunokMashtaba.Minimum)
+            {
+                PolzunokMashtaba.Value = Math.Max(PolzunokMashtaba.Minimum, PolzunokMashtaba.Value - 5);
+            }
+        }
+
+        private void IncreaseZoom_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (PolzunokMashtaba != null && PolzunokMashtaba.Value < PolzunokMashtaba.Maximum)
+            {
+                PolzunokMashtaba.Value = Math.Min(PolzunokMashtaba.Maximum, PolzunokMashtaba.Value + 5);
+            }
         }
 
     }

@@ -53,3 +53,27 @@ Z:\Downloads\Telegram Desktop\UseCaseApplication\UseCaseApplication\obj\Debug\Us
 Z:\Downloads\Telegram Desktop\UseCaseApplication\UseCaseApplication\obj\Debug\UseCaseApplication.csproj.CoreCompileInputs.cache
 Z:\Downloads\Telegram Desktop\UseCaseApplication\UseCaseApplication\obj\Debug\UseCaseApplication.exe
 Z:\Downloads\Telegram Desktop\UseCaseApplication\UseCaseApplication\obj\Debug\UseCaseApplication.pdb
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\bin\Debug\UseCaseApplication.exe.config
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\bin\Debug\UseCaseApplication.exe
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\bin\Debug\UseCaseApplication.pdb
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\UseCaseApplication.csproj.AssemblyReference.cache
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\MainWindow.g.cs
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\Page1.g.cs
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\Page2.g.cs
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\Page3.g.cs
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\Window1.g.cs
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\App.g.cs
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\UseCaseApplication_MarkupCompile.cache
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\UseCaseApplication_MarkupCompile.lref
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\MainWindow.baml
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\Page1.baml
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\Page2.baml
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\Page3.baml
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\Window1.baml
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\UseCaseApplication.g.resources
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\UseCaseApplication.Form1.resources
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\UseCaseApplication.Properties.Resources.resources
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\UseCaseApplication.csproj.GenerateResource.cache
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\UseCaseApplication.csproj.CoreCompileInputs.cache
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\UseCaseApplication.exe
+D:\Users\DefUsr7\Desktop\UseCaseApp-release\UseCaseApplication\obj\Debug\UseCaseApplication.pdb

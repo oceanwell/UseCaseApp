@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:UseCaseApplication"
         mc:Ignorable="d"
         Title="UCA" Height="600" Width="900" MinHeight="450" MinWidth="800"
-        WindowStyle="None" AllowsTransparency="True" ResizeMode="CanResize" Background="#2b2b2b"
+        WindowStyle="None" AllowsTransparency="True" ResizeMode="CanResize" Background="Transparent"
         FontFamily="Inter">
     <Window.Resources>
         <Style x:Key="ToolButtonStyle" TargetType="Button">
@@ -155,15 +155,17 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
     </Window.Resources>
 
-    <Grid>
+    <Border Background="#2b2b2b" CornerRadius="12" ClipToBounds="True" BorderBrush="#2b2b2b" BorderThickness="0">
+        <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="32"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="#3c3c3c" BorderBrush="#555" BorderThickness="0,0,0,1" MouseLeftButtonDown="ZagolovokOkna_MouseLeftButtonDown">
+        <Border Grid.Row="0" Background="#3c3c3c" BorderBrush="#555" BorderThickness="0,0,0,1" CornerRadius="12,12,0,0" MouseLeftButtonDown="ZagolovokOkna_MouseLeftButtonDown">
             <Grid>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0">
                     <Border Background="Transparent" Padding="5,2" Margin="0,0,20,0">
@@ -194,7 +196,7 @@
         </Border>
 
         <DockPanel Grid.Row="1">
-            <Border DockPanel.Dock="Left" Background="#1e1e1e" Width="220">
+            <Border DockPanel.Dock="Left" Background="#1e1e1e" Width="220" CornerRadius="0,0,0,12" ClipToBounds="True">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="12" >
                         <TextBlock Text="Инструменты" Foreground="White" FontWeight="Bold" Margin="0,0,0,15" FontSize="14"/>
@@ -323,8 +325,9 @@
                 </ScrollViewer>
             </Border>
 
-            <Grid Background="#2b2b2b">
-                <Border Background="White" Margin="10" CornerRadius="4" ClipToBounds="True">
+            <Border Background="#2b2b2b" CornerRadius="0,0,12,0" ClipToBounds="True" BorderThickness="0">
+                <Grid ClipToBounds="True">
+                    <Border Background="White" Margin="10,10,10,10" CornerRadius="4" ClipToBounds="True">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="79*"/>
@@ -347,7 +350,7 @@
                     </Grid>
                 </Border>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20,20,0,0">
                     <Button Width="36" Height="36" Margin="0,0,6,0" Click="Otmena_Click" Background="#2b2b2b" BorderBrush="#555" BorderThickness="1" Padding="0">
                         <Path Data="M15,12 L8,12 L8,8 L2,14 L8,20 L8,16 L15,16 C17,16 18,15 18,13 C18,11 17,10 15,10 L15,12 Z" Fill="White" Stretch="Uniform" Width="20" Height="20"/>
                     </Button>
@@ -356,15 +359,19 @@
                     </Button>
                 </StackPanel>
 
-                <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="220,0,0,12" Background="#1e1e1e" CornerRadius="6" Padding="8,4">
+                <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="150,0,10,15" Background="#2b2b2b" BorderBrush="#444" BorderThickness="1" CornerRadius="6" Padding="8,6">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="-" Foreground="White" Margin="0,0,6,0"/>
-                        <Slider x:Name="PolzunokMashtaba" Minimum="25" Maximum="200" Value="100" Width="220" TickFrequency="25" IsSnapToTickEnabled="True" ValueChanged="PolzunokMashtaba_ValueChanged"/>
-                        <TextBlock Text="+" Foreground="White" Margin="6,0,6,0"/>
-                        <TextBlock x:Name="MetkaMashtaba" Text="100%" Foreground="White"/>
+                        <TextBlock Text="−" Foreground="White" Margin="0,0,6,0" FontSize="13" VerticalAlignment="Center" Cursor="Hand" MouseLeftButtonDown="DecreaseZoom_Click"/>
+                        <Slider x:Name="PolzunokMashtaba" Minimum="10" Maximum="200" Value="100" Width="140" SmallChange="1" LargeChange="10" ValueChanged="PolzunokMashtaba_ValueChanged"/>
+                        <TextBlock Text="+" Foreground="White" Margin="6,0,6,0" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" Cursor="Hand" MouseLeftButtonDown="IncreaseZoom_Click"/>
+                        <Border Background="#1e1e1e" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="4,2" MinWidth="35">
+                            <TextBlock x:Name="MetkaMashtaba" Text="100%" Foreground="White" TextAlignment="Center" FontSize="10"/>
+                        </Border>
                     </StackPanel>
                 </Border>
-            </Grid>
+                </Grid>
+            </Border>
         </DockPanel>
-    </Grid>
+        </Grid>
+    </Border>
 </Window>
