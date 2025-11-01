@@ -9,6 +9,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -586,6 +587,41 @@ namespace UseCaseApplication
                 button.ContextMenu.PlacementTarget = button;
                 button.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
                 button.ContextMenu.IsOpen = true;
+            }
+        }
+
+        private void FileContextMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            // Применить блюр к контенту и показать overlay при открытии меню
+            if (ContentContainer != null)
+            {
+                ContentContainer.Effect = new BlurEffect { Radius = 5 };
+            }
+            if (BlurOverlay != null)
+            {
+                BlurOverlay.Visibility = Visibility.Visible;
+            }
+        }
+
+        private void FileContextMenu_Closed(object sender, RoutedEventArgs e)
+        {
+            // Убрать блюр с контента и скрыть overlay при закрытии меню
+            if (ContentContainer != null)
+            {
+                ContentContainer.Effect = null;
+            }
+            if (BlurOverlay != null)
+            {
+                BlurOverlay.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void BlurOverlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            // Закрыть меню при клике на overlay
+            if (FileContextMenu != null && FileContextMenu.IsOpen)
+            {
+                FileContextMenu.IsOpen = false;
             }
         }
 
