@@ -601,6 +601,11 @@ namespace UseCaseApplication
             {
                 BlurOverlay.Visibility = Visibility.Visible;
             }
+            if (FileButton != null)
+            {
+                FileButton.Background = new SolidColorBrush(Color.FromRgb(0xCD, 0x85, 0x3F));
+                FileButton.Foreground = Brushes.Black;
+            }
         }
 
         private void FileContextMenu_Closed(object sender, RoutedEventArgs e)
@@ -613,6 +618,11 @@ namespace UseCaseApplication
             if (BlurOverlay != null)
             {
                 BlurOverlay.Visibility = Visibility.Collapsed;
+            }
+            if (FileButton != null)
+            {
+                FileButton.Background = Brushes.Transparent;
+                FileButton.Foreground = Brushes.White;
             }
         }
 
