@@ -1,7 +1,10 @@
 {
   "ExpandedNodes": [
     "",
-    "\\UseCaseApplication"
+    "\\UseCaseApplication",
+    "\\UseCaseApplication\\bin",
+    "\\UseCaseApplication\\obj",
+    "\\UseCaseApplication\\Properties"
   ],
   "SelectedNode": "\\UseCaseApplication\\MainWindow.xaml.cs",
   "PreviewInSolutionExplorer": false

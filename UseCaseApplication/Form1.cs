@@ -28,7 +28,7 @@ namespace UseCaseApplication
         {
             // Настройки формы как на фотографии
             this.FormBorderStyle = FormBorderStyle.None;
-            this.BackColor = Color.FromArgb(43, 43, 43); // #2b2b2b - темный фон как на фото
+            this.BackColor = Color.FromArgb(43, 43, 43); 
             this.Size = new Size(900, 600);
             this.StartPosition = FormStartPosition.Manual;
             

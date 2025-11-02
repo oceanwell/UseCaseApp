@@ -1,9 +1,9 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "D:\\Users\\DefUsr7\\Desktop\\UseCaseApp-release\\UseCaseApplication\\",
+  "WorkspaceRootPath": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{910F4718-ED1E-4C51-B9FA-C6C989EA6507}|UseCaseApplication.csproj|d:\\users\\defusr7\\desktop\\usecaseapp-release\\usecaseapplication\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{910F4718-ED1E-4C51-B9FA-C6C989EA6507}|UseCaseApplication.csproj|c:\\loadapp\\volggty2\\kachestvo i nadezhnost is\\git\\usecaseapp\\usecaseapplication\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{910F4718-ED1E-4C51-B9FA-C6C989EA6507}|UseCaseApplication.csproj|solutionrelative:mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     }
   ],
@@ -14,19 +14,35 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{a80febb4-e7e0-4147-b476-21aaf2453969}"
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "MainWindow.xaml",
-              "DocumentMoniker": "D:\\Users\\DefUsr7\\Desktop\\UseCaseApp-release\\UseCaseApplication\\MainWindow.xaml",
+              "DocumentMoniker": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\MainWindow.xaml",
               "RelativeDocumentMoniker": "MainWindow.xaml",
-              "ToolTip": "D:\\Users\\DefUsr7\\Desktop\\UseCaseApp-release\\UseCaseApplication\\MainWindow.xaml",
+              "ToolTip": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\MainWindow.xaml",
               "RelativeToolTip": "MainWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
               "WhenOpened": "2025-10-27T15:24:50.375Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{e5c86464-96be-4d7c-9a8b-abcb3bbf5f92}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
             }
           ]
         }

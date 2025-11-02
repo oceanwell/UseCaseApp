@@ -190,7 +190,7 @@ namespace UseCaseApplication
                 }
             }
         }
-
+        //уцвеанпьртпвппариотлд
         private void PoleDlyaRisovaniya_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (peretaskivayuIzPaneli)
