@@ -590,6 +590,8 @@ namespace UseCaseApplication
             TabItem helpTab = new TabItem();
             helpTab.Header = "";
             
+            Grid helpContainer = new Grid { Background = new SolidColorBrush(Color.FromRgb(43, 43, 43)) };
+            
             ScrollViewer scrollViewer = new ScrollViewer 
             { 
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto, 
@@ -609,13 +611,109 @@ namespace UseCaseApplication
                     scrollBar.FlowDirection = FlowDirection.LeftToRight;
                 }
             };
-            StackPanel content = new StackPanel { Margin = new Thickness(270, 50, 50, 50) };
-            content.Children.Add(new TextBlock { Text = "Документация к UserApplicationCase", FontSize = 36, FontWeight = FontWeights.Bold, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 20), LineHeight = 34 });
-            content.Children.Add(new TextBlock { Text = "(большой текст, 36px, bold, интервал 95%)", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 40) });
-            content.Children.Add(new TextBlock { Text = "Глава 1 (подзаголовок, 24px, medium)", FontSize = 24, FontWeight = FontWeights.Normal, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 20) });
-            content.Children.Add(new TextBlock { Text = "Обычный текст (18px, regular)", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White });
+            
+            StackPanel content = new StackPanel { Margin = new Thickness(270, 5, 50, 50) };
+            content.Children.Add(new TextBlock { Text = "Справка Use Case App", FontSize = 36, FontWeight = FontWeights.Bold, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 20), LineHeight = 34 });
+            content.Children.Add(new TextBlock { Text = "Раздел предоставляет полное описание функциональных возможностей, структуры и элементов управления приложения «Use Case App». Документация предназначена для ознакомления пользователей с архитектурой проекта и эффективного использования всего инструментария.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 30), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "Структура приложения", FontSize = 24, FontWeight = FontWeights.Normal, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 15) });
+            content.Children.Add(new TextBlock { Text = "Приложение состоит из трех основных логических и визуальных модулей:", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "1. Панель приложения — Верхняя секция интерфейса, содержащая главное меню и элементы управления проектом. Обеспечивает доступ к операциям с файлами, настройкам параметров и справочной информации.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "2. Панель инструментов — Боковая панель, содержащая набор графических элементов и функций для построения диаграмм. Включает основные сущности (Акторы, Прецеденты) и отношения (Ассоциации, Включения, Расширения, Обобщения).", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "3. Рабочее пространство — Центральная область интерфейса, предназначенная для визуального проектирования диаграмм использования. Представляет собой холст с координатной сеткой для точного позиционирования элементов.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 30), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "1. Панель приложение", FontSize = 24, FontWeight = FontWeights.Normal, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 15) });
+            content.Children.Add(new TextBlock { Text = "Панель приложения состоит из:", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "1. Файл", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10) });
+            content.Children.Add(new TextBlock { Text = "2. Помощь", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10) });
+            content.Children.Add(new TextBlock { Text = "3. Свернуть", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10) });
+            content.Children.Add(new TextBlock { Text = "4. Развернуть", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10) });
+            content.Children.Add(new TextBlock { Text = "5. Закрыть", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 15) });
+            content.Children.Add(new TextBlock { Text = "1. Файл — Данный раздел содержит базовый набор операций для управления жизненным циклом проекта. Функции, объединенные в этой категории, предоставляют пользователю возможности по созданию, открытию и сохранению рабочих документов в среде моделирования, обеспечивая эффективное взаимодействие с файловой системой и целостность данных.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "Окно, подразделяется на следующие разделы:", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "1.1. Новый файл — Функция создания нового файла проекта. Инициирует процесс формирования пустого рабочего документа в среде моделирования.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "1.2. Открыть — Функция импорта существующего файла проекта. Открывает диалоговое окно выбора для загрузки и последующего редактирования ранее сохранённых данных.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "1.3. Сохранить — Функция сохранения текущего состояния проекта. Обеспечивает запись всех внесённых изменений в исходный файл без изменения его местоположения и формата.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "1.4. Сохранить как — Функция экспорта проекта в новый файл. Открывает диалоговое окно для выбора местоположения, формата и имени сохраняемого файла, позволяя создать его копию или изменить параметры хранения.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 15), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "2. Помощь — предоставляет полную справочную информацию о функциональных возможностях, интерфейсе и методах работы с приложением «Use-Case App». Предназначен для оперативного получения пользователями сведений о работе с проектом.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "3. Свернуть — Скрывает приложение в панель задач. Все процессы продолжают работать в фоновом режиме.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "4. Развернуть — Переводит приложение в полноэкранный режим для максимального использования рабочей области.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "5. Закрыть — Завершает работу приложения с автоматической проверкой несохраненных изменений.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 30), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "2. Инструменты", FontSize = 24, FontWeight = FontWeights.Normal, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 15) });
+            content.Children.Add(new TextBlock { Text = "1. Актор — роль внешнего субъекта (пользователя или системы), взаимодействующего с моделируемой системой для достижения целей.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "2. Прецедент — законченная последовательность действий системы, предоставляющая актору измеримый и ценный результат.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "3. Система — граница, отделяющая внутреннюю функциональность (прецеденты) от внешних взаимодействующих лиц (акторов).", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "4. Линия связи — отношение взаимодействия, обозначающее участие актора в выполнении прецедента.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "5. Отношение «Включить» — обязательная зависимость, при которой сценарий одного прецедента является неотъемлемой частью сценария другого.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "6. Отношение «Расширить» — опциональная зависимость, добавляющая в базовый прецедент дополнительное поведение при определённых условиях.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "7. Отношение «Обобщение» — связь «родитель-потомок», при которой дочерний элемент наследует свойства и поведение родительского.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "8. Текст — элемент для нанесения наименований и пояснительных надписей на диаграмму.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 15), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "• Сетка — инструмент, предназначенный для активации и деактивации координатной сетки в области рабочего поля.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "• Толщина линии — параметр, регулирующий толщину визуального отображения линий элементов диаграммы.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 30), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "3. Рабочее пространство", FontSize = 24, FontWeight = FontWeights.Normal, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 15) });
+            content.Children.Add(new TextBlock { Text = "1. Панель масштабирования", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10) });
+            content.Children.Add(new TextBlock { Text = "2. Панель клавишей Undo / Redo", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 15) });
+            content.Children.Add(new TextBlock { Text = "1. Панель масштабирования", FontSize = 20, FontWeight = FontWeights.Normal, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10) });
+            content.Children.Add(new TextBlock { Text = "1.1. Приближение (+) — Увеличивает масштаб отображения рабочей области для детального просмотра и редактирования элементов диаграммы.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "1.2. Отдаление (-) — Уменьшает масштаб отображения рабочей области для общего обзора структуры диаграммы.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 15), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "2. Панель клавишей Undo / Redo", FontSize = 20, FontWeight = FontWeights.Normal, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10) });
+            content.Children.Add(new TextBlock { Text = "2.1. Отмена (Undo) — Отменяет последнее выполненное действие. Позволяет последовательно откатывать внесенные изменения.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10), TextWrapping = TextWrapping.Wrap });
+            content.Children.Add(new TextBlock { Text = "2.2. Повтор (Redo) — Восстанавливает ранее отмененное действие. Доступна после использования функции отмены.", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 0), TextWrapping = TextWrapping.Wrap });
             scrollViewer.Content = content;
-            helpTab.Content = scrollViewer;
+            
+            Border closeButtonBorder = new Border
+            {
+                Width = 24,
+                Height = 24,
+                Background = new SolidColorBrush(Color.FromRgb(205, 133, 63)),
+                CornerRadius = new CornerRadius(4),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(0, 0, 10, 0),
+                Cursor = Cursors.Hand,
+                Child = new TextBlock 
+                { 
+                    Text = "✕", 
+                    FontSize = 14, 
+                    FontWeight = FontWeights.Bold, 
+                    Foreground = Brushes.White,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            };
+            
+            closeButtonBorder.MouseEnter += (s, args) =>
+            {
+                closeButtonBorder.Background = new SolidColorBrush(Color.FromRgb(218, 165, 32));
+            };
+            
+            closeButtonBorder.MouseLeave += (s, args) =>
+            {
+                closeButtonBorder.Background = new SolidColorBrush(Color.FromRgb(205, 133, 63));
+            };
+            
+            closeButtonBorder.MouseLeftButtonDown += (s, args) =>
+            {
+                MainTabControl.Items.Remove(helpTab);
+                if (MainTabControl.Items.Count == 0)
+                {
+                    MainTabControl.Visibility = Visibility.Collapsed;
+                    CanvasContent.Visibility = Visibility.Visible;
+                    var leftPanel = FindName("LeftPanel") as Border;
+                    if (leftPanel != null)
+                    {
+                        leftPanel.Visibility = Visibility.Visible;
+                    }
+                }
+                if (HelpButton != null)
+                {
+                    HelpButton.Background = Brushes.Transparent;
+                    HelpButton.Foreground = Brushes.White;
+                }
+            };
+            
+            helpContainer.Children.Add(scrollViewer);
+            helpContainer.Children.Add(closeButtonBorder);
+            
+            helpTab.Content = helpContainer;
             
             MainTabControl.Items.Add(helpTab);
             MainTabControl.SelectedItem = helpTab;
