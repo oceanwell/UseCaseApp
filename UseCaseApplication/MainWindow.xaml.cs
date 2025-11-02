@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media.Effects;
+using System.Windows.Media.Animation;
 
 namespace UseCaseApplication
 {
@@ -667,7 +668,7 @@ namespace UseCaseApplication
                 CornerRadius = new CornerRadius(4),
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(0, 0, 10, 0),
+                Margin = new Thickness(0, 15, 20, 0),
                 Cursor = Cursors.Hand,
                 Child = new TextBlock 
                 { 
@@ -680,14 +681,34 @@ namespace UseCaseApplication
                 }
             };
             
+            ColorAnimation hoverEnterAnimation = new ColorAnimation
+            {
+                To = Color.FromRgb(218, 165, 32),
+                Duration = new Duration(TimeSpan.FromMilliseconds(200))
+            };
+            
+            ColorAnimation hoverLeaveAnimation = new ColorAnimation
+            {
+                To = Color.FromRgb(205, 133, 63),
+                Duration = new Duration(TimeSpan.FromMilliseconds(200))
+            };
+            
             closeButtonBorder.MouseEnter += (s, args) =>
             {
-                closeButtonBorder.Background = new SolidColorBrush(Color.FromRgb(218, 165, 32));
+                var brush = closeButtonBorder.Background as SolidColorBrush;
+                if (brush != null)
+                {
+                    brush.BeginAnimation(SolidColorBrush.ColorProperty, hoverEnterAnimation);
+                }
             };
             
             closeButtonBorder.MouseLeave += (s, args) =>
             {
-                closeButtonBorder.Background = new SolidColorBrush(Color.FromRgb(205, 133, 63));
+                var brush = closeButtonBorder.Background as SolidColorBrush;
+                if (brush != null)
+                {
+                    brush.BeginAnimation(SolidColorBrush.ColorProperty, hoverLeaveAnimation);
+                }
             };
             
             closeButtonBorder.MouseLeftButtonDown += (s, args) =>
