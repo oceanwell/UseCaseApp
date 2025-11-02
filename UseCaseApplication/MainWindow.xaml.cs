@@ -12,6 +12,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media.Effects;
 
 namespace UseCaseApplication
 {
@@ -557,35 +559,308 @@ namespace UseCaseApplication
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            // Открываем Page3 в новом окне при нажатии на кнопку Помощь
-            Window helpWindow = new Window();
-            helpWindow.Title = "Помощь";
-            helpWindow.Width = 900;
-            helpWindow.Height = 600;
-            helpWindow.WindowStyle = WindowStyle.None;
-            helpWindow.AllowsTransparency = true;
-            helpWindow.Background = new SolidColorBrush(Color.FromRgb(43, 43, 43));
-            helpWindow.ResizeMode = ResizeMode.NoResize;
+            if (MainTabControl == null) return;
             
-            // Центрируем окно
-            helpWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            if (MainTabControl.Items.Count > 0)
+            {
+                MainTabControl.SelectedItem = MainTabControl.Items[0];
+                if (MainTabControl != null)
+                {
+                    MainTabControl.Visibility = Visibility.Visible;
+                }
+                if (CanvasContent != null)
+                {
+                    CanvasContent.Visibility = Visibility.Collapsed;
+                }
+                
+                var leftPanel1 = FindName("LeftPanel") as Border;
+                if (leftPanel1 != null)
+                {
+                    leftPanel1.Visibility = Visibility.Collapsed;
+                }
+                
+                if (HelpButton != null)
+                {
+                    HelpButton.Background = new SolidColorBrush(Color.FromRgb(205, 133, 63));
+                    HelpButton.Foreground = new SolidColorBrush(Color.FromRgb(43, 43, 43));
+                }
+                return;
+            }
             
-            // Добавляем Page3 в окно
-            Page3 helpPage = new Page3();
-            helpWindow.Content = helpPage;
+            TabItem helpTab = new TabItem();
+            helpTab.Header = "";
             
-            helpWindow.Show();
+            ScrollViewer scrollViewer = new ScrollViewer 
+            { 
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto, 
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, 
+                Background = new SolidColorBrush(Color.FromRgb(43, 43, 43)),
+                FlowDirection = FlowDirection.LeftToRight
+            };
+            
+            scrollViewer.Loaded += (s, evt) =>
+            {
+                scrollViewer.ApplyTemplate();
+                var scrollBar = scrollViewer.Template?.FindName("PART_VerticalScrollBar", scrollViewer) as ScrollBar;
+                if (scrollBar != null)
+                {
+                    scrollBar.Style = (Style)FindResource("HelpScrollBarStyle");
+                    scrollBar.HorizontalAlignment = HorizontalAlignment.Right;
+                    scrollBar.FlowDirection = FlowDirection.LeftToRight;
+                }
+            };
+            StackPanel content = new StackPanel { Margin = new Thickness(270, 50, 50, 50) };
+            content.Children.Add(new TextBlock { Text = "Документация к UserApplicationCase", FontSize = 36, FontWeight = FontWeights.Bold, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 20), LineHeight = 34 });
+            content.Children.Add(new TextBlock { Text = "(большой текст, 36px, bold, интервал 95%)", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 40) });
+            content.Children.Add(new TextBlock { Text = "Глава 1 (подзаголовок, 24px, medium)", FontSize = 24, FontWeight = FontWeights.Normal, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 20) });
+            content.Children.Add(new TextBlock { Text = "Обычный текст (18px, regular)", FontSize = 18, FontWeight = FontWeights.Regular, Foreground = Brushes.White });
+            scrollViewer.Content = content;
+            helpTab.Content = scrollViewer;
+            
+            MainTabControl.Items.Add(helpTab);
+            MainTabControl.SelectedItem = helpTab;
+            if (MainTabControl != null)
+            {
+                MainTabControl.Visibility = Visibility.Visible;
+            }
+            if (CanvasContent != null)
+            {
+                CanvasContent.Visibility = Visibility.Collapsed;
+            }
+            
+            var leftPanel2 = FindName("LeftPanel") as Border;
+            if (leftPanel2 != null)
+            {
+                leftPanel2.Visibility = Visibility.Collapsed;
+            }
+            
+            if (HelpButton != null)
+            {
+                HelpButton.Background = new SolidColorBrush(Color.FromRgb(205, 133, 63));
+                HelpButton.Foreground = new SolidColorBrush(Color.FromRgb(43, 43, 43));
+            }
+        }
+
+        private void CloseTab_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            if (button == null) return;
+            
+            var tabItem = FindParent<TabItem>(button);
+            if (tabItem != null)
+            {
+                if (HelpButton != null)
+                {
+                    HelpButton.Background = Brushes.Transparent;
+                    HelpButton.Foreground = Brushes.White;
+                }
+                MainTabControl.Items.Remove(tabItem);
+                
+                if (MainTabControl.Items.Count == 0)
+                {
+                    if (MainTabControl != null)
+                    {
+                        MainTabControl.Visibility = Visibility.Collapsed;
+                    }
+                    if (CanvasContent != null)
+                    {
+                        CanvasContent.Visibility = Visibility.Visible;
+                    }
+                    
+                    var leftPanel3 = FindName("LeftPanel") as Border;
+                    if (leftPanel3 != null)
+                    {
+                        leftPanel3.Visibility = Visibility.Visible;
+                    }
+                }
+            }
+        }
+
+        private T FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            DependencyObject parent = VisualTreeHelper.GetParent(child);
+            if (parent == null) return null;
+            if (parent is T) return parent as T;
+            return FindParent<T>(parent);
+        }
+
+        private void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (MainTabControl == null) return;
+            
+            if (MainTabControl.SelectedItem is TabItem && HelpButton != null)
+            {
+                HelpButton.Background = new SolidColorBrush(Color.FromRgb(205, 133, 63));
+                HelpButton.Foreground = new SolidColorBrush(Color.FromRgb(43, 43, 43));
+            }
+            else if (MainTabControl.Items.Count == 0)
+            {
+                if (MainTabControl != null)
+                {
+                    MainTabControl.Visibility = Visibility.Collapsed;
+                }
+                if (CanvasContent != null)
+                {
+                    CanvasContent.Visibility = Visibility.Visible;
+                }
+                
+                var leftPanel = FindName("LeftPanel") as Border;
+                if (leftPanel != null)
+                {
+                    leftPanel.Visibility = Visibility.Visible;
+                }
+                
+                if (HelpButton != null)
+                {
+                    HelpButton.Background = Brushes.Transparent;
+                    HelpButton.Foreground = Brushes.White;
+                }
+            }
         }
 
         private void FileButton_Click(object sender, RoutedEventArgs e)
         {
-            // Показать контекстное меню при клике на кнопку Файл
             var button = sender as Button;
             if (button?.ContextMenu != null)
             {
                 button.ContextMenu.PlacementTarget = button;
                 button.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
                 button.ContextMenu.IsOpen = true;
+            }
+        }
+
+        private void FileContextMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            ApplyBlurToWindow();
+            if (FileButton != null)
+            {
+                FileButton.Background = new SolidColorBrush(Color.FromRgb(205, 133, 63));
+                FileButton.Foreground = new SolidColorBrush(Color.FromRgb(43, 43, 43));
+            }
+        }
+
+        private void FileContextMenu_Closed(object sender, RoutedEventArgs e)
+        {
+            RemoveBlurFromWindow();
+            if (FileButton != null)
+            {
+                FileButton.Background = Brushes.Transparent;
+                FileButton.Foreground = Brushes.White;
+            }
+        }
+
+        private void ApplyBlurToWindow()
+        {
+            var mainGrid = FindName("MainContentGrid") as Grid;
+            if (mainGrid != null)
+            {
+                var row1Content = mainGrid.Children.Cast<FrameworkElement>()
+                    .FirstOrDefault(e => Grid.GetRow(e) == 1);
+                if (row1Content != null)
+                {
+                    row1Content.Effect = new BlurEffect
+                    {
+                        Radius = 10
+                    };
+                }
+
+                var row0Border = mainGrid.Children.Cast<FrameworkElement>()
+                    .FirstOrDefault(e => Grid.GetRow(e) == 0);
+                if (row0Border != null)
+                {
+                    ApplyBlurToHeader(row0Border, FileButton);
+                }
+            }
+        }
+
+        private void ApplyBlurToHeader(FrameworkElement headerElement, FrameworkElement excludeButton)
+        {
+            var grid = FindVisualChild<Grid>(headerElement);
+            if (grid != null)
+            {
+                foreach (FrameworkElement child in grid.Children.OfType<FrameworkElement>())
+                {
+                    if (child is StackPanel stackPanel && stackPanel.Orientation == Orientation.Horizontal)
+                    {
+                        if (stackPanel.HorizontalAlignment == HorizontalAlignment.Left)
+                        {
+                            ApplyBlurToLeftPanel(stackPanel, excludeButton);
+                        }
+                        else if (stackPanel.HorizontalAlignment == HorizontalAlignment.Right)
+                        {
+                            stackPanel.Effect = new BlurEffect { Radius = 10 };
+                        }
+                    }
+                }
+            }
+        }
+
+        private void ApplyBlurToLeftPanel(StackPanel leftPanel, FrameworkElement excludeButton)
+        {
+            foreach (FrameworkElement child in leftPanel.Children.OfType<FrameworkElement>())
+            {
+                if (child is Border border && child != excludeButton)
+                {
+                    border.Effect = new BlurEffect { Radius = 10 };
+                }
+                else if (child is Button button && button != excludeButton)
+                {
+                    button.Effect = new BlurEffect { Radius = 10 };
+                }
+            }
+        }
+
+        private T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T result)
+                {
+                    return result;
+                }
+                var childOfChild = FindVisualChild<T>(child);
+                if (childOfChild != null)
+                {
+                    return childOfChild;
+                }
+            }
+            return null;
+        }
+
+        private void RemoveBlurFromWindow()
+        {
+            var mainGrid = FindName("MainContentGrid") as Grid;
+            if (mainGrid != null)
+            {
+                RemoveBlurFromElement(mainGrid);
+            }
+        }
+
+        private void RemoveBlurFromElement(FrameworkElement element)
+        {
+            if (element != null)
+            {
+                element.Effect = null;
+
+                if (element is Panel panel)
+                {
+                    foreach (FrameworkElement child in panel.Children.OfType<FrameworkElement>())
+                    {
+                        RemoveBlurFromElement(child);
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+                    {
+                        var child = VisualTreeHelper.GetChild(element, i) as FrameworkElement;
+                        if (child != null)
+                        {
+                            RemoveBlurFromElement(child);
+                        }
+                    }
+                }
             }
         }
 
