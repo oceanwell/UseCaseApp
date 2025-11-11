@@ -3,6 +3,30 @@
   "WorkspaceRootPath": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\Properties\\AssemblyInfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:UseCaseApplication\\Properties\\AssemblyInfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\TestApp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:UseCaseApplication\\TestApp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\README_LOGO.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:UseCaseApplication\\README_LOGO.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\Page3.xaml||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:UseCaseApplication\\Page3.xaml||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\Page2.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:UseCaseApplication\\Page2.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\Page2.xaml||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:UseCaseApplication\\Page2.xaml||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\MainWindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:UseCaseApplication\\MainWindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
@@ -27,15 +51,87 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "AssemblyInfo.cs",
+              "DocumentMoniker": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\Properties\\AssemblyInfo.cs",
+              "RelativeDocumentMoniker": "UseCaseApplication\\Properties\\AssemblyInfo.cs",
+              "ToolTip": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\Properties\\AssemblyInfo.cs",
+              "RelativeToolTip": "UseCaseApplication\\Properties\\AssemblyInfo.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-02T09:38:24.009Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "TestApp.cs",
+              "DocumentMoniker": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\TestApp.cs",
+              "RelativeDocumentMoniker": "UseCaseApplication\\TestApp.cs",
+              "ToolTip": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\TestApp.cs",
+              "RelativeToolTip": "UseCaseApplication\\TestApp.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-02T09:38:21.864Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "README_LOGO.txt",
+              "DocumentMoniker": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\README_LOGO.txt",
+              "RelativeDocumentMoniker": "UseCaseApplication\\README_LOGO.txt",
+              "ToolTip": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\README_LOGO.txt",
+              "RelativeToolTip": "UseCaseApplication\\README_LOGO.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2025-11-02T09:38:20.187Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Page3.xaml",
+              "DocumentMoniker": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\Page3.xaml",
+              "RelativeDocumentMoniker": "UseCaseApplication\\Page3.xaml",
+              "ToolTip": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\Page3.xaml",
+              "RelativeToolTip": "UseCaseApplication\\Page3.xaml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-02T09:38:18.153Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Page2.xaml.cs",
+              "DocumentMoniker": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\Page2.xaml.cs",
+              "RelativeDocumentMoniker": "UseCaseApplication\\Page2.xaml.cs",
+              "ToolTip": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\Page2.xaml.cs",
+              "RelativeToolTip": "UseCaseApplication\\Page2.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-02T09:38:14.945Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Page2.xaml",
+              "DocumentMoniker": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\Page2.xaml",
+              "RelativeDocumentMoniker": "UseCaseApplication\\Page2.xaml",
+              "ToolTip": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\Page2.xaml",
+              "RelativeToolTip": "UseCaseApplication\\Page2.xaml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-02T09:38:11.098Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
               "Title": "MainWindow.xaml.cs",
               "DocumentMoniker": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\MainWindow.xaml.cs",
               "RelativeDocumentMoniker": "UseCaseApplication\\MainWindow.xaml.cs",
               "ToolTip": "C:\\LoadApp\\VOLGGTY2\\kachestvo i nadezhnost is\\Git\\UseCaseApp\\UseCaseApplication\\MainWindow.xaml.cs",
               "RelativeToolTip": "UseCaseApplication\\MainWindow.xaml.cs",
-              "ViewState": "AgIAAIoAAAAAAAAAAAAAAMAAAAAfAAAAAAAAAA==",
+              "ViewState": "AgIAACcAAAAAAAAAAAAAAMAAAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-02T09:21:38.762Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-02T09:21:38.762Z"
             },
             {
               "$type": "Bookmark",
