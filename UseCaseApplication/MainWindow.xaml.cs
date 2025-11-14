@@ -65,6 +65,9 @@ namespace UseCaseApplication
         private bool proiskhodiloPeremeshenieElementa;
         private bool proiskhodiloMashtabirovanieElementa;
         private readonly Dictionary<Line, LineCoordinates> originalnyeKoordinatyLinij = new Dictionary<Line, LineCoordinates>();
+        private ScaleTransform setkaScaleTransform;
+        private TranslateTransform setkaTranslateTransform;
+        private DrawingBrush individualnyySetochnyyBrush;
 
         public MainWindow()
         {
@@ -72,7 +75,13 @@ namespace UseCaseApplication
             
             TekstTolschiny.Text = tekushayaTolschinaLinii.ToString();
             Closing += MainWindow_Closing;
+            Loaded += MainWindow_Loaded;
             MarkDocumentClean();
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            NastroitSetku();
         }
 
         private void ZagolovokOkna_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -155,6 +164,13 @@ namespace UseCaseApplication
             
             TransformMashtaba.BeginAnimation(ScaleTransform.ScaleXProperty, animatsiyaX);
             TransformMashtaba.BeginAnimation(ScaleTransform.ScaleYProperty, animatsiyaY);
+            if (setkaScaleTransform != null)
+            {
+                var animXForGrid = animatsiyaX.Clone();
+                var animYForGrid = animatsiyaY.Clone();
+                setkaScaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, animXForGrid);
+                setkaScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, animYForGrid);
+            }
             MetkaMashtaba.Text = $"{(int)e.NewValue}%";
         }
 
@@ -172,6 +188,34 @@ namespace UseCaseApplication
             }
 
             MarkDocumentDirty();
+        }
+
+        private void NastroitSetku()
+        {
+            if (FonSetki == null)
+            {
+                return;
+            }
+
+            if (individualnyySetochnyyBrush == null)
+            {
+                var bazovyyBrush = TryFindResource("GridBrush") as DrawingBrush;
+                if (bazovyyBrush == null)
+                {
+                    return;
+                }
+
+                individualnyySetochnyyBrush = bazovyyBrush.Clone();
+                setkaScaleTransform = new ScaleTransform(1, 1);
+                setkaTranslateTransform = new TranslateTransform(0, 0);
+
+                var transformGroup = new TransformGroup();
+                transformGroup.Children.Add(setkaScaleTransform);
+                transformGroup.Children.Add(setkaTranslateTransform);
+                individualnyySetochnyyBrush.Transform = transformGroup;
+            }
+
+            FonSetki.Fill = individualnyySetochnyyBrush;
         }
 
         private void UmenshitTolshinu_Click(object sender, RoutedEventArgs e)
@@ -242,7 +286,7 @@ namespace UseCaseApplication
             
             var element = e.OriginalSource as UIElement;
             
-            if (element == PoleDlyaRisovaniya || element == FonSetki || element == ramkaVydeleniya)
+            if (element == PoleDlyaRisovaniya || element == FonSetki || element == ramkaVydeleniya || element == HolstSoderzhanie)
             {
                 SnytVydelenie();
                 peremeshayuHolst = true;
@@ -254,7 +298,7 @@ namespace UseCaseApplication
             
             var roditelskiyElement = NaytiElementNaHolste(element);
             
-            if (roditelskiyElement != null && PoleDlyaRisovaniya.Children.Contains(roditelskiyElement))
+            if (roditelskiyElement != null && HolstSoderzhanie != null && HolstSoderzhanie.Children.Contains(roditelskiyElement))
             {
                 bool shiftNazhat = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
                 
@@ -265,7 +309,7 @@ namespace UseCaseApplication
                 
                 vybranniyElement = roditelskiyElement;
                 peremeshayuElement = true;
-                nachaloPeremesheniya = e.GetPosition(PoleDlyaRisovaniya);
+                nachaloPeremesheniya = e.GetPosition(HolstSoderzhanie);
                 
                 var tekushiyLeft = Canvas.GetLeft(vybranniyElement);
                 var tekushiyTop = Canvas.GetTop(vybranniyElement);
@@ -317,9 +361,9 @@ namespace UseCaseApplication
         
         private void SkrytRamuMashtabirovaniya()
         {
-            if (ramkaVydeleniya != null)
+            if (ramkaVydeleniya != null && HolstSoderzhanie != null)
             {
-                PoleDlyaRisovaniya.Children.Remove(ramkaVydeleniya);
+                HolstSoderzhanie.Children.Remove(ramkaVydeleniya);
                 ramkaVydeleniya = null;
             }
             
@@ -327,9 +371,9 @@ namespace UseCaseApplication
             {
                 foreach (var marker in markeriMashtaba)
                 {
-                    if (PoleDlyaRisovaniya.Children.Contains(marker))
+                    if (HolstSoderzhanie != null && HolstSoderzhanie.Children.Contains(marker))
                     {
-                        PoleDlyaRisovaniya.Children.Remove(marker);
+                        HolstSoderzhanie.Children.Remove(marker);
                     }
                 }
                 markeriMashtaba.Clear();
@@ -338,7 +382,7 @@ namespace UseCaseApplication
         
         private void PokazatRamuMashtabirovaniya(UIElement element)
         {
-            if (element == null || !PoleDlyaRisovaniya.Children.Contains(element)) 
+            if (element == null || HolstSoderzhanie == null || !HolstSoderzhanie.Children.Contains(element)) 
             {
                 SkrytRamuMashtabirovaniya();
                 return;
@@ -377,7 +421,10 @@ namespace UseCaseApplication
             Canvas.SetLeft(ramkaVydeleniya, bounds.Left - 4);
             Canvas.SetTop(ramkaVydeleniya, bounds.Top - 4);
             Panel.SetZIndex(ramkaVydeleniya, 1000);
-            PoleDlyaRisovaniya.Children.Add(ramkaVydeleniya);
+            if (HolstSoderzhanie != null)
+            {
+                HolstSoderzhanie.Children.Add(ramkaVydeleniya);
+            }
             
             // Обновляем список маркеров перед созданием новых
             if (markeriMashtaba == null)
@@ -442,7 +489,10 @@ namespace UseCaseApplication
                 // Сохраняем индекс маркера для быстрого доступа
                 marker.Tag = i;
                 
-                PoleDlyaRisovaniya.Children.Add(marker);
+            if (HolstSoderzhanie != null)
+            {
+                HolstSoderzhanie.Children.Add(marker);
+            }
                 markeriMashtaba.Add(marker);
             }
         }
@@ -868,7 +918,7 @@ namespace UseCaseApplication
             
             mashtabiruyuElement = true;
             elementDlyaMashtabirovaniya = vybranniyElement;
-            tochkaNachalaMashtabirovaniya = e.GetPosition(PoleDlyaRisovaniya);
+            tochkaNachalaMashtabirovaniya = e.GetPosition(HolstSoderzhanie);
             
             // Получаем реальные размеры без учета текущего масштабирования
             if (!originalnyeRazmery.ContainsKey(elementDlyaMashtabirovaniya))
@@ -904,7 +954,7 @@ namespace UseCaseApplication
                 return;
             }
             
-            var tekushayaPoz = e.GetPosition(PoleDlyaRisovaniya);
+            var tekushayaPoz = e.GetPosition(HolstSoderzhanie);
             var deltaX = tekushayaPoz.X - tochkaNachalaMashtabirovaniya.X;
             var deltaY = tekushayaPoz.Y - tochkaNachalaMashtabirovaniya.Y;
             
@@ -1192,7 +1242,7 @@ namespace UseCaseApplication
             {
                 if (e.LeftButton == MouseButtonState.Pressed)
                 {
-                    var tekushayaPoz = e.GetPosition(PoleDlyaRisovaniya);
+                    var tekushayaPoz = e.GetPosition(HolstSoderzhanie);
                     var deltaX = tekushayaPoz.X - tochkaNachalaMashtabirovaniya.X;
                     var deltaY = tekushayaPoz.Y - tochkaNachalaMashtabirovaniya.Y;
                     
@@ -1280,8 +1330,16 @@ namespace UseCaseApplication
                     var deltaX = tekushayaPoz.X - nachaloPeremesheniyaHolsta.X;
                     var deltaY = tekushayaPoz.Y - nachaloPeremesheniyaHolsta.Y;
                     
+                    if (TransformSdviga != null)
+                    {
                     TransformSdviga.X += deltaX;
                     TransformSdviga.Y += deltaY;
+                    }
+                    if (setkaTranslateTransform != null)
+                    {
+                        setkaTranslateTransform.X += deltaX;
+                        setkaTranslateTransform.Y += deltaY;
+                    }
                     
                     nachaloPeremesheniyaHolsta = tekushayaPoz;
                 }
@@ -1298,7 +1356,7 @@ namespace UseCaseApplication
             {
                 if (e.LeftButton == MouseButtonState.Pressed)
                 {
-                    var tekushayaPoz = e.GetPosition(PoleDlyaRisovaniya);
+                    var tekushayaPoz = e.GetPosition(HolstSoderzhanie);
                     
                     var smeshenieX = tekushayaPoz.X - nachaloPeremesheniya.X;
                     var smeshenieY = tekushayaPoz.Y - nachaloPeremesheniya.Y;
@@ -1381,7 +1439,7 @@ namespace UseCaseApplication
             if (!e.Data.GetDataPresent(DataFormats.StringFormat)) return;
             
             var instrument = (string)e.Data.GetData(DataFormats.StringFormat);
-            var tochkaSbrosa = e.GetPosition(PoleDlyaRisovaniya);
+            var tochkaSbrosa = e.GetPosition(HolstSoderzhanie);
 
             UIElement element = SozdatElementPoInstrumentu(instrument, tochkaSbrosa);
             if (element != null)
@@ -1392,8 +1450,8 @@ namespace UseCaseApplication
 
         private void Otmena_Click(object sender, RoutedEventArgs e)
         {
-            if (PoleDlyaRisovaniya.Children.Count == 0) return;
-            var element = PoleDlyaRisovaniya.Children[PoleDlyaRisovaniya.Children.Count - 1] as UIElement;
+            if (HolstSoderzhanie == null || HolstSoderzhanie.Children.Count == 0) return;
+            var element = HolstSoderzhanie.Children[HolstSoderzhanie.Children.Count - 1] as UIElement;
             
             // Если удаляем выбранный элемент, скрываем рамку и маркеры
             if (vybranniyElement == element || (vybranniyElement == null && vybranniyeElementy.Contains(element)))
@@ -1402,7 +1460,7 @@ namespace UseCaseApplication
                 SnytVydelenie();
             }
             
-            PoleDlyaRisovaniya.Children.RemoveAt(PoleDlyaRisovaniya.Children.Count - 1);
+            HolstSoderzhanie.Children.RemoveAt(HolstSoderzhanie.Children.Count - 1);
             otmenaStack.Push(element);
             vozvratStack.Clear();
             MarkDocumentDirty();
@@ -1412,7 +1470,7 @@ namespace UseCaseApplication
         {
             if (otmenaStack.Count == 0) return;
             var element = otmenaStack.Pop();
-            PoleDlyaRisovaniya.Children.Add(element);
+            HolstSoderzhanie.Children.Add(element);
             vozvratStack.Push(element);
             
             // Если это был выбранный элемент, обновляем рамку и маркеры
@@ -1426,31 +1484,30 @@ namespace UseCaseApplication
 
         private void DobavitNaHolst(UIElement element, bool otslezhivatIzmeneniya = true)
         {
-            PoleDlyaRisovaniya.Children.Add(element);
+            if (HolstSoderzhanie == null || element == null) return;
+
+            HolstSoderzhanie.Children.Add(element);
             vozvratStack.Clear();
             
             // Сохраняем оригинальные размеры при добавлении элемента
-            if (element != null)
+            // Сохраняем координаты для Line элементов сразу
+            if (element is Line line)
             {
-                // Сохраняем координаты для Line элементов сразу
-                if (element is Line line)
+                if (!originalnyeKoordinatyLinij.ContainsKey(line))
                 {
-                    if (!originalnyeKoordinatyLinij.ContainsKey(line))
-                    {
-                        originalnyeKoordinatyLinij[line] = new LineCoordinates(line.X1, line.Y1, line.X2, line.Y2);
-                    }
+                    originalnyeKoordinatyLinij[line] = new LineCoordinates(line.X1, line.Y1, line.X2, line.Y2);
                 }
-                
-                // Немного задержки, чтобы элемент успел отрендериться
-                Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    var bounds = PoluchitGranitsyBezMashtaba(element);
-                    if (bounds.Width > 0 && bounds.Height > 0)
-                    {
-                        originalnyeRazmery[element] = bounds;
-                    }
-                }), System.Windows.Threading.DispatcherPriority.Loaded);
             }
+            
+            // Немного задержки, чтобы элемент успел отрендериться
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                var bounds = PoluchitGranitsyBezMashtaba(element);
+                if (bounds.Width > 0 && bounds.Height > 0)
+                {
+                    originalnyeRazmery[element] = bounds;
+                }
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
 
             if (otslezhivatIzmeneniya)
             {
@@ -1461,10 +1518,10 @@ namespace UseCaseApplication
         private UIElement NaytiElementNaHolste(UIElement element)
         {
             var tekushiy = element;
-            while (tekushiy != null && tekushiy != PoleDlyaRisovaniya)
+            while (tekushiy != null && tekushiy != HolstSoderzhanie)
             {
                 var roditel = VisualTreeHelper.GetParent(tekushiy) as UIElement;
-                if (roditel == PoleDlyaRisovaniya)
+                if (roditel == HolstSoderzhanie)
                 {
                     return tekushiy;
                 }
@@ -2116,7 +2173,7 @@ namespace UseCaseApplication
 
         private bool SohranitDiagrammu(bool prinuditelnoyeVyborMesta = false)
         {
-            if (PoleDlyaRisovaniya == null)
+            if (HolstSoderzhanie == null)
             {
                 return false;
             }
@@ -2183,7 +2240,8 @@ namespace UseCaseApplication
                 IsGridVisible = FonSetki?.Visibility != Visibility.Hidden
             };
 
-            foreach (UIElement child in PoleDlyaRisovaniya.Children)
+            if (HolstSoderzhanie == null) return diagram;
+            foreach (UIElement child in HolstSoderzhanie.Children)
             {
                 if (child == null) continue;
                 if (ramkaVydeleniya != null && ReferenceEquals(child, ramkaVydeleniya)) continue;
@@ -2255,7 +2313,7 @@ namespace UseCaseApplication
 
         private void PriminitDiagrammu(DiagramFile diagram)
         {
-            if (diagram == null || PoleDlyaRisovaniya == null)
+            if (diagram == null || HolstSoderzhanie == null)
             {
                 return;
             }
@@ -2319,6 +2377,11 @@ namespace UseCaseApplication
                 TransformSdviga.X = diagram.OffsetX;
                 TransformSdviga.Y = diagram.OffsetY;
             }
+            if (setkaTranslateTransform != null)
+            {
+                setkaTranslateTransform.X = diagram.OffsetX;
+                setkaTranslateTransform.Y = diagram.OffsetY;
+            }
 
             if (PerekyuchatelSetki != null)
             {
@@ -2334,7 +2397,7 @@ namespace UseCaseApplication
         {
             SnytVydelenie();
             SkrytRamuMashtabirovaniya();
-            PoleDlyaRisovaniya.Children.Clear();
+            HolstSoderzhanie?.Children.Clear();
             otmenaStack.Clear();
             vozvratStack.Clear();
             originalnyeRazmery.Clear();
@@ -2358,11 +2421,21 @@ namespace UseCaseApplication
                     TransformSdviga.X = 0;
                     TransformSdviga.Y = 0;
                 }
+                if (setkaTranslateTransform != null)
+                {
+                    setkaTranslateTransform.X = 0;
+                    setkaTranslateTransform.Y = 0;
+                }
 
                 if (TransformMashtaba != null)
                 {
                     TransformMashtaba.ScaleX = 1;
                     TransformMashtaba.ScaleY = 1;
+                }
+                if (setkaScaleTransform != null)
+                {
+                    setkaScaleTransform.ScaleX = 1;
+                    setkaScaleTransform.ScaleY = 1;
                 }
 
                 if (PolzunokMashtaba != null)
