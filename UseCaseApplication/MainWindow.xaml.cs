@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -15,6 +19,9 @@ using System.Windows.Shapes;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Animation;
+using System.Windows.Markup;
+using Microsoft.Win32;
+using ShapesPath = System.Windows.Shapes.Path;
 
 namespace UseCaseApplication
 {
@@ -52,11 +59,20 @@ namespace UseCaseApplication
         private Point originalnayaPozitsiya;
         private UIElement elementDlyaMashtabirovaniya;
 
+        private string tekushiyPutFayla;
+        private bool estNesokhrannyeIzmeneniya;
+        private bool blokirovatOtslezhivanieIzmeneniy;
+        private bool proiskhodiloPeremeshenieElementa;
+        private bool proiskhodiloMashtabirovanieElementa;
+        private readonly Dictionary<Line, LineCoordinates> originalnyeKoordinatyLinij = new Dictionary<Line, LineCoordinates>();
+
         public MainWindow()
         {
             InitializeComponent();
             
             TekstTolschiny.Text = tekushayaTolschinaLinii.ToString();
+            Closing += MainWindow_Closing;
+            MarkDocumentClean();
         }
 
         private void ZagolovokOkna_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -154,6 +170,8 @@ namespace UseCaseApplication
             {
                 FonSetki.Visibility = Visibility.Hidden;
             }
+
+            MarkDocumentDirty();
         }
 
         private void UmenshitTolshinu_Click(object sender, RoutedEventArgs e)
@@ -178,15 +196,15 @@ namespace UseCaseApplication
 
         private void ObnovitTolshinuLinii()
         {
-
             if (vybranniyeElementy == null || vybranniyeElementy.Count == 0) return;
-
+            bool byliIzmeneniya = false;
             foreach (var element in vybranniyeElementy.ToList())
             {
                 if (element is Shape forma)
                 {
                     forma.StrokeThickness = tekushayaTolschinaLinii;
                     originalnyeTolschiny[element] = tekushayaTolschinaLinii;
+                    byliIzmeneniya = true;
                 }
                 else if (element is Canvas canvas)
                 {
@@ -198,8 +216,14 @@ namespace UseCaseApplication
                         {
                             originalnyeTolschiny[key] = tekushayaTolschinaLinii;
                         }
+                        byliIzmeneniya = true;
                     }
                 }
+            }
+
+            if (byliIzmeneniya)
+            {
+                MarkDocumentDirty();
             }
         }
 
@@ -1039,39 +1063,6 @@ namespace UseCaseApplication
                         maxRight > 0 ? maxRight : 120,
                         maxBottom > 0 ? maxBottom : 150
                     );
-                    
-                    // Сохраняем оригинальные позиции и размеры дочерних элементов
-                    foreach (UIElement child in canvas.Children)
-                    {
-                        var childFe = child as FrameworkElement;
-                        if (childFe != null && childFe.Tag == null)
-                        {
-                            var childInfo = new Dictionary<string, double>();
-                            childInfo["Left"] = Canvas.GetLeft(child);
-                            childInfo["Top"] = Canvas.GetTop(child);
-                            if (child is Shape childShape)
-                            {
-                                childShape.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                                childInfo["Width"] = !double.IsNaN(childShape.Width) && childShape.Width > 0 
-                                    ? childShape.Width 
-                                    : childShape.DesiredSize.Width;
-                                childInfo["Height"] = !double.IsNaN(childShape.Height) && childShape.Height > 0 
-                                    ? childShape.Height 
-                                    : childShape.DesiredSize.Height;
-                            }
-                            else if (child is FrameworkElement childFrameworkElement)
-                            {
-                                childFrameworkElement.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                                childInfo["Width"] = !double.IsNaN(childFrameworkElement.Width) && childFrameworkElement.Width > 0 
-                                    ? childFrameworkElement.Width 
-                                    : childFrameworkElement.DesiredSize.Width;
-                                childInfo["Height"] = !double.IsNaN(childFrameworkElement.Height) && childFrameworkElement.Height > 0 
-                                    ? childFrameworkElement.Height 
-                                    : childFrameworkElement.DesiredSize.Height;
-                            }
-                            childFe.Tag = childInfo;
-                        }
-                    }
                 }
                 
                 // Масштабируем Canvas через RenderTransform
@@ -1101,32 +1092,20 @@ namespace UseCaseApplication
                 if (shape is Line lineForScale)
                 {
                     // Сохраняем оригинальные координаты при первом масштабировании
-                    if (!originalnyeRazmery.ContainsKey(element))
+                    if (!originalnyeKoordinatyLinij.ContainsKey(lineForScale))
                     {
-                        double origX1 = lineForScale.X1;
-                        double origY1 = lineForScale.Y1;
-                        double origX2 = lineForScale.X2;
-                        double origY2 = lineForScale.Y2;
-                        // Сохраняем координаты в словаре для Line (используем словарь с другим ключом)
-                        var lineCoords = new Dictionary<string, double>();
-                        lineCoords["X1"] = origX1;
-                        lineCoords["Y1"] = origY1;
-                        lineCoords["X2"] = origX2;
-                        lineCoords["Y2"] = origY2;
-                        // Используем Tag для хранения оригинальных координат (Line наследуется от FrameworkElement, так что Tag доступен)
-                        lineForScale.Tag = lineCoords;
+                        originalnyeKoordinatyLinij[lineForScale] = new LineCoordinates(lineForScale.X1, lineForScale.Y1, lineForScale.X2, lineForScale.Y2);
                     }
                     
-                    var origCoords = lineForScale.Tag as Dictionary<string, double>;
-                    if (origCoords != null)
+                    if (originalnyeKoordinatyLinij.TryGetValue(lineForScale, out var origCoords))
                     {
-                        lineForScale.X1 = origCoords["X1"] * scaleX;
-                        lineForScale.Y1 = origCoords["Y1"] * scaleY;
-                        lineForScale.X2 = origCoords["X2"] * scaleX;
-                        lineForScale.Y2 = origCoords["Y2"] * scaleY;
+                        lineForScale.X1 = origCoords.X1 * scaleX;
+                        lineForScale.Y1 = origCoords.Y1 * scaleY;
+                        lineForScale.X2 = origCoords.X2 * scaleX;
+                        lineForScale.Y2 = origCoords.Y2 * scaleY;
                     }
                 }
-                else if (shape is Path path)
+            else if (shape is ShapesPath path)
                 {
                     var transform = path.RenderTransform as ScaleTransform;
                     if (transform == null)
@@ -1280,6 +1259,7 @@ namespace UseCaseApplication
                         {
                             MashtabirovatElement(elementDlyaMashtabirovaniya, newLeft, newTop, newWidth, newHeight);
                             PokazatRamuMashtabirovaniya(elementDlyaMashtabirovaniya);
+                            proiskhodiloMashtabirovanieElementa = true;
                         }
                     }
                 }
@@ -1328,6 +1308,7 @@ namespace UseCaseApplication
                     
                     // Обновляем рамку масштабирования при перемещении
                     PokazatRamuMashtabirovaniya(vybranniyElement);
+                    proiskhodiloPeremeshenieElementa = true;
                 }
                 else
                 {
@@ -1349,6 +1330,15 @@ namespace UseCaseApplication
                 {
                     PokazatRamuMashtabirovaniya(elementDlyaMashtabirovaniya);
                 }
+                if (proiskhodiloMashtabirovanieElementa)
+                {
+                    proiskhodiloMashtabirovanieElementa = false;
+                    MarkDocumentDirty();
+                }
+                else
+                {
+                    proiskhodiloMashtabirovanieElementa = false;
+                }
                 return;
             }
             
@@ -1367,6 +1357,16 @@ namespace UseCaseApplication
                 {
                     PokazatRamuMashtabirovaniya(vybranniyElement);
                 }
+            }
+
+            if (proiskhodiloPeremeshenieElementa)
+            {
+                proiskhodiloPeremeshenieElementa = false;
+                MarkDocumentDirty();
+            }
+            else
+            {
+                proiskhodiloPeremeshenieElementa = false;
             }
         }
 
@@ -1405,6 +1405,7 @@ namespace UseCaseApplication
             PoleDlyaRisovaniya.Children.RemoveAt(PoleDlyaRisovaniya.Children.Count - 1);
             otmenaStack.Push(element);
             vozvratStack.Clear();
+            MarkDocumentDirty();
         }
 
         private void Vozvrat_Click(object sender, RoutedEventArgs e)
@@ -1420,9 +1421,10 @@ namespace UseCaseApplication
                 vybranniyElement = element;
                 PokazatRamuMashtabirovaniya(element);
             }
+            MarkDocumentDirty();
         }
 
-        private void DobavitNaHolst(UIElement element)
+        private void DobavitNaHolst(UIElement element, bool otslezhivatIzmeneniya = true)
         {
             PoleDlyaRisovaniya.Children.Add(element);
             vozvratStack.Clear();
@@ -1433,12 +1435,10 @@ namespace UseCaseApplication
                 // Сохраняем координаты для Line элементов сразу
                 if (element is Line line)
                 {
-                    var lineCoords = new Dictionary<string, double>();
-                    lineCoords["X1"] = line.X1;
-                    lineCoords["Y1"] = line.Y1;
-                    lineCoords["X2"] = line.X2;
-                    lineCoords["Y2"] = line.Y2;
-                    line.Tag = lineCoords;
+                    if (!originalnyeKoordinatyLinij.ContainsKey(line))
+                    {
+                        originalnyeKoordinatyLinij[line] = new LineCoordinates(line.X1, line.Y1, line.X2, line.Y2);
+                    }
                 }
                 
                 // Немного задержки, чтобы элемент успел отрендериться
@@ -1450,6 +1450,11 @@ namespace UseCaseApplication
                         originalnyeRazmery[element] = bounds;
                     }
                 }), System.Windows.Threading.DispatcherPriority.Loaded);
+            }
+
+            if (otslezhivatIzmeneniya)
+            {
+                MarkDocumentDirty();
             }
         }
 
@@ -1614,7 +1619,7 @@ namespace UseCaseApplication
                 }
                 case "obobshenie":
                 {
-                    var put = new Path
+                    var put = new ShapesPath
                     {
                         Stroke = Brushes.Black,
                         //StrokeThickness = tekushayaTolschinaLinii,
@@ -2070,26 +2075,374 @@ namespace UseCaseApplication
 
         private void NewFile_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Функция 'Новый файл' пока не реализована", "Информация", 
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            if (!ProveritNuzhnoLiSohranitPeredDeystviem())
+            {
+                return;
+            }
+
+            SozdatNovyyDokument();
         }
 
         private void OpenFile_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Функция 'Открыть' пока не реализована", "Информация", 
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            if (!ProveritNuzhnoLiSohranitPeredDeystviem())
+            {
+                return;
+            }
+
+            var dialog = new OpenFileDialog
+            {
+                Filter = "Use Case App (*.uca)|*.uca|Все файлы (*.*)|*.*",
+                DefaultExt = "uca",
+                Multiselect = false,
+                Title = "Открыть диаграмму"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                ZagruzitDiagrammuIzFaila(dialog.FileName);
+            }
         }
 
         private void SaveFile_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Функция 'Сохранить' пока не реализована", "Информация", 
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            SohranitDiagrammu();
         }
 
         private void SaveAsFile_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Функция 'Сохранить как' пока не реализована", "Информация", 
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            SohranitDiagrammu(true);
+        }
+
+        private bool SohranitDiagrammu(bool prinuditelnoyeVyborMesta = false)
+        {
+            if (PoleDlyaRisovaniya == null)
+            {
+                return false;
+            }
+
+            string targetPath = tekushiyPutFayla;
+            if (prinuditelnoyeVyborMesta || string.IsNullOrWhiteSpace(targetPath))
+            {
+                var dialog = new SaveFileDialog
+                {
+                    Filter = "Use Case App (*.uca)|*.uca|Все файлы (*.*)|*.*",
+                    DefaultExt = "uca",
+                    AddExtension = true,
+                    Title = "Сохранить диаграмму",
+                    FileName = string.IsNullOrWhiteSpace(tekushiyPutFayla) ? "Диаграмма" : System.IO.Path.GetFileName(tekushiyPutFayla)
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    targetPath = dialog.FileName;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            if (!EksportDiagrammy(targetPath))
+            {
+                return false;
+            }
+
+            tekushiyPutFayla = targetPath;
+            MarkDocumentClean();
+            return true;
+        }
+
+        private bool EksportDiagrammy(string filePath)
+        {
+            try
+            {
+                var snapshot = PostroitSnimokDiagrammy();
+                var serializer = new DataContractJsonSerializer(typeof(DiagramFile));
+                using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    serializer.WriteObject(stream, snapshot);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Не удалось сохранить файл.\n{ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+        }
+
+        private DiagramFile PostroitSnimokDiagrammy()
+        {
+            var diagram = new DiagramFile
+            {
+                Zoom = PolzunokMashtaba?.Value ?? 100,
+                OffsetX = TransformSdviga?.X ?? 0,
+                OffsetY = TransformSdviga?.Y ?? 0,
+                IsGridVisible = FonSetki?.Visibility != Visibility.Hidden
+            };
+
+            foreach (UIElement child in PoleDlyaRisovaniya.Children)
+            {
+                if (child == null) continue;
+                if (ramkaVydeleniya != null && ReferenceEquals(child, ramkaVydeleniya)) continue;
+                if (markeriMashtaba != null && child is Border marker && markeriMashtaba.Contains(marker)) continue;
+
+                try
+                {
+                    string elementXaml = XamlWriter.Save(child);
+                    var elementData = new DiagramElement
+                    {
+                        Xaml = elementXaml,
+                        Left = double.IsNaN(Canvas.GetLeft(child)) ? (double?)null : Canvas.GetLeft(child),
+                        Top = double.IsNaN(Canvas.GetTop(child)) ? (double?)null : Canvas.GetTop(child),
+                        ZIndex = Panel.GetZIndex(child)
+                    };
+                    diagram.Elements.Add(elementData);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Не удалось сериализовать элемент.\n{ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+
+            return diagram;
+        }
+
+        private bool ZagruzitDiagrammuIzFaila(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return false;
+            }
+
+            try
+            {
+                DiagramFile diagram;
+                var serializer = new DataContractJsonSerializer(typeof(DiagramFile));
+                using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    diagram = serializer.ReadObject(stream) as DiagramFile;
+                }
+
+                if (diagram == null)
+                {
+                    throw new InvalidOperationException("Файл повреждён или имеет неподдерживаемый формат.");
+                }
+
+                blokirovatOtslezhivanieIzmeneniy = true;
+                try
+                {
+                    OchistitHolstCore();
+                    PriminitDiagrammu(diagram);
+                }
+                finally
+                {
+                    blokirovatOtslezhivanieIzmeneniy = false;
+                }
+
+                tekushiyPutFayla = filePath;
+                MarkDocumentClean();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Не удалось открыть файл.\n{ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+        }
+
+        private void PriminitDiagrammu(DiagramFile diagram)
+        {
+            if (diagram == null || PoleDlyaRisovaniya == null)
+            {
+                return;
+            }
+
+            if (diagram.Elements != null)
+            {
+                foreach (var elementData in diagram.Elements)
+                {
+                    if (elementData == null || string.IsNullOrWhiteSpace(elementData.Xaml))
+                    {
+                        continue;
+                    }
+
+                    UIElement element;
+                    try
+                    {
+                        element = XamlReader.Parse(elementData.Xaml) as UIElement;
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+
+                    if (element == null)
+                    {
+                        continue;
+                    }
+
+                    DobavitNaHolst(element, false);
+
+                    if (elementData.Left.HasValue)
+                    {
+                        Canvas.SetLeft(element, elementData.Left.Value);
+                    }
+                    else
+                    {
+                        Canvas.SetLeft(element, double.NaN);
+                    }
+
+                    if (elementData.Top.HasValue)
+                    {
+                        Canvas.SetTop(element, elementData.Top.Value);
+                    }
+                    else
+                    {
+                        Canvas.SetTop(element, double.NaN);
+                    }
+
+                    Panel.SetZIndex(element, elementData.ZIndex);
+                }
+            }
+
+            if (PolzunokMashtaba != null && diagram.Zoom > 0)
+            {
+                var zoomValue = Math.Max(PolzunokMashtaba.Minimum, Math.Min(diagram.Zoom, PolzunokMashtaba.Maximum));
+                PolzunokMashtaba.Value = zoomValue;
+            }
+
+            if (TransformSdviga != null)
+            {
+                TransformSdviga.X = diagram.OffsetX;
+                TransformSdviga.Y = diagram.OffsetY;
+            }
+
+            if (PerekyuchatelSetki != null)
+            {
+                PerekyuchatelSetki.IsChecked = diagram.IsGridVisible;
+            }
+            else if (FonSetki != null)
+            {
+                FonSetki.Visibility = diagram.IsGridVisible ? Visibility.Visible : Visibility.Hidden;
+            }
+        }
+
+        private void OchistitHolstCore()
+        {
+            SnytVydelenie();
+            SkrytRamuMashtabirovaniya();
+            PoleDlyaRisovaniya.Children.Clear();
+            otmenaStack.Clear();
+            vozvratStack.Clear();
+            originalnyeRazmery.Clear();
+            originalnyeTolschiny.Clear();
+            originalnyeKoordinatyLinij.Clear();
+            vybranniyElement = null;
+            vybranniyeElementy.Clear();
+            proiskhodiloPeremeshenieElementa = false;
+            proiskhodiloMashtabirovanieElementa = false;
+        }
+
+        private void SozdatNovyyDokument()
+        {
+            blokirovatOtslezhivanieIzmeneniy = true;
+            try
+            {
+                OchistitHolstCore();
+
+                if (TransformSdviga != null)
+                {
+                    TransformSdviga.X = 0;
+                    TransformSdviga.Y = 0;
+                }
+
+                if (TransformMashtaba != null)
+                {
+                    TransformMashtaba.ScaleX = 1;
+                    TransformMashtaba.ScaleY = 1;
+                }
+
+                if (PolzunokMashtaba != null)
+                {
+                    PolzunokMashtaba.Value = 100;
+                }
+
+                if (PerekyuchatelSetki != null)
+                {
+                    PerekyuchatelSetki.IsChecked = true;
+                }
+                else if (FonSetki != null)
+                {
+                    FonSetki.Visibility = Visibility.Visible;
+                }
+
+                if (TekstTolschiny != null)
+                {
+                    TekstTolschiny.Text = tekushayaTolschinaLinii.ToString();
+                }
+            }
+            finally
+            {
+                blokirovatOtslezhivanieIzmeneniy = false;
+            }
+
+            tekushiyPutFayla = null;
+            MarkDocumentClean();
+        }
+
+        private bool ProveritNuzhnoLiSohranitPeredDeystviem()
+        {
+            if (!estNesokhrannyeIzmeneniya)
+            {
+                return true;
+            }
+
+            var result = MessageBox.Show("Диаграмма содержит несохранённые изменения. Сохранить изменения?", "Сохранить изменения", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Cancel)
+            {
+                return false;
+            }
+
+            if (result == MessageBoxResult.Yes)
+            {
+                return SohranitDiagrammu();
+            }
+
+            return true;
+        }
+
+        private void MarkDocumentDirty()
+        {
+            if (blokirovatOtslezhivanieIzmeneniy)
+            {
+                return;
+            }
+
+            estNesokhrannyeIzmeneniya = true;
+            ObnovitZagolovokOkna();
+        }
+
+        private void MarkDocumentClean()
+        {
+            estNesokhrannyeIzmeneniya = false;
+            ObnovitZagolovokOkna();
+        }
+
+        private void ObnovitZagolovokOkna()
+        {
+            var fileName = string.IsNullOrWhiteSpace(tekushiyPutFayla) ? "Безымянный" : System.IO.Path.GetFileName(tekushiyPutFayla);
+            Title = estNesokhrannyeIzmeneniya ? $"UCA - {fileName}*" : $"UCA - {fileName}";
+        }
+
+        private void MainWindow_Closing(object sender, CancelEventArgs e)
+        {
+            if (!ProveritNuzhnoLiSohranitPeredDeystviem())
+            {
+                e.Cancel = true;
+            }
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
@@ -2106,26 +2459,22 @@ namespace UseCaseApplication
 
         private void NoviyFayl_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Функция 'Новый файл' пока не реализована", "Информация", 
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            NewFile_Click(sender, e);
         }
 
         private void Otkryt_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Функция 'Открыть' пока не реализована", "Информация", 
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            OpenFile_Click(sender, e);
         }
 
         private void Sohranit_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Функция 'Сохранить' пока не реализована", "Информация", 
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            SaveFile_Click(sender, e);
         }
 
         private void SohranitKak_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Функция 'Сохранить как' пока не реализована", "Информация", 
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            SaveAsFile_Click(sender, e);
         }
 
         private void DecreaseZoom_Click(object sender, MouseButtonEventArgs e)
@@ -2144,5 +2493,39 @@ namespace UseCaseApplication
             }
         }
 
+        [DataContract]
+        private class DiagramFile
+        {
+            [DataMember] public List<DiagramElement> Elements { get; set; } = new List<DiagramElement>();
+            [DataMember] public double Zoom { get; set; } = 100;
+            [DataMember] public double OffsetX { get; set; }
+            [DataMember] public double OffsetY { get; set; }
+            [DataMember] public bool IsGridVisible { get; set; } = true;
+        }
+
+        [DataContract]
+        private class DiagramElement
+        {
+            [DataMember] public string Xaml { get; set; }
+            [DataMember] public double? Left { get; set; }
+            [DataMember] public double? Top { get; set; }
+            [DataMember] public int ZIndex { get; set; }
+        }
+
+        private class LineCoordinates
+        {
+            public LineCoordinates(double x1, double y1, double x2, double y2)
+            {
+                X1 = x1;
+                Y1 = y1;
+                X2 = x2;
+                Y2 = y2;
+            }
+
+            public double X1 { get; }
+            public double Y1 { get; }
+            public double X2 { get; }
+            public double Y2 { get; }
+        }
     }
 }
