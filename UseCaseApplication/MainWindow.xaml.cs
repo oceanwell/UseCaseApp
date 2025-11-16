@@ -2144,5 +2144,301 @@ namespace UseCaseApplication
             }
         }
 
+        private bool YavlyaetsyaStrelkoy(UIElement element)
+        {
+            return element is Polyline || (element is Canvas c && c.Children.OfType<Polyline>().Any());
+        }
+
+        private void ObnovitStrelkiDlyaObekta(UIElement obj)
+        {
+            if (obj == null) return;
+            foreach (var kvp in prikreplennyeStrelki.ToList())
+            {
+                if (kvp.Value.Item1 == obj || kvp.Value.Item2 == obj)
+                    PrivyazatStrelku(kvp.Key);
+            }
+        }
+
+        private void PrivyazatStrelku(UIElement strelka)
+        {
+            if (strelka == null || HolstSoderzhanie == null) return;
+
+            Polyline polyline = null;
+            Canvas canvas = null;
+            double canvasLeft = 0, canvasTop = 0;
+
+            if (strelka is Canvas c)
+            {
+                canvas = c;
+                polyline = canvas.Children.OfType<Polyline>().FirstOrDefault();
+                if (polyline?.Points == null || polyline.Points.Count < 2) return;
+                canvasLeft = Canvas.GetLeft(canvas); if (double.IsNaN(canvasLeft)) canvasLeft = 0;
+                canvasTop = Canvas.GetTop(canvas); if (double.IsNaN(canvasTop)) canvasTop = 0;
+            }
+            else if (strelka is Polyline pl)
+            {
+                if (pl.Points == null || pl.Points.Count < 2) return;
+                polyline = pl;
+            }
+            else return;
+
+            Tuple<UIElement, UIElement> savedAttachments = null;
+            if (prikreplennyeStrelki.ContainsKey(strelka))
+            {
+                savedAttachments = prikreplennyeStrelki[strelka];
+            }
+
+            var p1 = polyline.Points[0];
+            var p2 = polyline.Points[polyline.Points.Count - 1];
+            if (canvas != null)
+            {
+                p1 = new Point(p1.X + canvasLeft, p1.Y + canvasTop);
+                p2 = new Point(p2.X + canvasLeft, p2.Y + canvasTop);
+            }
+
+            var obj1 = savedAttachments?.Item1 ?? NaytiBlizhayshiyObekt(p1);
+            var obj2 = savedAttachments?.Item2 ?? NaytiBlizhayshiyObekt(p2);
+
+            bool updated = false;
+            if (obj1 != null)
+            {
+                var t = NaytiTochkuNaGranitseOtTsentra(p1, obj1);
+                if (canvas != null)
+                    polyline.Points[0] = new Point(t.X - canvasLeft, t.Y - canvasTop);
+                else
+                    polyline.Points[0] = t;
+                updated = true;
+            }
+
+            if (obj2 != null)
+            {
+                var t = NaytiTochkuNaGranitseOtTsentra(p2, obj2);
+                var idx = polyline.Points.Count - 1;
+                if (canvas != null)
+                    polyline.Points[idx] = new Point(t.X - canvasLeft, t.Y - canvasTop);
+                else
+                    polyline.Points[idx] = t;
+                updated = true;
+            }
+
+            if (updated && canvas != null)
+                ObnovitStrelku(canvas, polyline);
+
+            if (markeriIzgiba != null && polyline != null)
+            {
+                var points = polyline.Points;
+                for (int i = 0; i < points.Count && i < markeriIzgiba.Count; i++)
+                {
+                    var marker = markeriIzgiba[i];
+                    Point absPoint;
+                    if (canvas != null)
+                        absPoint = new Point(points[i].X + canvasLeft, points[i].Y + canvasTop);
+                    else
+                        absPoint = points[i];
+                    Canvas.SetLeft(marker, absPoint.X - marker.Width / 2);
+                    Canvas.SetTop(marker, absPoint.Y - marker.Height / 2);
+                }
+            }
+
+            prikreplennyeStrelki[strelka] = new Tuple<UIElement, UIElement>(obj1, obj2);
+        }
+
+        private UIElement NaytiBlizhayshiyObekt(Point p)
+        {
+            if (HolstSoderzhanie == null) return null;
+            UIElement nearest = null;
+            double minDist = 150;
+
+            foreach (UIElement el in HolstSoderzhanie.Children)
+            {
+                if (el == null) continue;
+                if (YavlyaetsyaStrelkoy(el)) continue;
+                if (el == ramkaVydeleniya) continue;
+                if (markeriMashtaba != null && markeriMashtaba.Contains(el)) continue;
+                if (markeriIzgiba != null && markeriIzgiba.Contains(el)) continue;
+                if (podsvetkiObektov != null && podsvetkiObektov.Contains(el)) continue;
+
+                var bounds = PoluchitGranitsyBezMashtaba(el);
+                if (bounds.Width <= 0 || bounds.Height <= 0) continue;
+
+                var expandedBounds = new Rect(bounds.Left - 10, bounds.Top - 10, bounds.Width + 20, bounds.Height + 20);
+                
+                var nearestPoint = new Point(
+                    Math.Max(bounds.Left, Math.Min(p.X, bounds.Right)),
+                    Math.Max(bounds.Top, Math.Min(p.Y, bounds.Bottom))
+                );
+                
+                if (p.X >= bounds.Left && p.X <= bounds.Right && p.Y >= bounds.Top && p.Y <= bounds.Bottom)
+                {
+                    var dLeft = p.X - bounds.Left;
+                    var dRight = bounds.Right - p.X;
+                    var dTop = p.Y - bounds.Top;
+                    var dBottom = bounds.Bottom - p.Y;
+                    var min = Math.Min(Math.Min(dLeft, dRight), Math.Min(dTop, dBottom));
+                    
+                    if (min == dLeft) nearestPoint = new Point(bounds.Left, p.Y);
+                    else if (min == dRight) nearestPoint = new Point(bounds.Right, p.Y);
+                    else if (min == dTop) nearestPoint = new Point(p.X, bounds.Top);
+                    else nearestPoint = new Point(p.X, bounds.Bottom);
+                }
+                
+                var dist = Math.Sqrt(Math.Pow(p.X - nearestPoint.X, 2) + Math.Pow(p.Y - nearestPoint.Y, 2));
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    nearest = el;
+                }
+            }
+            return nearest;
+        }
+
+        private Point NaytiTochkuNaGranitse(Point p, UIElement obj)
+        {
+            var bounds = PoluchitGranitsyBezMashtaba(obj);
+            var center = new Point(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
+            var dx = p.X - center.X;
+            var dy = p.Y - center.Y;
+            
+            if (Math.Abs(dx) < 0.001 && Math.Abs(dy) < 0.001)
+                return new Point(bounds.Right, center.Y);
+            
+            var ratio = Math.Min(Math.Abs(bounds.Width / 2 / dx), Math.Abs(bounds.Height / 2 / dy));
+            var x = center.X + dx * ratio;
+            var y = center.Y + dy * ratio;
+            
+            if (Math.Abs(x - bounds.Left) < 1 || Math.Abs(x - bounds.Right) < 1)
+                return new Point(Math.Abs(x - bounds.Left) < 1 ? bounds.Left : bounds.Right, y);
+            else
+                return new Point(x, Math.Abs(y - bounds.Top) < 1 ? bounds.Top : bounds.Bottom);
+        }
+
+        private Point NaytiTochkuNaGranitseOtTsentra(Point p, UIElement obj)
+        {
+            var bounds = PoluchitGranitsyBezMashtaba(obj);
+            var center = new Point(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
+            var dx = p.X - center.X;
+            var dy = p.Y - center.Y;
+            
+            if (Math.Abs(dx) < 0.001 && Math.Abs(dy) < 0.001)
+                return new Point(bounds.Right, center.Y);
+            
+            var length = Math.Sqrt(dx * dx + dy * dy);
+            if (length < 0.001) return new Point(bounds.Right, center.Y);
+            
+            var dirX = dx / length;
+            var dirY = dy / length;
+            
+            var halfWidth = bounds.Width / 2;
+            var halfHeight = bounds.Height / 2;
+            
+            double tX = double.MaxValue;
+            if (Math.Abs(dirX) > 0.001)
+            {
+                if (dirX > 0)
+                    tX = halfWidth / dirX;
+                else
+                    tX = -halfWidth / dirX;
+            }
+            
+            double tY = double.MaxValue;
+            if (Math.Abs(dirY) > 0.001)
+            {
+                if (dirY > 0)
+                    tY = halfHeight / dirY;
+                else
+                    tY = -halfHeight / dirY;
+            }
+            
+            var t = Math.Min(tX, tY);
+            var x = center.X + dirX * t;
+            var y = center.Y + dirY * t;
+            
+            x = Math.Max(bounds.Left, Math.Min(bounds.Right, x));
+            y = Math.Max(bounds.Top, Math.Min(bounds.Bottom, y));
+            
+            return new Point(x, y);
+        }
+
+        private void ObnovitStrelku(Canvas canvas, Polyline polyline)
+        {
+            if (polyline.StrokeDashArray == null || polyline.StrokeDashArray.Count == 0)
+                ObnovitStrelkuObobsheniya(canvas, polyline.Points);
+            else
+                ObnovitStrelkuDlyaCanvas(canvas, polyline.Points);
+        }
+        private void SkrytPodsvetku()
+        {
+            if (HolstSoderzhanie == null) return;
+            foreach (var border in podsvetkiObektov)
+            {
+                if (HolstSoderzhanie.Children.Contains(border))
+                    HolstSoderzhanie.Children.Remove(border);
+            }
+            podsvetkiObektov.Clear();
+        }
+        private void PrivyazatTochkuKObektu(Polyline polyline, int indexTochki, UIElement obj)
+        {
+            if (polyline == null || obj == null || indexTochki < 0 || indexTochki >= polyline.Points.Count) return;
+
+            var parent = VisualTreeHelper.GetParent(polyline) as Canvas;
+            UIElement strelkaElement = parent != null && parent != HolstSoderzhanie ? (UIElement)parent : polyline;
+            
+            double canvasLeft = 0, canvasTop = 0;
+            Point absTochka;
+
+            if (parent != null && parent != HolstSoderzhanie)
+            {
+                canvasLeft = Canvas.GetLeft(parent); if (double.IsNaN(canvasLeft)) canvasLeft = 0;
+                canvasTop = Canvas.GetTop(parent); if (double.IsNaN(canvasTop)) canvasTop = 0;
+                absTochka = new Point(polyline.Points[indexTochki].X + canvasLeft, polyline.Points[indexTochki].Y + canvasTop);
+            }
+            else
+            {
+                absTochka = polyline.Points[indexTochki];
+            }
+
+            var tochkaPrikrepleniya = NaytiTochkuNaGranitse(absTochka, obj);
+
+            if (parent != null && parent != HolstSoderzhanie)
+            {
+                var newRelativePoint = new Point(tochkaPrikrepleniya.X - canvasLeft, tochkaPrikrepleniya.Y - canvasTop);
+                polyline.Points[indexTochki] = newRelativePoint;
+                
+                if (polyline.StrokeDashArray == null || polyline.StrokeDashArray.Count == 0)
+                    ObnovitStrelkuObobsheniya(parent, polyline.Points);
+                else
+                    ObnovitStrelkuDlyaCanvas(parent, polyline.Points);
+            }
+            else
+            {
+                polyline.Points[indexTochki] = tochkaPrikrepleniya;
+            }
+
+            if (markeriIzgiba != null && indexTochki < markeriIzgiba.Count)
+            {
+                var marker = markeriIzgiba[indexTochki];
+                Canvas.SetLeft(marker, tochkaPrikrepleniya.X - marker.Width / 2);
+                Canvas.SetTop(marker, tochkaPrikrepleniya.Y - marker.Height / 2);
+            }
+
+            var isPervayaTochka = indexTochki == 0;
+            var isPoslednyayaTochka = indexTochki == polyline.Points.Count - 1;
+            
+            if (prikreplennyeStrelki.ContainsKey(strelkaElement))
+            {
+                var current = prikreplennyeStrelki[strelkaElement];
+                if (isPervayaTochka)
+                    prikreplennyeStrelki[strelkaElement] = new Tuple<UIElement, UIElement>(obj, current.Item2);
+                else if (isPoslednyayaTochka)
+                    prikreplennyeStrelki[strelkaElement] = new Tuple<UIElement, UIElement>(current.Item1, obj);
+            }
+            else
+            {
+                if (isPervayaTochka)
+                    prikreplennyeStrelki[strelkaElement] = new Tuple<UIElement, UIElement>(obj, null);
+                else if (isPoslednyayaTochka)
+                    prikreplennyeStrelki[strelkaElement] = new Tuple<UIElement, UIElement>(null, obj);
+            }
+        }
     }
 }
