@@ -1,6 +1,6 @@
 Инструкция по добавлению логотипа:
 
-1. Поместите файл logo.png в папку проекта: C:\LoadApp\VOLGGTY2\kachestvo i nadezhnost is\UseCaseApp\UseCaseApp\
+1. Поместите файл logo.png в папку проекта: C:\LoadApp\VOLGGTY2\kachestvo i nadezhnost is\UseCaseApplication\UseCaseApplication\
 
 2. В Visual Studio:
    - Щелкните правой кнопкой по файлу logo.png в Solution Explorer
