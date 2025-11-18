@@ -36,6 +36,8 @@ namespace UseCaseApplication
         private const string PodderzhivaemoeRasshirenie = ".uca";
         private double tekushayaTolschinaLinii = 2.0;
         private double tekushiyMashtab = 1.0;
+        private const int MaksimalnayaDlinaStrokiTeksta = 20;
+        private const int MaksimalnayaDlinaVsegoTeksta = 255;
 
         private Point tochkaNachalaPeretaskivaniya;
         private Button istochnikKnopki;
@@ -89,6 +91,11 @@ namespace UseCaseApplication
         // Редактирование текста
         private TextBox aktivnyTextovyEditor;
         private TextBlock redaktiruemyTextovyElement;
+        private readonly Dictionary<TextBlock, double> bazovyeRazmeryShriftaTeksta = new Dictionary<TextBlock, double>();
+        private bool normalizuyuTekstRedaktora;
+        private string posledniyKorrektnyyTekstRedaktora = string.Empty;
+        private bool zagruzkaDiagrammy;
+        private double mashtabDiagrammyPriZagruzke = 1.0;
 
 
         public MainWindow()
@@ -99,6 +106,7 @@ namespace UseCaseApplication
             Closing += MainWindow_Closing;
             Loaded += MainWindow_Loaded;
             MarkDocumentClean();
+            ObnovitSostoyanieUndoRedo();
         }
 
 
@@ -1632,13 +1640,54 @@ namespace UseCaseApplication
         {
             if (UndoButton != null)
             {
-                UndoButton.IsEnabled = otmenaStack.Count > 0;
+                UndoButton.IsEnabled = EstElementDlyaUndo();
             }
 
             if (RedoButton != null)
             {
                 RedoButton.IsEnabled = vozvratStack.Count > 0;
             }
+        }
+
+        private bool EstElementDlyaUndo()
+        {
+            if (HolstSoderzhanie == null)
+            {
+                return false;
+            }
+
+            for (int i = HolstSoderzhanie.Children.Count - 1; i >= 0; i--)
+            {
+                var child = HolstSoderzhanie.Children[i] as UIElement;
+                if (child == null)
+                {
+                    continue;
+                }
+
+                if (ramkaVydeleniya != null && ReferenceEquals(child, ramkaVydeleniya))
+                {
+                    continue;
+                }
+
+                if (markeriMashtaba != null && child is Border marker && markeriMashtaba.Contains(marker))
+                {
+                    continue;
+                }
+
+                if (markeriIzgiba != null && child is Border markerIzgiba && markeriIzgiba.Contains(markerIzgiba))
+                {
+                    continue;
+                }
+
+                if (aktivnyTextovyEditor != null && ReferenceEquals(child, aktivnyTextovyEditor))
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         private void Marker_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -2619,7 +2668,8 @@ namespace UseCaseApplication
             textBlock.Cursor = Cursors.IBeam;
             textBlock.MouseLeftButtonDown -= TekstovyElement_MouseLeftButtonDown;
             textBlock.MouseLeftButtonDown += TekstovyElement_MouseLeftButtonDown;
-            PrimeniKompensiruyushchiyMashtab(textBlock, PoluchitFaktorNezavisimostiOtMashtaba());
+            SohranitBazovyyRazmerShrifta(textBlock);
+            PrimenitAktualnyyRazmerShrifta(textBlock);
 
             if (nachatRedaktirovanieSrazu)
             {
@@ -2630,47 +2680,86 @@ namespace UseCaseApplication
             }
         }
 
-        private double PoluchitFaktorNezavisimostiOtMashtaba()
+        private void SohranitBazovyyRazmerShrifta(TextBlock textBlock)
         {
-            return tekushiyMashtab <= 0 ? 1.0 : 1.0 / tekushiyMashtab;
-        }
-
-        private void PrimeniKompensiruyushchiyMashtab(FrameworkElement element, double faktor)
-        {
-            if (element == null)
+            if (textBlock == null)
             {
                 return;
             }
 
-            if (element.LayoutTransform is ScaleTransform scale)
+            if (!bazovyeRazmeryShriftaTeksta.ContainsKey(textBlock))
             {
-                scale.ScaleX = faktor;
-                scale.ScaleY = faktor;
+                double bazovyy;
+                if (zagruzkaDiagrammy)
+                {
+                    var istochnyMashtab = Math.Max(mashtabDiagrammyPriZagruzke, 0.01);
+                    bazovyy = textBlock.FontSize > 0 ? textBlock.FontSize * istochnyMashtab : 16 * istochnyMashtab;
+                }
+                else
+                {
+                    bazovyy = textBlock.FontSize > 0 ? textBlock.FontSize : 16;
+                }
+                bazovyeRazmeryShriftaTeksta[textBlock] = bazovyy;
+            }
+        }
+
+        private double PoluchitBazovyyRazmerShrifta(TextBlock textBlock)
+        {
+            if (textBlock == null)
+            {
+                return 16 * tekushiyMashtab;
+            }
+
+            if (bazovyeRazmeryShriftaTeksta.TryGetValue(textBlock, out var bazovyy))
+            {
+                return bazovyy;
+            }
+
+            double znachenie;
+            if (zagruzkaDiagrammy)
+            {
+                var istochnyMashtab = Math.Max(mashtabDiagrammyPriZagruzke, 0.01);
+                znachenie = textBlock.FontSize > 0 ? textBlock.FontSize * istochnyMashtab : 16 * istochnyMashtab;
             }
             else
             {
-                element.LayoutTransform = new ScaleTransform(faktor, faktor);
+                var aktualnyyMashtab = Math.Max(tekushiyMashtab, 0.01);
+                znachenie = textBlock.FontSize > 0 ? textBlock.FontSize * aktualnyyMashtab : 16 * aktualnyyMashtab;
             }
+            bazovyeRazmeryShriftaTeksta[textBlock] = znachenie;
+            return znachenie;
+        }
+
+        private void PrimenitAktualnyyRazmerShrifta(TextBlock textBlock)
+        {
+            if (textBlock == null)
+            {
+                return;
+            }
+
+            var bazovyy = PoluchitBazovyyRazmerShrifta(textBlock);
+            var aktualnyy = bazovyy / Math.Max(tekushiyMashtab, 0.01);
+            textBlock.FontSize = Math.Max(8, aktualnyy);
+            textBlock.LayoutTransform = Transform.Identity;
         }
 
         private void ObnovitMashtabTeksta()
         {
-            var faktor = PoluchitFaktorNezavisimostiOtMashtaba();
-
             if (HolstSoderzhanie != null)
             {
                 foreach (var textBlock in HolstSoderzhanie.Children.OfType<TextBlock>())
                 {
                     if (EtoPolzovatelskiyTekst(textBlock))
                     {
-                        PrimeniKompensiruyushchiyMashtab(textBlock, faktor);
+                        PrimenitAktualnyyRazmerShrifta(textBlock);
                     }
                 }
             }
 
-            if (aktivnyTextovyEditor != null)
+            if (aktivnyTextovyEditor != null && redaktiruemyTextovyElement != null)
             {
-                PrimeniKompensiruyushchiyMashtab(aktivnyTextovyEditor, faktor);
+                var bazovyy = PoluchitBazovyyRazmerShrifta(redaktiruemyTextovyElement);
+                aktivnyTextovyEditor.FontSize = Math.Max(8, bazovyy / Math.Max(tekushiyMashtab, 0.01));
             }
         }
 
@@ -2681,9 +2770,15 @@ namespace UseCaseApplication
                 return;
             }
 
+            if (!MozhnoVstavitTekst(editor, Environment.NewLine))
+            {
+                return;
+            }
+
             var start = editor.SelectionStart;
             editor.SelectedText = Environment.NewLine;
             editor.CaretIndex = start + Environment.NewLine.Length;
+            posledniyKorrektnyyTekstRedaktora = editor.Text ?? string.Empty;
         }
 
         private bool IstochnikVnutriAktivnogoRedaktora(DependencyObject source)
@@ -2704,6 +2799,48 @@ namespace UseCaseApplication
             }
 
             return false;
+        }
+
+        private bool TekstUdovletvoryaetOgranicheniya(string text)
+        {
+            if (text == null)
+            {
+                return true;
+            }
+
+            var bezVozvrataKaretki = text.Replace("\r", string.Empty);
+            if (bezVozvrataKaretki.Length > MaksimalnayaDlinaVsegoTeksta)
+            {
+                return false;
+            }
+
+            var stroki = bezVozvrataKaretki.Split('\n');
+            return stroki.All(line => line.Length <= MaksimalnayaDlinaStrokiTeksta);
+        }
+
+        private bool MozhnoVstavitTekst(TextBox editor, string tekstDlyaVstavki)
+        {
+            if (editor == null)
+            {
+                return false;
+            }
+
+            var tekuschiy = editor.Text ?? string.Empty;
+            var selectionStart = editor.SelectionStart;
+            var selectionLength = editor.SelectionLength;
+
+            if (selectionStart < 0 || selectionStart > tekuschiy.Length)
+            {
+                selectionStart = tekuschiy.Length;
+            }
+
+            int dostupnayaDlina = Math.Max(0, Math.Min(selectionLength, tekuschiy.Length - selectionStart));
+            var bezVybrannogo = dostupnayaDlina > 0
+                ? tekuschiy.Remove(selectionStart, dostupnayaDlina)
+                : tekuschiy;
+
+            var prospected = bezVybrannogo.Insert(selectionStart, tekstDlyaVstavki ?? string.Empty);
+            return TekstUdovletvoryaetOgranicheniya(prospected);
         }
 
         private void TekstovyElement_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -2773,6 +2910,7 @@ namespace UseCaseApplication
             editor.VerticalContentAlignment = VerticalAlignment.Top;
 
             aktivnyTextovyEditor = editor;
+            posledniyKorrektnyyTekstRedaktora = editor.Text ?? string.Empty;
 
             Canvas.SetLeft(editor, left);
             Canvas.SetTop(editor, top);
@@ -2781,10 +2919,14 @@ namespace UseCaseApplication
             textBlock.Visibility = Visibility.Collapsed;
 
             HolstSoderzhanie.Children.Add(editor);
-            PrimeniKompensiruyushchiyMashtab(editor, PoluchitFaktorNezavisimostiOtMashtaba());
+            var bazovyy = PoluchitBazovyyRazmerShrifta(textBlock);
+            editor.FontSize = Math.Max(8, bazovyy / Math.Max(tekushiyMashtab, 0.01));
 
             editor.LostKeyboardFocus += TextEditor_LostKeyboardFocus;
             editor.KeyDown += TextEditor_KeyDown;
+            editor.TextChanged += TextEditor_TextChanged;
+            editor.PreviewTextInput += TextEditor_PreviewTextInput;
+            DataObject.AddPastingHandler(editor, TextEditor_OnPaste);
 
             RoutedEventHandler loadedHandler = null;
             loadedHandler = (s, _) =>
@@ -2827,6 +2969,61 @@ namespace UseCaseApplication
             }
         }
 
+        private void TextEditor_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (normalizuyuTekstRedaktora)
+            {
+                return;
+            }
+
+            if (sender is TextBox editor)
+            {
+                var text = editor.Text ?? string.Empty;
+                if (TekstUdovletvoryaetOgranicheniya(text))
+                {
+                    posledniyKorrektnyyTekstRedaktora = text;
+                }
+                else
+                {
+                    normalizuyuTekstRedaktora = true;
+                    var caret = editor.CaretIndex;
+                    editor.Text = posledniyKorrektnyyTekstRedaktora;
+                    editor.CaretIndex = Math.Max(0, Math.Min(caret - 1, editor.Text.Length));
+                    normalizuyuTekstRedaktora = false;
+                }
+            }
+        }
+
+        private void TextEditor_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (sender is TextBox editor)
+            {
+                if (!MozhnoVstavitTekst(editor, e.Text))
+                {
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private void TextEditor_OnPaste(object sender, DataObjectPastingEventArgs e)
+        {
+            if (sender is TextBox editor)
+            {
+                if (e.DataObject.GetDataPresent(DataFormats.Text))
+                {
+                    var pasteText = e.DataObject.GetData(DataFormats.Text) as string ?? string.Empty;
+                    if (!MozhnoVstavitTekst(editor, pasteText))
+                    {
+                        e.CancelCommand();
+                    }
+                }
+                else
+                {
+                    e.CancelCommand();
+                }
+            }
+        }
+
         private void TextEditor_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
         {
             ZavershitRedaktirovanieTeksta(true);
@@ -2845,11 +3042,16 @@ namespace UseCaseApplication
 
             editor.LostKeyboardFocus -= TextEditor_LostKeyboardFocus;
             editor.KeyDown -= TextEditor_KeyDown;
+            editor.TextChanged -= TextEditor_TextChanged;
+            editor.PreviewTextInput -= TextEditor_PreviewTextInput;
+            DataObject.RemovePastingHandler(editor, TextEditor_OnPaste);
 
             HolstSoderzhanie?.Children.Remove(editor);
 
             aktivnyTextovyEditor = null;
             redaktiruemyTextovyElement = null;
+            normalizuyuTekstRedaktora = false;
+            posledniyKorrektnyyTekstRedaktora = string.Empty;
 
             if (textBlock == null)
             {
@@ -3523,49 +3725,59 @@ namespace UseCaseApplication
 
             if (diagram.Elements != null)
             {
-                foreach (var elementData in diagram.Elements)
+                zagruzkaDiagrammy = true;
+                mashtabDiagrammyPriZagruzke = diagram.Zoom > 0 ? diagram.Zoom / 100.0 : 1.0;
+                try
                 {
-                    if (elementData == null || string.IsNullOrWhiteSpace(elementData.Xaml))
+                    foreach (var elementData in diagram.Elements)
                     {
-                        continue;
-                    }
+                        if (elementData == null || string.IsNullOrWhiteSpace(elementData.Xaml))
+                        {
+                            continue;
+                        }
 
-                    UIElement element;
-                    try
-                    {
-                        element = XamlReader.Parse(elementData.Xaml) as UIElement;
-                    }
-                    catch
-                    {
-                        continue;
-                    }
+                        UIElement element;
+                        try
+                        {
+                            element = XamlReader.Parse(elementData.Xaml) as UIElement;
+                        }
+                        catch
+                        {
+                            continue;
+                        }
 
-                    if (element == null)
-                    {
-                        continue;
-                    }
+                        if (element == null)
+                        {
+                            continue;
+                        }
 
-                    DobavitNaHolst(element, false);
+                        DobavitNaHolst(element, false);
 
-                    if (elementData.Left.HasValue)
-                    {
-                        Canvas.SetLeft(element, elementData.Left.Value);
-                    }
-                    else
-                    {
-                        Canvas.SetLeft(element, double.NaN);
-                    }
+                        if (elementData.Left.HasValue)
+                        {
+                            Canvas.SetLeft(element, elementData.Left.Value);
+                        }
+                        else
+                        {
+                            Canvas.SetLeft(element, double.NaN);
+                        }
 
-                    if (elementData.Top.HasValue)
-                    {
-                        Canvas.SetTop(element, elementData.Top.Value);
-                    }
-                    else
-                    {
-                        Canvas.SetTop(element, double.NaN);
-                    }
+                        if (elementData.Top.HasValue)
+                        {
+                            Canvas.SetTop(element, elementData.Top.Value);
+                        }
+                        else
+                        {
+                            Canvas.SetTop(element, double.NaN);
+                        }
 
-                    Panel.SetZIndex(element, elementData.ZIndex);
+                        Panel.SetZIndex(element, elementData.ZIndex);
+                    }
+                }
+                finally
+                {
+                    zagruzkaDiagrammy = false;
+                    mashtabDiagrammyPriZagruzke = Math.Max(tekushiyMashtab, 0.01);
                 }
             }
 
@@ -3613,6 +3825,7 @@ namespace UseCaseApplication
             vybranniyeElementy.Clear();
             proiskhodiloPeremeshenieElementa = false;
             proiskhodiloMashtabirovanieElementa = false;
+            bazovyeRazmeryShriftaTeksta.Clear();
             ObnovitSostoyanieUndoRedo();
         }
 
