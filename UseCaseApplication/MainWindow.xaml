@@ -864,12 +864,16 @@
                                             MouseLeftButtonUp="PoleDlyaRisovaniya_MouseLeftButtonUp"
                                             Drop="PoleDlyaRisovaniya_Drop"
                                             DragOver="PoleDlyaRisovaniya_DragOver" Grid.ColumnSpan="2">
-                                        <Canvas.RenderTransform>
-                                            <TransformGroup>
-                                                <ScaleTransform x:Name="TransformMashtaba" ScaleX="1" ScaleY="1"/>
-                                                <TranslateTransform x:Name="TransformSdviga"/>
-                                            </TransformGroup>
-                                        </Canvas.RenderTransform>
+                                        <Canvas x:Name="HolstSoderzhanie" Background="Transparent"
+                                                Width="{Binding ActualWidth, ElementName=PoleDlyaRisovaniya}"
+                                                Height="{Binding ActualHeight, ElementName=PoleDlyaRisovaniya}">
+                                            <Canvas.RenderTransform>
+                                                <TransformGroup>
+                                                    <ScaleTransform x:Name="TransformMashtaba" ScaleX="1" ScaleY="1"/>
+                                                    <TranslateTransform x:Name="TransformSdviga"/>
+                                                </TransformGroup>
+                                            </Canvas.RenderTransform>
+                                        </Canvas>
                                     </Canvas>
                                 </Grid>
                             </Border>
@@ -893,6 +897,7 @@
                                     </Border>
                                 </StackPanel>
                             </Border>
+
                         </Grid>
                     </Border>
                 </Grid>
