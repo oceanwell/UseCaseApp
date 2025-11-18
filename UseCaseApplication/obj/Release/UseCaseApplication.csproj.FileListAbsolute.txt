@@ -1,6 +1,3 @@
-Z:\Desktop\UseCaseApplication\bin\Release\UseCaseApplication.exe.config
-Z:\Desktop\UseCaseApplication\bin\Release\UseCaseApplication.exe
-Z:\Desktop\UseCaseApplication\bin\Release\UseCaseApplication.pdb
 Z:\Desktop\UseCaseApplication\obj\Release\UseCaseApplication.csproj.AssemblyReference.cache
 Z:\Desktop\UseCaseApplication\obj\Release\MainWindow.g.cs
 Z:\Desktop\UseCaseApplication\obj\Release\Page1.g.cs
@@ -10,6 +7,9 @@ Z:\Desktop\UseCaseApplication\obj\Release\Window1.g.cs
 Z:\Desktop\UseCaseApplication\obj\Release\App.g.cs
 Z:\Desktop\UseCaseApplication\obj\Release\UseCaseApplication_MarkupCompile.cache
 Z:\Desktop\UseCaseApplication\obj\Release\UseCaseApplication_MarkupCompile.lref
+Z:\Desktop\UseCaseApplication\bin\Release\UseCaseApplication.exe.config
+Z:\Desktop\UseCaseApplication\bin\Release\UseCaseApplication.exe
+Z:\Desktop\UseCaseApplication\bin\Release\UseCaseApplication.pdb
 Z:\Desktop\UseCaseApplication\obj\Release\MainWindow.baml
 Z:\Desktop\UseCaseApplication\obj\Release\Page1.baml
 Z:\Desktop\UseCaseApplication\obj\Release\Page2.baml

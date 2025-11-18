@@ -64,6 +64,7 @@ namespace UseCaseApplication
         private Rect originalniyRazmer;
         private Point originalnayaPozitsiya;
         private UIElement elementDlyaMashtabirovaniya;
+        private bool nachatoRealnoeMashtabirovanie;
 
         // Переменные для точек изгиба линий
         private List<Border> markeriIzgiba;
@@ -850,7 +851,7 @@ namespace UseCaseApplication
 
             // Создаем маркеры изменения размера (8 штук: 4 угла + 4 стороны)
             markeriMashtaba = new List<Border>();
-            double markerSize = 8;
+            double markerSize = 14;
 
             // Угловые маркеры
             var positions = new[]
@@ -1695,6 +1696,7 @@ namespace UseCaseApplication
             if (aktivniyMarker == null) return;
 
             mashtabiruyuElement = true;
+            nachatoRealnoeMashtabirovanie = false;
             elementDlyaMashtabirovaniya = vybranniyElement;
             tochkaNachalaMashtabirovaniya = e.GetPosition(HolstSoderzhanie);
 
@@ -1747,6 +1749,7 @@ namespace UseCaseApplication
             if (mashtabiruyuElement)
             {
                 mashtabiruyuElement = false;
+                nachatoRealnoeMashtabirovanie = false;
                 if (aktivniyMarker != null)
                 {
                     aktivniyMarker.ReleaseMouseCapture();
@@ -2083,6 +2086,16 @@ namespace UseCaseApplication
                     var deltaX = tekushayaPoz.X - tochkaNachalaMashtabirovaniya.X;
                     var deltaY = tekushayaPoz.Y - tochkaNachalaMashtabirovaniya.Y;
 
+                    if (!nachatoRealnoeMashtabirovanie)
+                    {
+                        var maxDelta = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY));
+                        if (maxDelta < 3)
+                        {
+                            return;
+                        }
+                        nachatoRealnoeMashtabirovanie = true;
+                    }
+
                     if (Math.Abs(deltaX) < 0.5 && Math.Abs(deltaY) < 0.5)
                     {
                         return;
@@ -2157,6 +2170,7 @@ namespace UseCaseApplication
                 else
                 {
                     mashtabiruyuElement = false;
+                    nachatoRealnoeMashtabirovanie = false;
                     aktivniyMarker = null;
                     Mouse.Capture(null);
                 }
@@ -4114,7 +4128,7 @@ namespace UseCaseApplication
                 if (podsvetkiObektov != null && podsvetkiObektov.Contains(el)) continue;
                 if (aktivnyTextovyEditor != null && ReferenceEquals(el, aktivnyTextovyEditor)) continue;
 
-                var bounds = PoluchitGranitsyBezMashtaba(el);
+                var bounds = PoluchitGranitsyElementa(el);
                 if (bounds.Width <= 0 || bounds.Height <= 0) continue;
 
                 var expandedBounds = new Rect(bounds.Left - 10, bounds.Top - 10, bounds.Width + 20, bounds.Height + 20);
@@ -4164,7 +4178,7 @@ namespace UseCaseApplication
                 if (podsvetkiObektov != null && podsvetkiObektov.Contains(el)) continue;
                 if (aktivnyTextovyEditor != null && ReferenceEquals(el, aktivnyTextovyEditor)) continue;
 
-                var bounds = PoluchitGranitsyBezMashtaba(el);
+                var bounds = PoluchitGranitsyElementa(el);
                 if (bounds.Width <= 0 || bounds.Height <= 0) continue;
 
                 // Вычисляем динамический радиус на основе размера объекта
@@ -4217,12 +4231,30 @@ namespace UseCaseApplication
 
         private Point NaytiTochkuNaGranitse(Point p, UIElement obj)
         {
-            var bounds = PoluchitGranitsyBezMashtaba(obj);
+            var bounds = PoluchitGranitsyElementa(obj);
             var center = new Point(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
             
             // Вычисляем вектор от центра к точке
             var dx = p.X - center.X;
             var dy = p.Y - center.Y;
+            
+            // Для эллипсов используем точное пересечение
+            if (obj is Ellipse && bounds.Width > 0 && bounds.Height > 0)
+            {
+                var a = bounds.Width / 2;
+                var b = bounds.Height / 2;
+                if (Math.Abs(dx) < 0.001 && Math.Abs(dy) < 0.001)
+                {
+                    return new Point(center.X + a, center.Y);
+                }
+                var denominator = Math.Sqrt((dx * dx) / (a * a) + (dy * dy) / (b * b));
+                if (denominator < 0.0001)
+                {
+                    denominator = 0.0001;
+                }
+                var tEllipse = 1 / denominator;
+                return new Point(center.X + dx * tEllipse, center.Y + dy * tEllipse);
+            }
             
             // Если точка очень близко к центру, возвращаем правую сторону
             if (Math.Abs(dx) < 0.001 && Math.Abs(dy) < 0.001)
@@ -4277,10 +4309,27 @@ namespace UseCaseApplication
 
         private Point NaytiTochkuNaGranitseOtTsentra(Point p, UIElement obj)
         {
-            var bounds = PoluchitGranitsyBezMashtaba(obj);
+            var bounds = PoluchitGranitsyElementa(obj);
             var center = new Point(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
             var dx = p.X - center.X;
             var dy = p.Y - center.Y;
+            
+            if (obj is Ellipse && bounds.Width > 0 && bounds.Height > 0)
+            {
+                var a = bounds.Width / 2;
+                var b = bounds.Height / 2;
+                if (Math.Abs(dx) < 0.001 && Math.Abs(dy) < 0.001)
+                {
+                    return new Point(center.X + a, center.Y);
+                }
+                var denominator = Math.Sqrt((dx * dx) / (a * a) + (dy * dy) / (b * b));
+                if (denominator < 0.0001)
+                {
+                    denominator = 0.0001;
+                }
+                var tEllipse = 1 / denominator;
+                return new Point(center.X + dx * tEllipse, center.Y + dy * tEllipse);
+            }
             
             if (Math.Abs(dx) < 0.001 && Math.Abs(dy) < 0.001)
                 return new Point(bounds.Right, center.Y);
