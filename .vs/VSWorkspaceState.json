@@ -1,11 +1,18 @@
 {
   "ExpandedNodes": [
     "",
+<<<<<<< HEAD
     "\\UseCaseApplication",
     "\\UseCaseApplication\\bin",
     "\\UseCaseApplication\\obj",
     "\\UseCaseApplication\\Properties"
   ],
   "SelectedNode": "\\UseCaseApplication\\Properties\\AssemblyInfo.cs",
+=======
+    "\\UseCaseApp-release",
+    "\\UseCaseApp-release\\UseCaseApplication"
+  ],
+  "SelectedNode": "\\UseCaseApp-release\\UseCaseApplication\\MainWindow.xaml.cs",
+>>>>>>> origin/branchvika
   "PreviewInSolutionExplorer": false
 }
