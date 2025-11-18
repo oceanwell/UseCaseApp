@@ -4,12 +4,12 @@
 winexe
 C#
 .cs
-Z:\Downloads\Telegram Desktop\UseCaseApplication 2\obj\Debug\
+Z:\Desktop\UseCaseApplication\obj\Release\
 UseCaseApplication
 none
 false
-DEBUG;TRACE
-Z:\Downloads\Telegram Desktop\UseCaseApplication 2\App.xaml
+TRACE
+Z:\Desktop\UseCaseApplication\App.xaml
 5285276493
 
 11-374854188

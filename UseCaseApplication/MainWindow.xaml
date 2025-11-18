@@ -879,10 +879,10 @@
                             </Border>
 
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20,20,0,0">
-                                <Button Width="36" Height="36" Margin="0,0,6,0" Click="Otmena_Click" Background="#2b2b2b" BorderBrush="#555" BorderThickness="1" Padding="0">
+                                <Button x:Name="UndoButton" Width="36" Height="36" Margin="0,0,6,0" Click="Otmena_Click" Background="#2b2b2b" BorderBrush="#555" BorderThickness="1" Padding="0" IsEnabled="False">
                                     <Path Data="M15,12 L8,12 L8,8 L2,14 L8,20 L8,16 L15,16 C17,16 18,15 18,13 C18,11 17,10 15,10 L15,12 Z" Fill="White" Stretch="Uniform" Width="20" Height="20"/>
                                 </Button>
-                                <Button Width="36" Height="36" Click="Vozvrat_Click" Background="#2b2b2b" BorderBrush="#555" BorderThickness="1" Padding="0">
+                                <Button x:Name="RedoButton" Width="36" Height="36" Click="Vozvrat_Click" Background="#2b2b2b" BorderBrush="#555" BorderThickness="1" Padding="0" IsEnabled="False">
                                     <Path Data="M9,12 L16,12 L16,8 L22,14 L16,20 L16,16 L9,16 C7,16 6,15 6,13 C6,11 7,10 9,10 L9,12 Z" Fill="White" Stretch="Uniform" Width="20" Height="20"/>
                                 </Button>
                             </StackPanel>
@@ -897,6 +897,7 @@
                                     </Border>
                                 </StackPanel>
                             </Border>
+
                         </Grid>
                     </Border>
                 </Grid>
