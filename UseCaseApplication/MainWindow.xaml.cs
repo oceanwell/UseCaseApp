@@ -34,6 +34,11 @@ namespace UseCaseApplication
         private const double ShirinaAktoraPoUmolchaniyu = 60.0;
         private const double VysotaAktoraPoUmolchaniyu = 120.0;
         private const string PodderzhivaemoeRasshirenie = ".uca";
+        private const double DefaultTextModuleWidth = 220.0;
+        private const double DefaultTextModuleHeight = 84.0;
+        private const double MinTextModuleWidth = 120.0;
+        private const double MinTextModuleHeight = 42.0;
+        private const double MaxTextModuleWidth = 480.0;
         private double tekushayaTolschinaLinii = 2.0;
         private double tekushiyMashtab = 1.0;
         private const int MaksimalnayaDlinaStrokiTeksta = 20;
@@ -440,6 +445,12 @@ namespace UseCaseApplication
                     docherniy.Stroke = orangeColor;
                     docherniy.StrokeThickness = 2;
                 }
+            }
+            else if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
+            {
+                border.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#CD853F"));
+                border.BorderThickness = new Thickness(2);
+                border.Background = new SolidColorBrush(Color.FromArgb(32, 205, 133, 63));
             }
 
             PokazatRamuMashtabirovaniya(element);
@@ -1629,6 +1640,12 @@ namespace UseCaseApplication
                         }
                     }
                 }
+                else if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
+                {
+                    border.BorderBrush = Brushes.Transparent;
+                    border.BorderThickness = new Thickness(0);
+                    border.Background = Brushes.Transparent;
+                }
             }
             vybranniyeElementy.Clear();
             originalnyeTolschiny.Clear();
@@ -1841,6 +1858,25 @@ namespace UseCaseApplication
                 // Принудительно обновляем визуализацию
                 canvas.InvalidateVisual();
                 canvas.UpdateLayout();
+            }
+            // Текстовые контейнеры масштабируем как карточки
+            else if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
+            {
+                var clampedWidth = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, width));
+                var clampedHeight = Math.Max(MinTextModuleHeight, height);
+                border.Width = clampedWidth;
+                border.Height = clampedHeight;
+                Canvas.SetLeft(border, left);
+                Canvas.SetTop(border, top);
+
+                if (border.Child is TextBlock inner)
+                {
+                    var contentWidth = Math.Max(16, clampedWidth - (border.Padding.Left + border.Padding.Right));
+                    inner.Width = contentWidth;
+                    inner.TextWrapping = TextWrapping.Wrap;
+                    inner.TextAlignment = TextAlignment.Center;
+                }
+                return;
             }
             // Для Shape изменяем размеры напрямую или через трансформацию
             else if (element is Shape shape)
@@ -2412,10 +2448,23 @@ namespace UseCaseApplication
         {
             if (HolstSoderzhanie == null || element == null) return;
 
+            if (element is TextBlock legacyText && EtoPolzovatelskogoTekstaLegacy(legacyText))
+            {
+                element = PreobrazovatLegacyTextElement(legacyText);
+            }
+
             HolstSoderzhanie.Children.Add(element);
             vozvratStack.Clear();
 
-            if (element is TextBlock textBlock)
+            if (YavlyaetsyaTekstovymKontainerom(element))
+            {
+                var textBlock = PoluchitTextBlockIzElementa(element);
+                if (textBlock != null)
+                {
+                    NastroitTekstovyElement(textBlock, nachatRedaktirovanieTeksta);
+                }
+            }
+            else if (element is TextBlock textBlock)
             {
                 NastroitTekstovyElement(textBlock, nachatRedaktirovanieTeksta);
             }
@@ -2448,6 +2497,37 @@ namespace UseCaseApplication
             }
 
             ObnovitSostoyanieUndoRedo();
+        }
+
+        private bool EtoPolzovatelskogoTekstaLegacy(TextBlock textBlock)
+        {
+            return textBlock != null &&
+                   textBlock.Tag as string == TagPolzovatelskogoTeksta &&
+                   PoluchitKontainerTeksta(textBlock) == null;
+        }
+
+        private UIElement PreobrazovatLegacyTextElement(TextBlock oldText)
+        {
+            if (oldText == null) return oldText;
+
+            oldText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            var desired = oldText.DesiredSize;
+
+            var width = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, desired.Width + 32));
+            var height = Math.Max(MinTextModuleHeight, desired.Height + 24);
+
+            var container = SozdatTekstovyyKontainer(oldText.Text ?? "Текст", width, height, oldText);
+
+            var left = Canvas.GetLeft(oldText);
+            var top = Canvas.GetTop(oldText);
+            if (double.IsNaN(left)) left = 0;
+            if (double.IsNaN(top)) top = 0;
+
+            Canvas.SetLeft(container, left);
+            Canvas.SetTop(container, top);
+            Panel.SetZIndex(container, Panel.GetZIndex(oldText));
+
+            return container;
         }
 
         private UIElement NaytiElementNaHolste(UIElement element)
@@ -2632,20 +2712,59 @@ namespace UseCaseApplication
                     }
                 case "tekst":
                     {
-                        var blokTeksta = new TextBlock
-                        {
-                            Text = "Текст",
-                            FontSize = 16,
-                            Foreground = Brushes.Black,
-                            Tag = TagPolzovatelskogoTeksta
-                        };
-                        Canvas.SetLeft(blokTeksta, tochka.X - 20);
-                        Canvas.SetTop(blokTeksta, tochka.Y - 10);
-                        return blokTeksta;
+                        return SozdatTekstovyyElement(tochka);
                     }
                 default:
                     return null;
             }
+        }
+
+        private UIElement SozdatTekstovyyElement(Point center)
+        {
+            var container = SozdatTekstovyyKontainer("Текст", DefaultTextModuleWidth, DefaultTextModuleHeight, null);
+            Canvas.SetLeft(container, center.X - container.Width / 2);
+            Canvas.SetTop(container, center.Y - container.Height / 2);
+            return container;
+        }
+
+        private Border SozdatTekstovyyKontainer(string text, double width, double height, TextBlock template)
+        {
+            var container = new Border
+            {
+                Tag = TagPolzovatelskogoTeksta,
+                Background = Brushes.Transparent,
+                BorderBrush = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(16, 12, 16, 12),
+                Width = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, width)),
+                Height = Math.Max(MinTextModuleHeight, height),
+                MinWidth = MinTextModuleWidth,
+                MinHeight = MinTextModuleHeight,
+                MaxWidth = MaxTextModuleWidth,
+                SnapsToDevicePixels = true,
+                Cursor = Cursors.IBeam,
+                ClipToBounds = true
+            };
+
+            var textBlock = new TextBlock
+            {
+                Text = string.IsNullOrWhiteSpace(text) ? "Текст" : text,
+                FontSize = template?.FontSize > 0 ? template.FontSize : 18,
+                FontFamily = template?.FontFamily ?? new FontFamily("Inter"),
+                FontWeight = template?.FontWeight ?? FontWeights.SemiBold,
+                Foreground = template?.Foreground ?? Brushes.Black,
+                TextAlignment = TextAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+                Tag = TagPolzovatelskogoTeksta,
+                Cursor = Cursors.IBeam
+            };
+
+            container.Child = textBlock;
+            container.MouseLeftButtonDown += TekstovyyKontainer_MouseLeftButtonDown;
+            return container;
         }
 
         private bool EtoPolzovatelskiyTekst(TextBlock textBlock)
@@ -2661,13 +2780,135 @@ namespace UseCaseApplication
                 return true;
             }
 
-            if (HolstSoderzhanie == null)
+            var container = PoluchitKontainerTeksta(textBlock);
+            return container != null;
+        }
+
+        private bool YavlyaetsyaTekstovymKontainerom(UIElement element)
+        {
+            if (element is Border border && border.Tag is string tag)
             {
-                return false;
+                return string.Equals(tag, TagPolzovatelskogoTeksta, StringComparison.Ordinal);
+            }
+            return false;
+        }
+
+        private Border PoluchitKontainerTeksta(TextBlock textBlock)
+        {
+            if (textBlock == null) return null;
+            var parent = VisualTreeHelper.GetParent(textBlock) as Border;
+            if (parent != null && YavlyaetsyaTekstovymKontainerom(parent))
+            {
+                return parent;
+            }
+            return null;
+        }
+
+        private TextBlock PoluchitTextBlockIzElementa(UIElement element)
+        {
+            if (element is TextBlock tb && EtoPolzovatelskiyTekst(tb))
+            {
+                return tb;
             }
 
-            var parent = VisualTreeHelper.GetParent(textBlock);
-            return ReferenceEquals(parent, HolstSoderzhanie);
+            if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
+            {
+                return border.Child as TextBlock;
+            }
+
+            return null;
+        }
+
+        private Size IzmeritTekstovoeSoderzhimoe(string text, FontFamily fontFamily, double fontSize, FontWeight fontWeight, double maxWidth)
+        {
+            if (fontFamily == null)
+            {
+                fontFamily = new FontFamily("Inter");
+            }
+            if (fontSize <= 0)
+            {
+                fontSize = 18;
+            }
+            if (fontWeight.Equals(default(FontWeight)))
+            {
+                fontWeight = FontWeights.SemiBold;
+            }
+
+            var probe = new TextBlock
+            {
+                Text = string.IsNullOrWhiteSpace(text) ? "Текст" : text,
+                FontFamily = fontFamily,
+                FontSize = fontSize,
+                FontWeight = fontWeight,
+                TextWrapping = TextWrapping.Wrap,
+                TextAlignment = TextAlignment.Center,
+                Width = maxWidth
+            };
+
+            probe.Measure(new Size(maxWidth, double.PositiveInfinity));
+            return probe.DesiredSize;
+        }
+
+        private void AktualizirovatRazmerEditora(TextBox editor)
+        {
+            if (editor == null)
+            {
+                return;
+            }
+
+            double baseWidth = editor.Width;
+            if (redaktiruemyTextovyElement != null)
+            {
+                var container = PoluchitKontainerTeksta(redaktiruemyTextovyElement);
+                if (container != null && !double.IsNaN(container.Width) && container.Width > 0)
+                {
+                    baseWidth = container.Width;
+                }
+            }
+
+            if (double.IsNaN(baseWidth) || baseWidth <= 0)
+            {
+                baseWidth = DefaultTextModuleWidth;
+            }
+
+            var clampedWidth = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, baseWidth));
+            editor.Width = clampedWidth;
+
+            var paddingWidth = editor.Padding.Left + editor.Padding.Right + editor.BorderThickness.Left + editor.BorderThickness.Right;
+            var paddingHeight = editor.Padding.Top + editor.Padding.Bottom + editor.BorderThickness.Top + editor.BorderThickness.Bottom;
+            var contentWidth = Math.Max(16, clampedWidth - paddingWidth);
+
+            var measured = IzmeritTekstovoeSoderzhimoe(editor.Text, editor.FontFamily, editor.FontSize, editor.FontWeight, contentWidth);
+            editor.Height = Math.Max(MinTextModuleHeight, measured.Height + paddingHeight);
+        }
+
+        private void ObnovitRazmerTekstovogoKontainera(TextBlock textBlock)
+        {
+            var container = PoluchitKontainerTeksta(textBlock);
+            if (container == null)
+            {
+                return;
+            }
+
+            var paddingWidth = container.Padding.Left + container.Padding.Right;
+            var paddingHeight = container.Padding.Top + container.Padding.Bottom;
+
+            var targetWidth = container.Width;
+            if (double.IsNaN(targetWidth) || targetWidth <= 0)
+            {
+                targetWidth = DefaultTextModuleWidth;
+            }
+            targetWidth = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, targetWidth));
+
+            var contentWidth = Math.Max(20, targetWidth - paddingWidth);
+            var measured = IzmeritTekstovoeSoderzhimoe(textBlock.Text, textBlock.FontFamily, textBlock.FontSize, textBlock.FontWeight, contentWidth);
+
+            container.Width = targetWidth;
+            container.Height = Math.Max(MinTextModuleHeight, measured.Height + paddingHeight);
+
+            textBlock.Width = contentWidth;
+            textBlock.TextWrapping = TextWrapping.Wrap;
+            textBlock.TextAlignment = TextAlignment.Center;
         }
 
         private void NastroitTekstovyElement(TextBlock textBlock, bool nachatRedaktirovanieSrazu = false)
@@ -2683,9 +2924,22 @@ namespace UseCaseApplication
             }
 
             textBlock.Cursor = Cursors.IBeam;
+            textBlock.TextAlignment = TextAlignment.Center;
+            textBlock.VerticalAlignment = VerticalAlignment.Center;
+            textBlock.HorizontalAlignment = HorizontalAlignment.Stretch;
+            textBlock.TextWrapping = TextWrapping.Wrap;
             textBlock.MouseLeftButtonDown -= TekstovyElement_MouseLeftButtonDown;
             textBlock.MouseLeftButtonDown += TekstovyElement_MouseLeftButtonDown;
             PrimeniKompensiruyushchiyMashtabKTextu(textBlock);
+
+            var container = PoluchitKontainerTeksta(textBlock);
+            if (container != null)
+            {
+                container.Cursor = Cursors.IBeam;
+                container.MouseLeftButtonDown -= TekstovyyKontainer_MouseLeftButtonDown;
+                container.MouseLeftButtonDown += TekstovyyKontainer_MouseLeftButtonDown;
+                ObnovitRazmerTekstovogoKontainera(textBlock);
+            }
 
             if (nachatRedaktirovanieSrazu)
             {
@@ -2714,7 +2968,7 @@ namespace UseCaseApplication
                 scale = new ScaleTransform(faktor, faktor);
                 textBlock.RenderTransform = scale;
             }
-            textBlock.RenderTransformOrigin = new Point(0, 0);
+            textBlock.RenderTransformOrigin = new Point(0.5, 0.5);
         }
 
         private void PrimeniKompensiruyushchiyMashtabKEditoru(TextBox editor)
@@ -2735,16 +2989,17 @@ namespace UseCaseApplication
                 scale = new ScaleTransform(faktor, faktor);
                 editor.RenderTransform = scale;
             }
-            editor.RenderTransformOrigin = new Point(0, 0);
+            editor.RenderTransformOrigin = new Point(0.5, 0.5);
         }
 
         private void ObnovitMashtabTeksta()
         {
             if (HolstSoderzhanie != null)
             {
-                foreach (var textBlock in HolstSoderzhanie.Children.OfType<TextBlock>())
+                foreach (UIElement child in HolstSoderzhanie.Children)
                 {
-                    if (EtoPolzovatelskiyTekst(textBlock))
+                    var textBlock = PoluchitTextBlockIzElementa(child);
+                    if (textBlock != null)
                     {
                         PrimeniKompensiruyushchiyMashtabKTextu(textBlock);
                     }
@@ -2773,6 +3028,7 @@ namespace UseCaseApplication
             editor.SelectedText = Environment.NewLine;
             editor.CaretIndex = start + Environment.NewLine.Length;
             posledniyKorrektnyyTekstRedaktora = editor.Text ?? string.Empty;
+            AktualizirovatRazmerEditora(editor);
         }
 
         private bool IstochnikVnutriAktivnogoRedaktora(DependencyObject source)
@@ -2851,6 +3107,24 @@ namespace UseCaseApplication
             }
         }
 
+        private void TekstovyyKontainer_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount < 2)
+            {
+                return;
+            }
+
+            if (sender is Border border && YavlyaetsyaTekstovymKontainerom(border))
+            {
+                var textBlock = border.Child as TextBlock;
+                if (textBlock != null && EtoPolzovatelskiyTekst(textBlock))
+                {
+                    e.Handled = true;
+                    NachatRedaktirovanieTeksta(textBlock, false);
+                }
+            }
+        }
+
         private void NachatRedaktirovanieTeksta(TextBlock textBlock, bool vybratVse)
         {
             if (textBlock == null || HolstSoderzhanie == null)
@@ -2874,16 +3148,17 @@ namespace UseCaseApplication
 
             redaktiruemyTextovyElement = textBlock;
 
-            double left = Canvas.GetLeft(textBlock);
-            double top = Canvas.GetTop(textBlock);
+            var container = PoluchitKontainerTeksta(textBlock);
+
+            double left = container != null ? Canvas.GetLeft(container) : Canvas.GetLeft(textBlock);
+            double top = container != null ? Canvas.GetTop(container) : Canvas.GetTop(textBlock);
             if (double.IsNaN(left)) left = 0;
             if (double.IsNaN(top)) top = 0;
 
-            textBlock.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            var desired = textBlock.DesiredSize;
-            double minWidth = Math.Max(80, desired.Width + 12);
-            double minHeight = Math.Max(textBlock.FontSize + 8, desired.Height + 8);
+            var currentWidth = container?.Width ?? DefaultTextModuleWidth;
+            var currentHeight = container?.Height ?? DefaultTextModuleHeight;
 
+            textBlock.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             var editor = new TextBox
             {
                 Text = textBlock.Text ?? string.Empty,
@@ -2891,29 +3166,37 @@ namespace UseCaseApplication
                 FontFamily = textBlock.FontFamily,
                 FontWeight = textBlock.FontWeight,
                 Foreground = textBlock.Foreground ?? Brushes.Black,
-                Background = new SolidColorBrush(Color.FromArgb(235, 255, 255, 255)),
+                Background = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255)),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(205, 133, 63)),
-                BorderThickness = new Thickness(1),
-                Padding = new Thickness(8, 4, 8, 4),
-                MinWidth = minWidth,
-                MinHeight = minHeight,
+                BorderThickness = new Thickness(1.5),
+                Padding = new Thickness(16, 12, 16, 12),
+                MinWidth = MinTextModuleWidth,
+                MinHeight = MinTextModuleHeight,
+                Width = Math.Max(MinTextModuleWidth, currentWidth),
+                Height = Math.Max(MinTextModuleHeight, currentHeight),
                 AcceptsReturn = false,
+                TextAlignment = TextAlignment.Center,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
                 TextWrapping = TextWrapping.Wrap
             };
-            editor.HorizontalContentAlignment = HorizontalAlignment.Left;
-            editor.VerticalContentAlignment = VerticalAlignment.Top;
 
             aktivnyTextovyEditor = editor;
             posledniyKorrektnyyTekstRedaktora = editor.Text ?? string.Empty;
 
             Canvas.SetLeft(editor, left);
             Canvas.SetTop(editor, top);
-            Panel.SetZIndex(editor, Panel.GetZIndex(textBlock) + 1);
+            Panel.SetZIndex(editor, Panel.GetZIndex(container ?? (UIElement)textBlock) + 1);
 
+            if (container != null)
+            {
+                container.Visibility = Visibility.Collapsed;
+            }
             textBlock.Visibility = Visibility.Collapsed;
 
             HolstSoderzhanie.Children.Add(editor);
             PrimeniKompensiruyushchiyMashtabKEditoru(editor);
+            AktualizirovatRazmerEditora(editor);
 
             editor.LostKeyboardFocus += TextEditor_LostKeyboardFocus;
             editor.KeyDown += TextEditor_KeyDown;
@@ -2984,6 +3267,7 @@ namespace UseCaseApplication
                     editor.CaretIndex = Math.Max(0, Math.Min(caret - 1, editor.Text.Length));
                     normalizuyuTekstRedaktora = false;
                 }
+                AktualizirovatRazmerEditora(editor);
             }
         }
 
@@ -3051,6 +3335,8 @@ namespace UseCaseApplication
                 return;
             }
 
+            var container = PoluchitKontainerTeksta(textBlock);
+
             if (sohranitIzmeneniya)
             {
                 var novyyTekst = editor.Text ?? string.Empty;
@@ -3064,9 +3350,14 @@ namespace UseCaseApplication
                     textBlock.Text = novyyTekst;
                     MarkDocumentDirty();
                 }
+                ObnovitRazmerTekstovogoKontainera(textBlock);
             }
 
             textBlock.Visibility = Visibility.Visible;
+            if (container != null)
+            {
+                container.Visibility = Visibility.Visible;
+            }
             PrimeniKompensiruyushchiyMashtabKTextu(textBlock);
         }
 
