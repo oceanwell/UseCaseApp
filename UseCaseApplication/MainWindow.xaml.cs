@@ -105,6 +105,7 @@ namespace UseCaseApplication
             Loaded += MainWindow_Loaded;
             MarkDocumentClean();
             ObnovitSostoyanieUndoRedo();
+            PreviewKeyDown += MainWindow_PreviewKeyDown;
         }
 
 
@@ -1695,6 +1696,8 @@ namespace UseCaseApplication
             aktivniyMarker = sender as Border;
             if (aktivniyMarker == null) return;
 
+            peremeshayuElement = false;
+            proiskhodiloPeremeshenieElementa = false;
             mashtabiruyuElement = true;
             nachatoRealnoeMashtabirovanie = false;
             elementDlyaMashtabirovaniya = vybranniyElement;
@@ -1962,23 +1965,21 @@ namespace UseCaseApplication
                     Canvas.SetTop(shape, top);
                 }
             }
-            // Для TextBlock изменяем FontSize пропорционально
+            // Для TextBlock изменяем размеры области, не меняя шрифт
             else if (element is TextBlock textBlock)
             {
-                // Сохраняем оригинальный размер шрифта
                 if (!originalnyeRazmery.ContainsKey(element))
                 {
                     textBlock.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
                     originalnyeRazmery[element] = new Rect(left, top, textBlock.DesiredSize.Width, textBlock.DesiredSize.Height);
                 }
 
-                var fontSizeScale = Math.Min(finalScaleX, finalScaleY);
-                if (!originalnyeTolschiny.ContainsKey(element))
-                {
-                    originalnyeTolschiny[element] = textBlock.FontSize > 0 ? textBlock.FontSize : 16;
-                }
-                var baseFontSize = originalnyeTolschiny[element];
-                textBlock.FontSize = baseFontSize * fontSizeScale;
+                var baseRect = originalnyeRazmery[element];
+                var newWidth = Math.Max(40, baseRect.Width * finalScaleX);
+                var newHeight = Math.Max(20, baseRect.Height * finalScaleY);
+                textBlock.Width = newWidth;
+                textBlock.Height = newHeight;
+                textBlock.TextWrapping = TextWrapping.Wrap;
                 Canvas.SetLeft(textBlock, left);
                 Canvas.SetTop(textBlock, top);
             }
@@ -2703,7 +2704,7 @@ namespace UseCaseApplication
             }
 
             var faktor = tekushiyMashtab <= 0 ? 1.0 : 1.0 / tekushiyMashtab;
-            if (textBlock.LayoutTransform is ScaleTransform scale)
+            if (textBlock.RenderTransform is ScaleTransform scale)
             {
                 scale.ScaleX = faktor;
                 scale.ScaleY = faktor;
@@ -2711,8 +2712,9 @@ namespace UseCaseApplication
             else
             {
                 scale = new ScaleTransform(faktor, faktor);
-                textBlock.LayoutTransform = scale;
+                textBlock.RenderTransform = scale;
             }
+            textBlock.RenderTransformOrigin = new Point(0, 0);
         }
 
         private void PrimeniKompensiruyushchiyMashtabKEditoru(TextBox editor)
@@ -2723,7 +2725,7 @@ namespace UseCaseApplication
             }
 
             var faktor = tekushiyMashtab <= 0 ? 1.0 : 1.0 / tekushiyMashtab;
-            if (editor.LayoutTransform is ScaleTransform scale)
+            if (editor.RenderTransform is ScaleTransform scale)
             {
                 scale.ScaleX = faktor;
                 scale.ScaleY = faktor;
@@ -2731,8 +2733,9 @@ namespace UseCaseApplication
             else
             {
                 scale = new ScaleTransform(faktor, faktor);
-                editor.LayoutTransform = scale;
+                editor.RenderTransform = scale;
             }
+            editor.RenderTransformOrigin = new Point(0, 0);
         }
 
         private void ObnovitMashtabTeksta()
@@ -3907,6 +3910,23 @@ namespace UseCaseApplication
         {
             estNesokhrannyeIzmeneniya = false;
             ObnovitZagolovokOkna();
+        }
+
+        private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                if (e.Key == Key.Z)
+                {
+                    Otmena_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.U)
+                {
+                    Vozvrat_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                }
+            }
         }
 
         private void ObnovitZagolovokOkna()
