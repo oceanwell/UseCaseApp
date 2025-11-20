@@ -29,6 +29,7 @@ namespace UseCaseApplication
     {
         private readonly Stack<UIElement> otmenaStack = new Stack<UIElement>();
         private readonly Stack<UIElement> vozvratStack = new Stack<UIElement>();
+        private readonly Dictionary<UIElement, UIElement> informaciyaZamen = new Dictionary<UIElement, UIElement>();
         private const double standartnayaTolschinaLinii = 1.0;
         private const string TagPolzovatelskogoTeksta = "uca-user-text";
         private const double ShirinaAktoraPoUmolchaniyu = 60.0;
@@ -2408,7 +2409,26 @@ namespace UseCaseApplication
 
             if (element == null) return;
 
+            UIElement originalElement = null;
+            if (informaciyaZamen.TryGetValue(element, out var original))
+            {
+                originalElement = original;
+            }
+
+            var elementZIndex = Panel.GetZIndex(element);
+
             UdalitElementSHolsta(element);
+
+            if (originalElement != null)
+            {
+                if (!HolstSoderzhanie.Children.Contains(originalElement))
+                {
+                    HolstSoderzhanie.Children.Add(originalElement);
+                    Panel.SetZIndex(originalElement, elementZIndex);
+                }
+                vybranniyElement = originalElement;
+                PokazatRamuMashtabirovaniya(originalElement);
+            }
         }
 
         /// <summary>
@@ -2416,7 +2436,7 @@ namespace UseCaseApplication
         /// Используется как кнопкой «Отмена», так и контекстным меню элемента.
         /// </summary>
         /// <param name="element">Элемент верхнего уровня на HolstSoderzhanie.</param>
-        private void UdalitElementSHolsta(UIElement element)
+        private void UdalitElementSHolsta(UIElement element, bool registrirovatUndo = true)
         {
             if (element == null || HolstSoderzhanie == null) return;
 
@@ -2433,16 +2453,74 @@ namespace UseCaseApplication
             }
 
             HolstSoderzhanie.Children.Remove(element);
-            otmenaStack.Push(element);
-            vozvratStack.Clear();
+
+            if (registrirovatUndo)
+            {
+                otmenaStack.Push(element);
+                vozvratStack.Clear();
+                MarkDocumentDirty();
+                ObnovitSostoyanieUndoRedo();
+            }
+        }
+
+        private void ZamenitElementInstrumentom(UIElement element, string instrument)
+        {
+            if (HolstSoderzhanie == null || string.IsNullOrWhiteSpace(instrument)) return;
+            var targetElement = element;
+            if (targetElement == null) return;
+
+            var holstElement = NaytiElementNaHolste(targetElement) ?? targetElement;
+            if (holstElement == null) return;
+
+            double left = Canvas.GetLeft(holstElement);
+            if (double.IsNaN(left)) left = 0;
+            double top = Canvas.GetTop(holstElement);
+            if (double.IsNaN(top)) top = 0;
+
+            double width = holstElement.RenderSize.Width;
+            double height = holstElement.RenderSize.Height;
+
+            if (holstElement is FrameworkElement fe)
+            {
+                if (fe.ActualWidth > 0) width = fe.ActualWidth;
+                if (fe.ActualHeight > 0) height = fe.ActualHeight;
+            }
+
+            if (width <= 0) width = 60;
+            if (height <= 0) height = 60;
+
+            var zIndex = Panel.GetZIndex(holstElement);
+            var centerPoint = new Point(left + width / 2, top + height / 2);
+            var newElement = SozdatElementPoInstrumentu(instrument, centerPoint);
+            if (newElement == null)
+            {
+                return;
+            }
+
+            Canvas.SetLeft(newElement, left);
+            Canvas.SetTop(newElement, top);
+            Panel.SetZIndex(newElement, zIndex);
+
+            UdalitElementSHolsta(holstElement, registrirovatUndo: false);
+            DobavitNaHolst(newElement);
+
+            informaciyaZamen[newElement] = holstElement;
             MarkDocumentDirty();
-            ObnovitSostoyanieUndoRedo();
         }
 
         private void Vozvrat_Click(object sender, RoutedEventArgs e)
         {
             if (otmenaStack.Count == 0) return;
             var element = otmenaStack.Pop();
+
+             if (informaciyaZamen.TryGetValue(element, out var original) && original != null)
+             {
+                 if (HolstSoderzhanie.Children.Contains(original))
+                 {
+                     HolstSoderzhanie.Children.Remove(original);
+                 }
+             }
+
             HolstSoderzhanie.Children.Add(element);
             vozvratStack.Push(element);
 
@@ -2650,7 +2728,10 @@ namespace UseCaseApplication
             }
             replaceWithActor.Click += (s, e) =>
             {
-                // Функция будет реализована позже
+                if (contextMenu.PlacementTarget is UIElement target)
+                {
+                    ZamenitElementInstrumentom(target, "aktor");
+                }
             };
 
             var replaceWithUseCase = new MenuItem
@@ -2663,7 +2744,10 @@ namespace UseCaseApplication
             }
             replaceWithUseCase.Click += (s, e) =>
             {
-                // Функция будет реализована позже
+                if (contextMenu.PlacementTarget is UIElement target)
+                {
+                    ZamenitElementInstrumentom(target, "pretsedent");
+                }
             };
 
             var replaceWithSystem = new MenuItem
@@ -2676,7 +2760,10 @@ namespace UseCaseApplication
             }
             replaceWithSystem.Click += (s, e) =>
             {
-                // Функция будет реализована позже
+                if (contextMenu.PlacementTarget is UIElement target)
+                {
+                    ZamenitElementInstrumentom(target, "sistema");
+                }
             };
 
             var replaceWithLine = new MenuItem
@@ -2689,7 +2776,10 @@ namespace UseCaseApplication
             }
             replaceWithLine.Click += (s, e) =>
             {
-                // Функция будет реализована позже
+                if (contextMenu.PlacementTarget is UIElement target)
+                {
+                    ZamenitElementInstrumentom(target, "liniya");
+                }
             };
 
             var replaceWithInclude = new MenuItem
@@ -2702,7 +2792,10 @@ namespace UseCaseApplication
             }
             replaceWithInclude.Click += (s, e) =>
             {
-                // Функция будет реализована позже
+                if (contextMenu.PlacementTarget is UIElement target)
+                {
+                    ZamenitElementInstrumentom(target, "vklyuchit");
+                }
             };
 
             var replaceWithExtend = new MenuItem
@@ -2715,7 +2808,10 @@ namespace UseCaseApplication
             }
             replaceWithExtend.Click += (s, e) =>
             {
-                // Функция будет реализована позже
+                if (contextMenu.PlacementTarget is UIElement target)
+                {
+                    ZamenitElementInstrumentom(target, "rasshirit");
+                }
             };
 
             var replaceWithGeneralization = new MenuItem
@@ -2728,7 +2824,10 @@ namespace UseCaseApplication
             }
             replaceWithGeneralization.Click += (s, e) =>
             {
-                // Функция будет реализована позже
+                if (contextMenu.PlacementTarget is UIElement target)
+                {
+                    ZamenitElementInstrumentom(target, "obobshenie");
+                }
             };
 
             replaceMenuItem.Items.Add(replaceWithActor);
