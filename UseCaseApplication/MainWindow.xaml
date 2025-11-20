@@ -255,31 +255,58 @@
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="MinHeight" Value="28"/>
             <Setter Property="Padding" Value="12,6,12,6"/>
+            <Setter Property="StaysOpenOnClick" Value="False"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="MenuItem">
-                        <Border x:Name="Border" 
-                                Background="{TemplateBinding Background}" 
-                                BorderBrush="Transparent" 
-                                BorderThickness="0" 
-                                MinHeight="28"
-                                CornerRadius="2"
-                                Margin="1">
-                            <Grid>
-                                <TextBlock Text="{TemplateBinding Header}" 
-                                           Foreground="{TemplateBinding Foreground}" 
-                                           VerticalAlignment="Center" 
-                                           HorizontalAlignment="Left" 
-                                           Margin="12,0,12,0"/>
-                                <Path x:Name="Arrow" 
-                                      Data="M 0 0 L 4 4 L 0 8 Z" 
-                                      Fill="White" 
-                                      HorizontalAlignment="Right" 
-                                      VerticalAlignment="Center" 
-                                      Margin="0,0,8,0" 
-                                      Visibility="Collapsed"/>
-                            </Grid>
-                        </Border>
+                        <Grid>
+                            <Border x:Name="Border" 
+                                    Background="{TemplateBinding Background}" 
+                                    BorderBrush="Transparent" 
+                                    BorderThickness="0" 
+                                    MinHeight="28"
+                                    CornerRadius="2"
+                                    Margin="1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{TemplateBinding Header}" 
+                                               Foreground="{TemplateBinding Foreground}" 
+                                               VerticalAlignment="Center" 
+                                               HorizontalAlignment="Left" 
+                                               Margin="12,0,12,0"
+                                               Grid.Column="0"/>
+                                    <Path x:Name="Arrow" 
+                                          Data="M 0 0 L 4 4 L 0 8 Z" 
+                                          Fill="White" 
+                                          HorizontalAlignment="Right" 
+                                          VerticalAlignment="Center" 
+                                          Margin="0,0,8,0" 
+                                          Visibility="Collapsed"
+                                          Grid.Column="1"/>
+                                </Grid>
+                            </Border>
+                            <!-- Popup для подменю -->
+                            <Popup x:Name="PART_Popup" 
+                                   AllowsTransparency="True" 
+                                   Placement="Right" 
+                                   HorizontalOffset="0"
+                                   IsOpen="{TemplateBinding IsSubmenuOpen}"
+                                   PopupAnimation="Fade">
+                                <Border Background="#404040" 
+                                        CornerRadius="4" 
+                                        Padding="2"
+                                        BorderThickness="0">
+                                    <ItemsPresenter x:Name="ItemsPresenter" 
+                                                    KeyboardNavigation.DirectionalNavigation="Cycle" 
+                                                    Grid.IsSharedSizeScope="True" 
+                                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" 
+                                                    KeyboardNavigation.TabNavigation="Cycle"/>
+                                </Border>
+                            </Popup>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsHighlighted" Value="True">
                                 <Trigger.EnterActions>
@@ -300,10 +327,58 @@
                             <Trigger Property="HasItems" Value="True">
                                 <Setter TargetName="Arrow" Property="Visibility" Value="Visible"/>
                             </Trigger>
+                            <Trigger Property="IsSubmenuOpen" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#505050"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <Style.Resources>
+                <Style TargetType="MenuItem">
+                    <Setter Property="Background" Value="#404040"/>
+                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="MinHeight" Value="28"/>
+                    <Setter Property="Padding" Value="12,6,12,6"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="MenuItem">
+                                <Border x:Name="SubMenuBorder" 
+                                        Background="{TemplateBinding Background}" 
+                                        BorderBrush="Transparent" 
+                                        BorderThickness="0" 
+                                        MinHeight="28"
+                                        CornerRadius="2"
+                                        Margin="1">
+                                    <TextBlock Text="{TemplateBinding Header}" 
+                                               Foreground="{TemplateBinding Foreground}" 
+                                               VerticalAlignment="Center" 
+                                               HorizontalAlignment="Left" 
+                                               Margin="12,0,12,0"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsHighlighted" Value="True">
+                                        <Trigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <ColorAnimation Storyboard.TargetName="SubMenuBorder" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#505050" Duration="0:0:0.15"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </Trigger.EnterActions>
+                                        <Trigger.ExitActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <ColorAnimation Storyboard.TargetName="SubMenuBorder" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#404040" Duration="0:0:0.15"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </Trigger.ExitActions>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Style.Resources>
         </Style>
 
         <Style x:Key="FileButtonStyle" TargetType="Button">
@@ -496,6 +571,13 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- Стиль для подменю - применяется автоматически ко всем подменю -->
+        <Style TargetType="ContextMenu" BasedOn="{StaticResource ElementContextMenuStyle}">
+            <Style.Resources>
+                <Style TargetType="MenuItem" BasedOn="{StaticResource ElementMenuItemStyle}"/>
+            </Style.Resources>
         </Style>
 
     </Window.Resources>
