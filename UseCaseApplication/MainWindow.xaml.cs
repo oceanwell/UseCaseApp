@@ -2408,6 +2408,18 @@ namespace UseCaseApplication
 
             if (element == null) return;
 
+            UdalitElementSHolsta(element);
+        }
+
+        /// <summary>
+        /// Удаляет указанный элемент с холста с поддержкой Undo/Redo.
+        /// Используется как кнопкой «Отмена», так и контекстным меню элемента.
+        /// </summary>
+        /// <param name="element">Элемент верхнего уровня на HolstSoderzhanie.</param>
+        private void UdalitElementSHolsta(UIElement element)
+        {
+            if (element == null || HolstSoderzhanie == null) return;
+
             // Если удаляем выбранный элемент, скрываем рамку и маркеры
             if (vybranniyElement == element || (vybranniyElement == null && vybranniyeElementy.Contains(element)))
             {
@@ -2607,7 +2619,13 @@ namespace UseCaseApplication
             }
             deleteMenuItem.Click += (s, e) =>
             {
-                // Функция будет реализована позже
+                // Элемент, по которому кликнули правой кнопкой
+                if (contextMenu.PlacementTarget is UIElement target)
+                {
+                    // Находим реальный элемент верхнего уровня на холсте
+                    var elementNaHolste = NaytiElementNaHolste(target) ?? target;
+                    UdalitElementSHolsta(elementNaHolste);
+                }
             };
             contextMenu.Items.Add(deleteMenuItem);
 
