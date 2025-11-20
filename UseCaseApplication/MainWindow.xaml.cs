@@ -2578,6 +2578,15 @@ namespace UseCaseApplication
             gruppa.Children.Add(nogaR);
 
             // Создаем контекстное меню
+            gruppa.ContextMenu = SozdatKontekstnoyeMenyu();
+
+            Canvas.SetLeft(gruppa, 0);
+            Canvas.SetTop(gruppa, 0);
+            return gruppa;
+        }
+
+        private ContextMenu SozdatKontekstnoyeMenyu()
+        {
             var contextMenu = new ContextMenu();
             var contextMenuStyle = TryFindResource("ElementContextMenuStyle") as Style;
             if (contextMenuStyle != null)
@@ -2613,6 +2622,19 @@ namespace UseCaseApplication
             }
 
             // Подменю для замены
+            var replaceWithActor = new MenuItem
+            {
+                Header = "Актер"
+            };
+            if (menuItemStyle != null)
+            {
+                replaceWithActor.Style = menuItemStyle;
+            }
+            replaceWithActor.Click += (s, e) =>
+            {
+                // Функция будет реализована позже
+            };
+
             var replaceWithUseCase = new MenuItem
             {
                 Header = "Прецедент"
@@ -2691,6 +2713,7 @@ namespace UseCaseApplication
                 // Функция будет реализована позже
             };
 
+            replaceMenuItem.Items.Add(replaceWithActor);
             replaceMenuItem.Items.Add(replaceWithUseCase);
             replaceMenuItem.Items.Add(replaceWithSystem);
             replaceMenuItem.Items.Add(replaceWithLine);
@@ -2700,11 +2723,7 @@ namespace UseCaseApplication
 
             contextMenu.Items.Add(replaceMenuItem);
 
-            gruppa.ContextMenu = contextMenu;
-
-            Canvas.SetLeft(gruppa, 0);
-            Canvas.SetTop(gruppa, 0);
-            return gruppa;
+            return contextMenu;
         }
 
         private UIElement SozdatElementPoInstrumentu(string instrument, Point tochka)
@@ -2731,6 +2750,7 @@ namespace UseCaseApplication
                         };
                         Canvas.SetLeft(ellips, tochka.X - 60);
                         Canvas.SetTop(ellips, tochka.Y - 30);
+                        ellips.ContextMenu = SozdatKontekstnoyeMenyu();
                         return ellips;
                     }
                 case "sistema":
@@ -2748,6 +2768,7 @@ namespace UseCaseApplication
                         };
                         Canvas.SetLeft(pryamougolnik, tochka.X - 120);
                         Canvas.SetTop(pryamougolnik, tochka.Y - 80);
+                        pryamougolnik.ContextMenu = SozdatKontekstnoyeMenyu();
                         return pryamougolnik;
                     }
                 case "liniya":
@@ -2759,6 +2780,7 @@ namespace UseCaseApplication
                             //StrokeThickness = tekushayaTolschinaLinii
                             StrokeThickness = standartnayaTolschinaLinii
                         };
+                        liniya.ContextMenu = SozdatKontekstnoyeMenyu();
                         return liniya;
                     }
                 case "vklyuchit":
@@ -2785,6 +2807,7 @@ namespace UseCaseApplication
                         gruppa.Children.Add(tekst);
                         Canvas.SetLeft(gruppa, tochka.X - 70);
                         Canvas.SetTop(gruppa, tochka.Y - 20);
+                        gruppa.ContextMenu = SozdatKontekstnoyeMenyu();
                         return gruppa;
                     }
                 case "rasshirit":
@@ -2811,6 +2834,7 @@ namespace UseCaseApplication
                         gruppa.Children.Add(tekst);
                         Canvas.SetLeft(gruppa, tochka.X - 70);
                         Canvas.SetTop(gruppa, tochka.Y - 20);
+                        gruppa.ContextMenu = SozdatKontekstnoyeMenyu();
                         return gruppa;
                     }
                 case "obobshenie":
@@ -2833,6 +2857,7 @@ namespace UseCaseApplication
                         gruppa.Children.Add(strelka);
                         Canvas.SetLeft(gruppa, tochka.X - 60);
                         Canvas.SetTop(gruppa, tochka.Y - 20);
+                        gruppa.ContextMenu = SozdatKontekstnoyeMenyu();
                         return gruppa;
                     }
                 case "tekst":
@@ -2889,6 +2914,7 @@ namespace UseCaseApplication
 
             container.Child = textBlock;
             container.MouseLeftButtonDown += TekstovyyKontainer_MouseLeftButtonDown;
+            container.ContextMenu = SozdatKontekstnoyeMenyu();
             return container;
         }
 
