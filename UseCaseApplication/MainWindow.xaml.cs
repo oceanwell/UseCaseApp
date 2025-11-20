@@ -2401,6 +2401,7 @@ namespace UseCaseApplication
                 // Пропускаем рамку и маркеры
                 if (ramkaVydeleniya != null && ReferenceEquals(child, ramkaVydeleniya)) continue;
                 if (markeriMashtaba != null && child is Border marker && markeriMashtaba.Contains(marker)) continue;
+                if (markeriIzgiba != null && child is Border markerIzgiba && markeriIzgiba.Contains(markerIzgiba)) continue;
                 if (aktivnyTextovyEditor != null && ReferenceEquals(child, aktivnyTextovyEditor)) continue;
 
                 element = child;
