@@ -430,7 +430,8 @@ namespace UseCaseApplication
                 }
                 // Оранжевый цвет выделения (#CD853F)
                 forma.Stroke = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#CD853F"));
-                forma.StrokeThickness = 2;
+                // Сохраняем текущую толщину линии при выделении
+                // forma.StrokeThickness остается без изменений
             }
             else if (element is Canvas canvas)
             {
@@ -444,7 +445,8 @@ namespace UseCaseApplication
                         originalnyeTolschiny[key] = docherniy.StrokeThickness;
                     }
                     docherniy.Stroke = orangeColor;
-                    docherniy.StrokeThickness = 2;
+                    // Сохраняем текущую толщину линии при выделении
+                    // docherniy.StrokeThickness остается без изменений
                 }
             }
             else if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
