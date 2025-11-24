@@ -1440,11 +1440,6 @@ namespace UseCaseApplication
                         : shape.DesiredSize.Height;
 
                     // Убираем эффект трансформации
-                    if (shape.RenderTransform is ScaleTransform scaleTransform)
-                    {
-                        width = width / scaleTransform.ScaleX;
-                        height = height / scaleTransform.ScaleY;
-                    }
                 }
             }
             else if (element is Canvas canvas)
@@ -1528,6 +1523,10 @@ namespace UseCaseApplication
                 {
                     width = maxRight - minLeft;
                     height = maxBottom - minTop;
+                    
+                    // Корректируем позицию, так как PoluchitGranitsyElementa учитывает смещение minLeft/minTop
+                    left += minLeft;
+                    top += minTop;
                 }
                 else
                 {
@@ -1535,12 +1534,11 @@ namespace UseCaseApplication
                     height = 150;
                 }
 
-                // Убираем эффект трансформации Canvas
-                if (canvas.RenderTransform is ScaleTransform scaleTransform)
-                {
-                    width = width / scaleTransform.ScaleX;
-                    height = height / scaleTransform.ScaleY;
-                }
+                // Если у Canvas есть явные размеры, используем их, как и в PoluchitGranitsyElementa
+                if (!double.IsNaN(canvas.Width) && canvas.Width > 0)
+                    width = canvas.Width;
+                if (!double.IsNaN(canvas.Height) && canvas.Height > 0)
+                    height = canvas.Height;
             }
             else if (element is TextBlock textBlock)
             {
@@ -1557,12 +1555,6 @@ namespace UseCaseApplication
                 height = !double.IsNaN(fe.Height) && fe.Height > 0
                     ? fe.Height
                     : fe.DesiredSize.Height;
-
-                if (fe.RenderTransform is ScaleTransform scaleTransform)
-                {
-                    width = width / scaleTransform.ScaleX;
-                    height = height / scaleTransform.ScaleY;
-                }
             }
 
             return new Rect(left, top, width, height);
@@ -1733,6 +1725,13 @@ namespace UseCaseApplication
                 realLeft = currentBounds.Left;
                 realTop = currentBounds.Top;
             }
+            else if (elementDlyaMashtabirovaniya is Canvas)
+            {
+                // Для Canvas используем позицию из PoluchitGranitsyElementa,
+                // так как она учитывает смещение содержимого при масштабировании
+                realLeft = currentBounds.Left;
+                realTop = currentBounds.Top;
+            }
             else
             {
                 // Для других элементов получаем РЕАЛЬНУЮ позицию на Canvas
@@ -1840,6 +1839,13 @@ namespace UseCaseApplication
                 // Для других Canvas (актор и т.д.) используем обычное масштабирование
                 // Оригинальные размеры уже сохранены в начале функции, используем их
 
+                // Вычисляем визуальное смещение содержимого относительно Canvas через текущие границы
+                var currentBounds = PoluchitGranitsyElementa(canvas);
+                double currentCanvasLeft = Canvas.GetLeft(canvas);
+                if (double.IsNaN(currentCanvasLeft)) currentCanvasLeft = 0;
+                double currentCanvasTop = Canvas.GetTop(canvas);
+                if (double.IsNaN(currentCanvasTop)) currentCanvasTop = 0;
+
                 // Масштабируем Canvas через RenderTransform
                 var transform = canvas.RenderTransform as ScaleTransform;
                 if (transform == null)
@@ -1849,12 +1855,26 @@ namespace UseCaseApplication
                     canvas.RenderTransformOrigin = new Point(0, 0);
                 }
 
+                double currentScaleX = Math.Abs(transform.ScaleX) < 0.0001 ? 1.0 : transform.ScaleX;
+                double currentScaleY = Math.Abs(transform.ScaleY) < 0.0001 ? 1.0 : transform.ScaleY;
+
+                double minLeft = (currentBounds.Left - currentCanvasLeft) / currentScaleX;
+                double minTop = (currentBounds.Top - currentCanvasTop) / currentScaleY;
+
+                if (double.IsNaN(minLeft) || double.IsInfinity(minLeft)) minLeft = 0;
+                if (double.IsNaN(minTop) || double.IsInfinity(minTop)) minTop = 0;
+
                 transform.ScaleX = finalScaleX;
                 transform.ScaleY = finalScaleY;
 
+                // left и top - это визуальные координаты содержимого (с учетом смещения)
+                // Позиция Canvas = визуальная позиция - смещение содержимого с новым масштабом
+                double canvasLeft = left - minLeft * finalScaleX;
+                double canvasTop = top - minTop * finalScaleY;
+
                 // Устанавливаем новую позицию
-                Canvas.SetLeft(canvas, left);
-                Canvas.SetTop(canvas, top);
+                Canvas.SetLeft(canvas, canvasLeft);
+                Canvas.SetTop(canvas, canvasTop);
 
                 // Принудительно обновляем визуализацию
                 canvas.InvalidateVisual();
@@ -4485,6 +4505,66 @@ namespace UseCaseApplication
                 {
                     Vozvrat_Click(this, new RoutedEventArgs());
                     e.Handled = true;
+                }
+                else if (e.Key == Key.C)
+                {
+                    if (vybranniyElement != null)
+                    {
+                        var realElement = NaytiElementNaHolste(vybranniyElement) ?? vybranniyElement;
+                        ClipboardManager.Copy(realElement);
+                        e.Handled = true;
+                    }
+                }
+                else if (e.Key == Key.V)
+                {
+                    if (ClipboardManager.HasContent())
+                    {
+                        var mousePos = Mouse.GetPosition(HolstSoderzhanie);
+                        // Если мышь не над холстом, вставляем по центру видимой области или со смещением
+                        if (mousePos.X < 0 || mousePos.Y < 0 || mousePos.X > HolstSoderzhanie.ActualWidth || mousePos.Y > HolstSoderzhanie.ActualHeight)
+                        {
+                             // Если мышь за пределами, вставляем со смещением от выбранного элемента или в левый верхний угол
+                             mousePos = new Point(50, 50);
+                             if (vybranniyElement != null)
+                             {
+                                 var left = Canvas.GetLeft(vybranniyElement);
+                                 var top = Canvas.GetTop(vybranniyElement);
+                                 if (!double.IsNaN(left) && !double.IsNaN(top))
+                                 {
+                                     mousePos = new Point(left + 20, top + 20);
+                                 }
+                             }
+                        }
+                        
+                        var element = ClipboardManager.Paste(mousePos);
+                        if (element != null)
+                        {
+                            DobavitNaHolst(element);
+                            
+                            // Выделяем вставленный элемент
+                            SnytVydelenie();
+                            vybranniyElement = element;
+                            PokazatRamuMashtabirovaniya(element);
+                        }
+                        e.Handled = true;
+                    }
+                }
+                else if (e.Key == Key.X)
+                {
+                    if (vybranniyElement != null)
+                    {
+                        var realElement = NaytiElementNaHolste(vybranniyElement) ?? vybranniyElement;
+                        ClipboardManager.Copy(realElement);
+                        UdalitElementSHolsta(realElement);
+
+                        // Вырезание не должно добавлять запись в стек Redo
+                        if (otmenaStack.Count > 0 && ReferenceEquals(otmenaStack.Peek(), realElement))
+                        {
+                            otmenaStack.Pop();
+                            ObnovitSostoyanieUndoRedo();
+                        }
+                        e.Handled = true;
+                    }
                 }
             }
         }
