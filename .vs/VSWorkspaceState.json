@@ -1,8 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\UseCaseApplication"
+    "\\UseCaseApplication",
+    "\\UseCaseApplication\\UseCaseApplication"
   ],
-  "SelectedNode": "\\UseCaseApplication\\MainWindow.xaml.cs",
+  "SelectedNode": "\\UseCaseApplication\\UseCaseApplication\\MainWindow.xaml.cs",
   "PreviewInSolutionExplorer": false
 }
