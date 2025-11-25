@@ -2180,27 +2180,52 @@ namespace UseCaseApplication
                         double newTop = originalnayaPozitsiya.Y;
 
                         // Вычисляем новые размеры и позицию в зависимости от маркера
+                        // Для угловых маркеров используем пропорциональное масштабирование
                         switch (markerIndex)
                         {
                             case 0: // Левый верхний
-                                newWidth = Math.Max(20, originalniyRazmer.Width - deltaX);
-                                newHeight = Math.Max(20, originalniyRazmer.Height - deltaY);
-                                newLeft = originalnayaPozitsiya.X + (originalniyRazmer.Width - newWidth);
-                                newTop = originalnayaPozitsiya.Y + (originalniyRazmer.Height - newHeight);
+                                {
+                                    // Используем максимальное изменение для сохранения пропорций
+                                    double scale = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY)) / Math.Max(originalniyRazmer.Width, originalniyRazmer.Height);
+                                    if (deltaX < 0 || deltaY < 0) scale = -scale;
+                                    
+                                    newWidth = Math.Max(20, originalniyRazmer.Width - scale * originalniyRazmer.Width);
+                                    newHeight = Math.Max(20, originalniyRazmer.Height - scale * originalniyRazmer.Height);
+                                    newLeft = originalnayaPozitsiya.X + (originalniyRazmer.Width - newWidth);
+                                    newTop = originalnayaPozitsiya.Y + (originalniyRazmer.Height - newHeight);
+                                }
                                 break;
                             case 1: // Правый верхний
-                                newWidth = Math.Max(20, originalniyRazmer.Width + deltaX);
-                                newHeight = Math.Max(20, originalniyRazmer.Height - deltaY);
-                                newTop = originalnayaPozitsiya.Y + (originalniyRazmer.Height - newHeight);
+                                {
+                                    double scale = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY)) / Math.Max(originalniyRazmer.Width, originalniyRazmer.Height);
+                                    if (deltaX > 0 || deltaY < 0) scale = Math.Abs(scale);
+                                    else scale = -Math.Abs(scale);
+                                    
+                                    newWidth = Math.Max(20, originalniyRazmer.Width + scale * originalniyRazmer.Width);
+                                    newHeight = Math.Max(20, originalniyRazmer.Height + scale * originalniyRazmer.Height);
+                                    newTop = originalnayaPozitsiya.Y + (originalniyRazmer.Height - newHeight);
+                                }
                                 break;
                             case 2: // Левый нижний
-                                newWidth = Math.Max(20, originalniyRazmer.Width - deltaX);
-                                newHeight = Math.Max(20, originalniyRazmer.Height + deltaY);
-                                newLeft = originalnayaPozitsiya.X + (originalniyRazmer.Width - newWidth);
+                                {
+                                    double scale = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY)) / Math.Max(originalniyRazmer.Width, originalniyRazmer.Height);
+                                    if (deltaX < 0 || deltaY > 0) scale = Math.Abs(scale);
+                                    else scale = -Math.Abs(scale);
+                                    
+                                    newWidth = Math.Max(20, originalniyRazmer.Width - scale * originalniyRazmer.Width);
+                                    newHeight = Math.Max(20, originalniyRazmer.Height - scale * originalniyRazmer.Height);
+                                    newLeft = originalnayaPozitsiya.X + (originalniyRazmer.Width - newWidth);
+                                }
                                 break;
                             case 3: // Правый нижний
-                                newWidth = Math.Max(20, originalniyRazmer.Width + deltaX);
-                                newHeight = Math.Max(20, originalniyRazmer.Height + deltaY);
+                                {
+                                    double scale = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY)) / Math.Max(originalniyRazmer.Width, originalniyRazmer.Height);
+                                    if (deltaX > 0 || deltaY > 0) scale = Math.Abs(scale);
+                                    else scale = -Math.Abs(scale);
+                                    
+                                    newWidth = Math.Max(20, originalniyRazmer.Width + scale * originalniyRazmer.Width);
+                                    newHeight = Math.Max(20, originalniyRazmer.Height + scale * originalniyRazmer.Height);
+                                }
                                 break;
                             case 4: // Верхний центр
                                 newHeight = Math.Max(20, originalniyRazmer.Height - deltaY);
