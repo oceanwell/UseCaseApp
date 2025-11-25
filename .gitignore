@@ -1,2 +1,20 @@
+# Build folders
+bin/
+obj/
 Debug/
 Release/
+
+# executables / pdb
+*.exe
+*.dll
+*.pdb
+
+# generated cs files, baml и т.п.
+*.g.cs
+*.baml
+
+# user / temp
+*.user
+*.log
+*.vs/
+
