@@ -42,8 +42,9 @@ namespace UseCaseApplication
         private const double MaxTextModuleWidth = 480.0;
         private double tekushayaTolschinaLinii = 2.0;
         private double tekushiyMashtab = 1.0;
-        private const int MaksimalnayaDlinaStrokiTeksta = 20;
-        private const int MaksimalnayaDlinaVsegoTeksta = 255;
+        private const int MaksimalnayaDlinaStrokiTeksta = 50;
+        private const int MaksimalnayaDlinaVsegoTeksta = 500;
+        private const int MaksimalnoeKolichestvoStrok = 10;
 
         private Point tochkaNachalaPeretaskivaniya;
         private Button istochnikKnopki;
@@ -3071,10 +3072,11 @@ namespace UseCaseApplication
                 Foreground = template?.Foreground ?? Brushes.Black,
                 TextAlignment = TextAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Top,
                 TextWrapping = TextWrapping.Wrap,
                 Tag = TagPolzovatelskogoTeksta,
-                Cursor = Cursors.IBeam
+                Cursor = Cursors.IBeam,
+                MaxHeight = double.PositiveInfinity
             };
 
             container.Child = textBlock;
@@ -3217,14 +3219,26 @@ namespace UseCaseApplication
             targetWidth = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, targetWidth));
 
             var contentWidth = Math.Max(20, targetWidth - paddingWidth);
+            
+            // Настраиваем TextBlock для правильного отображения
+            textBlock.Width = contentWidth;
+            textBlock.Height = double.NaN; // Позволяем TextBlock автоматически подстраивать высоту
+            textBlock.TextWrapping = TextWrapping.Wrap;
+            textBlock.TextAlignment = TextAlignment.Center;
+            textBlock.VerticalAlignment = VerticalAlignment.Top;
+            textBlock.MaxHeight = double.PositiveInfinity;
+            
+            // Измеряем размер текста
             var measured = IzmeritTekstovoeSoderzhimoe(textBlock.Text, textBlock.FontFamily, textBlock.FontSize, textBlock.FontWeight, contentWidth);
 
             container.Width = targetWidth;
             container.Height = Math.Max(MinTextModuleHeight, measured.Height + paddingHeight);
-
-            textBlock.Width = contentWidth;
-            textBlock.TextWrapping = TextWrapping.Wrap;
-            textBlock.TextAlignment = TextAlignment.Center;
+            
+            // Принудительное обновление layout для корректного отображения
+            textBlock.InvalidateMeasure();
+            textBlock.UpdateLayout();
+            container.InvalidateMeasure();
+            container.UpdateLayout();
         }
 
         private void NastroitTekstovyElement(TextBlock textBlock, bool nachatRedaktirovanieSrazu = false)
@@ -3381,6 +3395,13 @@ namespace UseCaseApplication
             }
 
             var stroki = bezVozvrataKaretki.Split('\n');
+            
+            // Проверяем максимальное количество строк
+            if (stroki.Length > MaksimalnoeKolichestvoStrok)
+            {
+                return false;
+            }
+            
             return stroki.All(line => line.Length <= MaksimalnayaDlinaStrokiTeksta);
         }
 
@@ -3490,11 +3511,12 @@ namespace UseCaseApplication
                 MinHeight = MinTextModuleHeight,
                 Width = Math.Max(MinTextModuleWidth, currentWidth),
                 Height = Math.Max(MinTextModuleHeight, currentHeight),
-                AcceptsReturn = false,
+                AcceptsReturn = true,
                 TextAlignment = TextAlignment.Center,
                 HorizontalContentAlignment = HorizontalAlignment.Center,
-                VerticalContentAlignment = VerticalAlignment.Center,
-                TextWrapping = TextWrapping.Wrap
+                VerticalContentAlignment = VerticalAlignment.Top,
+                TextWrapping = TextWrapping.Wrap,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto
             };
 
             aktivnyTextovyEditor = editor;
@@ -3541,16 +3563,28 @@ namespace UseCaseApplication
         {
             if (e.Key == Key.Enter)
             {
-                if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+                // Shift+Enter или Ctrl+Enter - новая строка
+                if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift ||
+                    (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
                 {
+                    // Проверяем, не превысим ли мы лимит строк
                     if (sender is TextBox textBox)
                     {
-                        VstavitPerehodNaNovuyuStroku(textBox);
+                        var currentText = textBox.Text ?? string.Empty;
+                        var lineCount = currentText.Split('\n').Length;
+                        
+                        if (lineCount >= MaksimalnoeKolichestvoStrok)
+                        {
+                            // Достигнут лимит строк - не даем добавлять новую строку
+                            e.Handled = true;
+                            return;
+                        }
+                        // Позволяем AcceptsReturn=true обработать это автоматически
                     }
-                    e.Handled = true;
                     return;
                 }
 
+                // Enter без модификаторов - завершаем редактирование
                 ZavershitRedaktirovanieTeksta(true);
                 e.Handled = true;
             }
@@ -3605,8 +3639,22 @@ namespace UseCaseApplication
                 if (e.DataObject.GetDataPresent(DataFormats.Text))
                 {
                     var pasteText = e.DataObject.GetData(DataFormats.Text) as string ?? string.Empty;
+                    
+                    // Проверяем, можно ли вставить текст
                     if (!MozhnoVstavitTekst(editor, pasteText))
                     {
+                        // Попробуем ограничить вставляемый текст
+                        var currentText = editor.Text ?? string.Empty;
+                        var currentLines = currentText.Split('\n').Length;
+                        
+                        // Если уже достигнут лимит строк, отменяем вставку
+                        if (currentLines >= MaksimalnoeKolichestvoStrok)
+                        {
+                            e.CancelCommand();
+                            return;
+                        }
+                        
+                        // Иначе просто отменяем (слишком длинный текст)
                         e.CancelCommand();
                     }
                 }
