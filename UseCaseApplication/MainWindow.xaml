@@ -1004,32 +1004,35 @@
                 </ScrollViewer>
             </Border>
 
-            <Grid x:Name="TabsContainer" ClipToBounds="False">
+            <Grid x:Name="TabsContainer" ClipToBounds="True">
                 <Grid x:Name="CanvasContent" Visibility="Visible">
-                    <Border Background="#2b2b2b" CornerRadius="0,0,12,0" ClipToBounds="False" BorderThickness="0">
-<Grid ClipToBounds="False">
-                            <Border Background="White" Margin="10,10,10,10" CornerRadius="4" ClipToBounds="False">
+                    <Border Background="#2b2b2b" CornerRadius="0,0,12,0" ClipToBounds="True" BorderThickness="0">
+<Grid ClipToBounds="True">
+                            <Border Background="White" Margin="10,10,10,10" CornerRadius="4" ClipToBounds="True">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="79*"/>
                                         <ColumnDefinition Width="261*"/>
                                     </Grid.ColumnDefinitions>
                                     <Rectangle x:Name="FonSetki" Fill="{StaticResource GridBrush}" Grid.ColumnSpan="2"/>
-                                    <Canvas x:Name="PoleDlyaRisovaniya" Background="Transparent" AllowDrop="True" 
-                                            MouseLeftButtonDown="PoleDlyaRisovaniya_MouseLeftButtonDown" 
-                                            MouseMove="PoleDlyaRisovaniya_MouseMove" 
-                                            MouseLeftButtonUp="PoleDlyaRisovaniya_MouseLeftButtonUp"
-                                            Drop="PoleDlyaRisovaniya_Drop"
-                                            DragOver="PoleDlyaRisovaniya_DragOver" Grid.ColumnSpan="2">
-                                        <Canvas x:Name="HolstSoderzhanie" Background="Transparent">
-                                            <Canvas.RenderTransform>
-                                                <TransformGroup>
-                                                    <ScaleTransform x:Name="TransformMashtaba" ScaleX="1" ScaleY="1"/>
-                                                    <TranslateTransform x:Name="TransformSdviga"/>
-                                                </TransformGroup>
-                                            </Canvas.RenderTransform>
+                                    <ScrollViewer x:Name="CanvasScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Grid.ColumnSpan="2">
+                                        <Canvas x:Name="PoleDlyaRisovaniya" Background="Transparent" AllowDrop="True" 
+                                                MouseLeftButtonDown="PoleDlyaRisovaniya_MouseLeftButtonDown" 
+                                                MouseMove="PoleDlyaRisovaniya_MouseMove" 
+                                                MouseLeftButtonUp="PoleDlyaRisovaniya_MouseLeftButtonUp"
+                                                Drop="PoleDlyaRisovaniya_Drop"
+                                                DragOver="PoleDlyaRisovaniya_DragOver"
+                                                MinWidth="800" MinHeight="600">
+                                            <Canvas x:Name="HolstSoderzhanie" Background="Transparent">
+                                                <Canvas.RenderTransform>
+                                                    <TransformGroup>
+                                                        <ScaleTransform x:Name="TransformMashtaba" ScaleX="1" ScaleY="1"/>
+                                                        <TranslateTransform x:Name="TransformSdviga"/>
+                                                    </TransformGroup>
+                                                </Canvas.RenderTransform>
+                                            </Canvas>
                                         </Canvas>
-                                    </Canvas>
+                                    </ScrollViewer>
                                 </Grid>
                             </Border>
 

@@ -102,6 +102,11 @@ namespace UseCaseApplication
         private bool normalizuyuTekstRedaktora;
         private string posledniyKorrektnyyTekstRedaktora = string.Empty;
 
+        // Динамическое расширение холста
+        private const double MinCanvasWidth = 800;
+        private const double MinCanvasHeight = 600;
+        private const double CanvasExpandMargin = 200; // Отступ для расширения
+
 
         public MainWindow()
         {
@@ -119,6 +124,18 @@ namespace UseCaseApplication
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             NastroitSetku();
+            
+            // Инициализируем начальные размеры холста
+            if (PoleDlyaRisovaniya != null)
+            {
+                PoleDlyaRisovaniya.Width = MinCanvasWidth;
+                PoleDlyaRisovaniya.Height = MinCanvasHeight;
+            }
+            if (HolstSoderzhanie != null)
+            {
+                HolstSoderzhanie.Width = MinCanvasWidth;
+                HolstSoderzhanie.Height = MinCanvasHeight;
+            }
         }
 
         private void ZagolovokOkna_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -2249,6 +2266,7 @@ namespace UseCaseApplication
                         {
                             MashtabirovatElement(elementDlyaMashtabirovaniya, newLeft, newTop, newWidth, newHeight);
                             PokazatRamuMashtabirovaniya(elementDlyaMashtabirovaniya);
+                            RasshiritHolstEsliNeobhodimo(elementDlyaMashtabirovaniya);
                             proiskhodiloMashtabirovanieElementa = true;
                         }
                     }
@@ -2307,6 +2325,9 @@ namespace UseCaseApplication
 
                     // Обновляем рамку масштабирования при перемещении
                     PokazatRamuMashtabirovaniya(vybranniyElement);
+
+                    // Расширяем холст если объект приближается к краям
+                    RasshiritHolstEsliNeobhodimo(vybranniyElement);
 
                     // Если перемещаем объект - обновляем прикрепленные стрелки
                     if (!YavlyaetsyaStrelkoy(vybranniyElement))
@@ -5222,6 +5243,60 @@ namespace UseCaseApplication
                 prikreplennyeStrelki.Remove(strelkaElement);
             else
                 prikreplennyeStrelki[strelkaElement] = current;
+        }
+
+        private void RasshiritHolstEsliNeobhodimo(UIElement element)
+        {
+            if (element == null || PoleDlyaRisovaniya == null || HolstSoderzhanie == null)
+                return;
+
+            // Получаем границы элемента
+            var bounds = PoluchitGranitsyElementa(element);
+            if (bounds.Width <= 0 || bounds.Height <= 0)
+                return;
+
+            // Получаем текущие размеры холста
+            double currentWidth = PoleDlyaRisovaniya.Width;
+            double currentHeight = PoleDlyaRisovaniya.Height;
+
+            if (double.IsNaN(currentWidth) || currentWidth < MinCanvasWidth)
+                currentWidth = MinCanvasWidth;
+            if (double.IsNaN(currentHeight) || currentHeight < MinCanvasHeight)
+                currentHeight = MinCanvasHeight;
+
+            // Вычисляем необходимые размеры с отступом
+            double requiredWidth = bounds.Right + CanvasExpandMargin;
+            double requiredHeight = bounds.Bottom + CanvasExpandMargin;
+
+            // Расширяем холст, если нужно
+            bool changed = false;
+            if (requiredWidth > currentWidth)
+            {
+                currentWidth = Math.Max(requiredWidth, currentWidth + CanvasExpandMargin);
+                changed = true;
+            }
+
+            if (requiredHeight > currentHeight)
+            {
+                currentHeight = Math.Max(requiredHeight, currentHeight + CanvasExpandMargin);
+                changed = true;
+            }
+
+            // Применяем новые размеры
+            if (changed)
+            {
+                PoleDlyaRisovaniya.Width = currentWidth;
+                PoleDlyaRisovaniya.Height = currentHeight;
+                HolstSoderzhanie.Width = currentWidth;
+                HolstSoderzhanie.Height = currentHeight;
+
+                // Обновляем сетку, если она есть
+                if (FonSetki != null)
+                {
+                    FonSetki.Width = currentWidth;
+                    FonSetki.Height = currentHeight;
+                }
+            }
         }
     }
 }
