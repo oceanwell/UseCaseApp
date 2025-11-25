@@ -18,3 +18,8 @@ Release/
 *.log
 *.vs/
 
+# Visual Studio / editor temp
+*.vsidx
+*.suo
+*.i.cs
+*.g.i.cs
