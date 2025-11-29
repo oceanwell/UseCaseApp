@@ -601,7 +601,7 @@
                     </Border>
                     <Button x:Name="FileButton" Content="Файл" Style="{StaticResource FileButtonStyle}" Click="FileButton_Click">
                         <Button.ContextMenu>
-                            <ContextMenu x:Name="FileContextMenu" Style="{StaticResource FileContextMenuStyle}" Opened="FileContextMenu_Opened" Closed="FileContextMenu_Closed">
+                            <ContextMenu x:Name="FileContextMenu" Style="{StaticResource FileContextMenuStyle}" StaysOpen="False" Opened="FileContextMenu_Opened" Closed="FileContextMenu_Closed">
                                 <MenuItem Header="Новый файл" Click="NewFile_Click" Style="{StaticResource NoIconMenuItemStyle}"/>
                                 <MenuItem Header="Открыть..." Click="OpenFile_Click" Style="{StaticResource NoIconMenuItemStyle}"/>
                                 <MenuItem Header="Сохранить" Click="SaveFile_Click" Style="{StaticResource NoIconMenuItemStyle}"/>
