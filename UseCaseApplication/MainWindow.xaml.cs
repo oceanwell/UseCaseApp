@@ -42,9 +42,8 @@ namespace UseCaseApplication
         private const double MaxTextModuleWidth = 480.0;
         private double tekushayaTolschinaLinii = 2.0;
         private double tekushiyMashtab = 1.0;
-        private const int MaksimalnayaDlinaStrokiTeksta = 50;
-        private const int MaksimalnayaDlinaVsegoTeksta = 500;
-        private const int MaksimalnoeKolichestvoStrok = 10;
+        private const int MaksimalnayaDlinaStrokiTeksta = 20;
+        private const int MaksimalnayaDlinaVsegoTeksta = 255;
 
         private Point tochkaNachalaPeretaskivaniya;
         private Button istochnikKnopki;
@@ -102,11 +101,6 @@ namespace UseCaseApplication
         private bool normalizuyuTekstRedaktora;
         private string posledniyKorrektnyyTekstRedaktora = string.Empty;
 
-        // Динамическое расширение холста
-        private const double MinCanvasWidth = 800;
-        private const double MinCanvasHeight = 600;
-        private const double CanvasExpandMargin = 200; // Отступ для расширения
-
 
         public MainWindow()
         {
@@ -124,18 +118,6 @@ namespace UseCaseApplication
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             NastroitSetku();
-            
-            // Инициализируем начальные размеры холста
-            if (PoleDlyaRisovaniya != null)
-            {
-                PoleDlyaRisovaniya.Width = MinCanvasWidth;
-                PoleDlyaRisovaniya.Height = MinCanvasHeight;
-            }
-            if (HolstSoderzhanie != null)
-            {
-                HolstSoderzhanie.Width = MinCanvasWidth;
-                HolstSoderzhanie.Height = MinCanvasHeight;
-            }
         }
 
         private void ZagolovokOkna_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -2198,52 +2180,27 @@ namespace UseCaseApplication
                         double newTop = originalnayaPozitsiya.Y;
 
                         // Вычисляем новые размеры и позицию в зависимости от маркера
-                        // Для угловых маркеров используем пропорциональное масштабирование
                         switch (markerIndex)
                         {
                             case 0: // Левый верхний
-                                {
-                                    // Используем максимальное изменение для сохранения пропорций
-                                    double scale = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY)) / Math.Max(originalniyRazmer.Width, originalniyRazmer.Height);
-                                    if (deltaX < 0 || deltaY < 0) scale = -scale;
-                                    
-                                    newWidth = Math.Max(20, originalniyRazmer.Width - scale * originalniyRazmer.Width);
-                                    newHeight = Math.Max(20, originalniyRazmer.Height - scale * originalniyRazmer.Height);
-                                    newLeft = originalnayaPozitsiya.X + (originalniyRazmer.Width - newWidth);
-                                    newTop = originalnayaPozitsiya.Y + (originalniyRazmer.Height - newHeight);
-                                }
+                                newWidth = Math.Max(20, originalniyRazmer.Width - deltaX);
+                                newHeight = Math.Max(20, originalniyRazmer.Height - deltaY);
+                                newLeft = originalnayaPozitsiya.X + (originalniyRazmer.Width - newWidth);
+                                newTop = originalnayaPozitsiya.Y + (originalniyRazmer.Height - newHeight);
                                 break;
                             case 1: // Правый верхний
-                                {
-                                    double scale = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY)) / Math.Max(originalniyRazmer.Width, originalniyRazmer.Height);
-                                    if (deltaX > 0 || deltaY < 0) scale = Math.Abs(scale);
-                                    else scale = -Math.Abs(scale);
-                                    
-                                    newWidth = Math.Max(20, originalniyRazmer.Width + scale * originalniyRazmer.Width);
-                                    newHeight = Math.Max(20, originalniyRazmer.Height + scale * originalniyRazmer.Height);
-                                    newTop = originalnayaPozitsiya.Y + (originalniyRazmer.Height - newHeight);
-                                }
+                                newWidth = Math.Max(20, originalniyRazmer.Width + deltaX);
+                                newHeight = Math.Max(20, originalniyRazmer.Height - deltaY);
+                                newTop = originalnayaPozitsiya.Y + (originalniyRazmer.Height - newHeight);
                                 break;
                             case 2: // Левый нижний
-                                {
-                                    double scale = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY)) / Math.Max(originalniyRazmer.Width, originalniyRazmer.Height);
-                                    if (deltaX < 0 || deltaY > 0) scale = Math.Abs(scale);
-                                    else scale = -Math.Abs(scale);
-                                    
-                                    newWidth = Math.Max(20, originalniyRazmer.Width - scale * originalniyRazmer.Width);
-                                    newHeight = Math.Max(20, originalniyRazmer.Height - scale * originalniyRazmer.Height);
-                                    newLeft = originalnayaPozitsiya.X + (originalniyRazmer.Width - newWidth);
-                                }
+                                newWidth = Math.Max(20, originalniyRazmer.Width - deltaX);
+                                newHeight = Math.Max(20, originalniyRazmer.Height + deltaY);
+                                newLeft = originalnayaPozitsiya.X + (originalniyRazmer.Width - newWidth);
                                 break;
                             case 3: // Правый нижний
-                                {
-                                    double scale = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY)) / Math.Max(originalniyRazmer.Width, originalniyRazmer.Height);
-                                    if (deltaX > 0 || deltaY > 0) scale = Math.Abs(scale);
-                                    else scale = -Math.Abs(scale);
-                                    
-                                    newWidth = Math.Max(20, originalniyRazmer.Width + scale * originalniyRazmer.Width);
-                                    newHeight = Math.Max(20, originalniyRazmer.Height + scale * originalniyRazmer.Height);
-                                }
+                                newWidth = Math.Max(20, originalniyRazmer.Width + deltaX);
+                                newHeight = Math.Max(20, originalniyRazmer.Height + deltaY);
                                 break;
                             case 4: // Верхний центр
                                 newHeight = Math.Max(20, originalniyRazmer.Height - deltaY);
@@ -2266,7 +2223,6 @@ namespace UseCaseApplication
                         {
                             MashtabirovatElement(elementDlyaMashtabirovaniya, newLeft, newTop, newWidth, newHeight);
                             PokazatRamuMashtabirovaniya(elementDlyaMashtabirovaniya);
-                            RasshiritHolstEsliNeobhodimo(elementDlyaMashtabirovaniya);
                             proiskhodiloMashtabirovanieElementa = true;
                         }
                     }
@@ -2325,9 +2281,6 @@ namespace UseCaseApplication
 
                     // Обновляем рамку масштабирования при перемещении
                     PokazatRamuMashtabirovaniya(vybranniyElement);
-
-                    // Расширяем холст если объект приближается к краям
-                    RasshiritHolstEsliNeobhodimo(vybranniyElement);
 
                     // Если перемещаем объект - обновляем прикрепленные стрелки
                     if (!YavlyaetsyaStrelkoy(vybranniyElement))
@@ -3093,11 +3046,10 @@ namespace UseCaseApplication
                 Foreground = template?.Foreground ?? Brushes.Black,
                 TextAlignment = TextAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Top,
+                VerticalAlignment = VerticalAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
                 Tag = TagPolzovatelskogoTeksta,
-                Cursor = Cursors.IBeam,
-                MaxHeight = double.PositiveInfinity
+                Cursor = Cursors.IBeam
             };
 
             container.Child = textBlock;
@@ -3240,26 +3192,14 @@ namespace UseCaseApplication
             targetWidth = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, targetWidth));
 
             var contentWidth = Math.Max(20, targetWidth - paddingWidth);
-            
-            // Настраиваем TextBlock для правильного отображения
-            textBlock.Width = contentWidth;
-            textBlock.Height = double.NaN; // Позволяем TextBlock автоматически подстраивать высоту
-            textBlock.TextWrapping = TextWrapping.Wrap;
-            textBlock.TextAlignment = TextAlignment.Center;
-            textBlock.VerticalAlignment = VerticalAlignment.Top;
-            textBlock.MaxHeight = double.PositiveInfinity;
-            
-            // Измеряем размер текста
             var measured = IzmeritTekstovoeSoderzhimoe(textBlock.Text, textBlock.FontFamily, textBlock.FontSize, textBlock.FontWeight, contentWidth);
 
             container.Width = targetWidth;
             container.Height = Math.Max(MinTextModuleHeight, measured.Height + paddingHeight);
-            
-            // Принудительное обновление layout для корректного отображения
-            textBlock.InvalidateMeasure();
-            textBlock.UpdateLayout();
-            container.InvalidateMeasure();
-            container.UpdateLayout();
+
+            textBlock.Width = contentWidth;
+            textBlock.TextWrapping = TextWrapping.Wrap;
+            textBlock.TextAlignment = TextAlignment.Center;
         }
 
         private void NastroitTekstovyElement(TextBlock textBlock, bool nachatRedaktirovanieSrazu = false)
@@ -3416,13 +3356,6 @@ namespace UseCaseApplication
             }
 
             var stroki = bezVozvrataKaretki.Split('\n');
-            
-            // Проверяем максимальное количество строк
-            if (stroki.Length > MaksimalnoeKolichestvoStrok)
-            {
-                return false;
-            }
-            
             return stroki.All(line => line.Length <= MaksimalnayaDlinaStrokiTeksta);
         }
 
@@ -3532,12 +3465,11 @@ namespace UseCaseApplication
                 MinHeight = MinTextModuleHeight,
                 Width = Math.Max(MinTextModuleWidth, currentWidth),
                 Height = Math.Max(MinTextModuleHeight, currentHeight),
-                AcceptsReturn = true,
+                AcceptsReturn = false,
                 TextAlignment = TextAlignment.Center,
                 HorizontalContentAlignment = HorizontalAlignment.Center,
-                VerticalContentAlignment = VerticalAlignment.Top,
-                TextWrapping = TextWrapping.Wrap,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+                VerticalContentAlignment = VerticalAlignment.Center,
+                TextWrapping = TextWrapping.Wrap
             };
 
             aktivnyTextovyEditor = editor;
@@ -3584,28 +3516,16 @@ namespace UseCaseApplication
         {
             if (e.Key == Key.Enter)
             {
-                // Shift+Enter или Ctrl+Enter - новая строка
-                if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift ||
-                    (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+                if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
                 {
-                    // Проверяем, не превысим ли мы лимит строк
                     if (sender is TextBox textBox)
                     {
-                        var currentText = textBox.Text ?? string.Empty;
-                        var lineCount = currentText.Split('\n').Length;
-                        
-                        if (lineCount >= MaksimalnoeKolichestvoStrok)
-                        {
-                            // Достигнут лимит строк - не даем добавлять новую строку
-                            e.Handled = true;
-                            return;
-                        }
-                        // Позволяем AcceptsReturn=true обработать это автоматически
+                        VstavitPerehodNaNovuyuStroku(textBox);
                     }
+                    e.Handled = true;
                     return;
                 }
 
-                // Enter без модификаторов - завершаем редактирование
                 ZavershitRedaktirovanieTeksta(true);
                 e.Handled = true;
             }
@@ -3660,22 +3580,8 @@ namespace UseCaseApplication
                 if (e.DataObject.GetDataPresent(DataFormats.Text))
                 {
                     var pasteText = e.DataObject.GetData(DataFormats.Text) as string ?? string.Empty;
-                    
-                    // Проверяем, можно ли вставить текст
                     if (!MozhnoVstavitTekst(editor, pasteText))
                     {
-                        // Попробуем ограничить вставляемый текст
-                        var currentText = editor.Text ?? string.Empty;
-                        var currentLines = currentText.Split('\n').Length;
-                        
-                        // Если уже достигнут лимит строк, отменяем вставку
-                        if (currentLines >= MaksimalnoeKolichestvoStrok)
-                        {
-                            e.CancelCommand();
-                            return;
-                        }
-                        
-                        // Иначе просто отменяем (слишком длинный текст)
                         e.CancelCommand();
                     }
                 }
@@ -5243,60 +5149,6 @@ namespace UseCaseApplication
                 prikreplennyeStrelki.Remove(strelkaElement);
             else
                 prikreplennyeStrelki[strelkaElement] = current;
-        }
-
-        private void RasshiritHolstEsliNeobhodimo(UIElement element)
-        {
-            if (element == null || PoleDlyaRisovaniya == null || HolstSoderzhanie == null)
-                return;
-
-            // Получаем границы элемента
-            var bounds = PoluchitGranitsyElementa(element);
-            if (bounds.Width <= 0 || bounds.Height <= 0)
-                return;
-
-            // Получаем текущие размеры холста
-            double currentWidth = PoleDlyaRisovaniya.Width;
-            double currentHeight = PoleDlyaRisovaniya.Height;
-
-            if (double.IsNaN(currentWidth) || currentWidth < MinCanvasWidth)
-                currentWidth = MinCanvasWidth;
-            if (double.IsNaN(currentHeight) || currentHeight < MinCanvasHeight)
-                currentHeight = MinCanvasHeight;
-
-            // Вычисляем необходимые размеры с отступом
-            double requiredWidth = bounds.Right + CanvasExpandMargin;
-            double requiredHeight = bounds.Bottom + CanvasExpandMargin;
-
-            // Расширяем холст, если нужно
-            bool changed = false;
-            if (requiredWidth > currentWidth)
-            {
-                currentWidth = Math.Max(requiredWidth, currentWidth + CanvasExpandMargin);
-                changed = true;
-            }
-
-            if (requiredHeight > currentHeight)
-            {
-                currentHeight = Math.Max(requiredHeight, currentHeight + CanvasExpandMargin);
-                changed = true;
-            }
-
-            // Применяем новые размеры
-            if (changed)
-            {
-                PoleDlyaRisovaniya.Width = currentWidth;
-                PoleDlyaRisovaniya.Height = currentHeight;
-                HolstSoderzhanie.Width = currentWidth;
-                HolstSoderzhanie.Height = currentHeight;
-
-                // Обновляем сетку, если она есть
-                if (FonSetki != null)
-                {
-                    FonSetki.Width = currentWidth;
-                    FonSetki.Height = currentHeight;
-                }
-            }
         }
     }
 }
