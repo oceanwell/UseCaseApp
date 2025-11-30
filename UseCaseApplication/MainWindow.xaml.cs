@@ -19,51 +19,16 @@ using System.Windows.Shapes;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Animation;
-using System.Windows.Media.Media3D;
 using System.Windows.Markup;
 using Microsoft.Win32;
 using ShapesPath = System.Windows.Shapes.Path;
 
 namespace UseCaseApplication
 {
-    // Класс для хранения действия (снимка состояния) для Undo/Redo
-    public class CanvasAction
-    {
-        public enum ActionType
-        {
-            Add,            // Добавление элемента
-            Remove,         // Удаление элемента
-            Modify,         // Изменение элемента (перемещение, масштабирование и т.д.)
-            ChangeThickness // Изменение толщины линии
-        }
-
-        public ActionType Type { get; set; }
-        public UIElement Element { get; set; }
-        
-        // Для хранения состояния элемента
-        public double PrevLeft { get; set; }
-        public double PrevTop { get; set; }
-        public double PrevWidth { get; set; }
-        public double PrevHeight { get; set; }
-        public int PrevZIndex { get; set; }
-        public double PrevThickness { get; set; } // Предыдущая толщина линии
-        
-        public double NewLeft { get; set; }
-        public double NewTop { get; set; }
-        public double NewWidth { get; set; }
-        public double NewHeight { get; set; }
-        public int NewZIndex { get; set; }
-        public double NewThickness { get; set; } // Новая толщина линии
-        
-        // Для группового изменения толщины
-        public Dictionary<UIElement, double> PrevThicknesses { get; set; } // Предыдущие толщины для группы элементов
-        public Dictionary<UIElement, double> NewThicknesses { get; set; }  // Новые толщины для группы элементов
-    }
-
     public partial class MainWindow : Window
     {
-        private readonly Stack<CanvasAction> otmenaStack = new Stack<CanvasAction>();
-        private readonly Stack<CanvasAction> vozvratStack = new Stack<CanvasAction>();
+        private readonly Stack<UIElement> otmenaStack = new Stack<UIElement>();
+        private readonly Stack<UIElement> vozvratStack = new Stack<UIElement>();
         private readonly Dictionary<UIElement, UIElement> informaciyaZamen = new Dictionary<UIElement, UIElement>();
         private const double standartnayaTolschinaLinii = 1.0;
         private const string TagPolzovatelskogoTeksta = "uca-user-text";
@@ -119,15 +84,6 @@ namespace UseCaseApplication
         private bool blokirovatOtslezhivanieIzmeneniy;
         private bool proiskhodiloPeremeshenieElementa;
         private bool proiskhodiloMashtabirovanieElementa;
-        
-        // Для сохранения состояния перед изменением
-        private UIElement elementDoIzmeneniya;
-        private double leftDoIzmeneniya;
-        private double topDoIzmeneniya;
-        private double widthDoIzmeneniya;
-        private double heightDoIzmeneniya;
-        private int zIndexDoIzmeneniya;
-        
         private readonly Dictionary<Line, LineCoordinates> originalnyeKoordinatyLinij = new Dictionary<Line, LineCoordinates>();
         private ScaleTransform setkaScaleTransform;
         private TranslateTransform setkaTranslateTransform;
@@ -344,61 +300,28 @@ namespace UseCaseApplication
         private void ObnovitTolshinuLinii()
         {
             if (vybranniyeElementy == null || vybranniyeElementy.Count == 0) return;
-            
-            var prevThicknesses = new Dictionary<UIElement, double>();
-            var newThicknesses = new Dictionary<UIElement, double>();
             bool byliIzmeneniya = false;
-            
             foreach (var element in vybranniyeElementy.ToList())
             {
                 if (element is Shape forma)
                 {
-                    // Сохраняем предыдущую толщину
-                    double prevThickness = forma.StrokeThickness;
-                    
-                    // Применяем новую толщину
                     forma.StrokeThickness = tekushayaTolschinaLinii;
                     originalnyeTolschiny[element] = tekushayaTolschinaLinii;
-                    
-                    // Добавляем в словарь для группового изменения только если толщина изменилась
-                    if (Math.Abs(prevThickness - tekushayaTolschinaLinii) > 0.01)
-                    {
-                        prevThicknesses[element] = prevThickness;
-                        newThicknesses[element] = tekushayaTolschinaLinii;
-                    }
-                    
                     byliIzmeneniya = true;
                 }
                 else if (element is Canvas canvas)
                 {
                     foreach (var docherniy in canvas.Children.OfType<Shape>())
                     {
-                        // Сохраняем предыдущую толщину
-                        double prevThickness = docherniy.StrokeThickness;
-                        
-                        // Применяем новую толщину
                         docherniy.StrokeThickness = tekushayaTolschinaLinii;
                         var key = docherniy as UIElement;
                         if (key != null)
                         {
                             originalnyeTolschiny[key] = tekushayaTolschinaLinii;
-                            
-                            // Добавляем в словарь для группового изменения только если толщина изменилась
-                            if (Math.Abs(prevThickness - tekushayaTolschinaLinii) > 0.01)
-                            {
-                                prevThicknesses[key] = prevThickness;
-                                newThicknesses[key] = tekushayaTolschinaLinii;
-                            }
                         }
                         byliIzmeneniya = true;
                     }
                 }
-            }
-
-            // Записываем ОДНО групповое действие для всех изменений толщины
-            if (prevThicknesses.Count > 0)
-            {
-                ZapisatGruppovojeIzmenenieTolschiny(prevThicknesses, newThicknesses);
             }
 
             if (byliIzmeneniya)
@@ -499,11 +422,6 @@ namespace UseCaseApplication
                 var tekushiyTop = Canvas.GetTop(vybranniyElement);
                 originalLeft = double.IsNaN(tekushiyLeft) ? 0 : tekushiyLeft;
                 originalTop = double.IsNaN(tekushiyTop) ? 0 : tekushiyTop;
-
-                // Сохраняем состояние элемента перед перемещением
-                elementDoIzmeneniya = vybranniyElement;
-                SohranitSostoyanie(vybranniyElement, out leftDoIzmeneniya, out topDoIzmeneniya, 
-                                 out widthDoIzmeneniya, out heightDoIzmeneniya, out zIndexDoIzmeneniya);
 
                 Mouse.Capture(PoleDlyaRisovaniya);
 
@@ -1751,112 +1669,54 @@ namespace UseCaseApplication
         {
             if (UndoButton != null)
             {
-                UndoButton.IsEnabled = otmenaStack.Count > 0;
+                UndoButton.IsEnabled = EstElementDlyaUndo();
             }
 
             if (RedoButton != null)
             {
-                RedoButton.IsEnabled = vozvratStack.Count > 0;
+                RedoButton.IsEnabled = otmenaStack.Count > 0;
             }
         }
 
-        // Метод для получения состояния элемента
-        private void SohranitSostoyanie(UIElement element, out double left, out double top, out double width, out double height, out int zIndex)
+        private bool EstElementDlyaUndo()
         {
-            left = Canvas.GetLeft(element);
-            top = Canvas.GetTop(element);
-            if (double.IsNaN(left)) left = 0;
-            if (double.IsNaN(top)) top = 0;
-            
-            zIndex = Panel.GetZIndex(element);
-            width = 0;
-            height = 0;
-
-            if (element is FrameworkElement fe)
+            if (HolstSoderzhanie == null)
             {
-                width = fe.ActualWidth > 0 ? fe.ActualWidth : fe.Width;
-                height = fe.ActualHeight > 0 ? fe.ActualHeight : fe.Height;
-                if (double.IsNaN(width)) width = 0;
-                if (double.IsNaN(height)) height = 0;
+                return false;
             }
-            else if (element is Line line)
+
+            for (int i = HolstSoderzhanie.Children.Count - 1; i >= 0; i--)
             {
-                var bounds = PoluchitGranitsyElementa(line);
-                width = bounds.Width;
-                height = bounds.Height;
+                var child = HolstSoderzhanie.Children[i] as UIElement;
+                if (child == null)
+                {
+                    continue;
+                }
+
+                if (ramkaVydeleniya != null && ReferenceEquals(child, ramkaVydeleniya))
+                {
+                    continue;
+                }
+
+                if (markeriMashtaba != null && child is Border marker && markeriMashtaba.Contains(marker))
+                {
+                    continue;
+                }
+
+                if (markeriIzgiba != null && child is Border markerIzgiba && markeriIzgiba.Contains(markerIzgiba))
+                {
+                    continue;
+                }
+
+                if (aktivnyTextovyEditor != null && ReferenceEquals(child, aktivnyTextovyEditor))
+                {
+                    continue;
+                }
+
+                return true;
             }
-        }
 
-        // Метод для записи действия добавления в историю Undo
-        private void ZapisatDeystvieUndo(CanvasAction.ActionType type, UIElement element)
-        {
-            if (element == null) return;
-
-            double left, top, width, height;
-            int zIndex;
-            SohranitSostoyanie(element, out left, out top, out width, out height, out zIndex);
-
-            var action = new CanvasAction
-            {
-                Type = type,
-                Element = element,
-                NewLeft = left,
-                NewTop = top,
-                NewWidth = width,
-                NewHeight = height,
-                NewZIndex = zIndex
-            };
-
-            otmenaStack.Push(action);
-            vozvratStack.Clear(); // Очищаем стек Redo при новом действии
-            ObnovitSostoyanieUndoRedo();
-        }
-        
-        // Метод для записи действия изменения с сохранением предыдущего состояния
-        private void ZapisatDeystvieIzmeneniya(UIElement element, double prevLeft, double prevTop, double prevWidth, double prevHeight, int prevZIndex)
-        {
-            if (element == null) return;
-
-            double newLeft, newTop, newWidth, newHeight;
-            int newZIndex;
-            SohranitSostoyanie(element, out newLeft, out newTop, out newWidth, out newHeight, out newZIndex);
-
-            var action = new CanvasAction
-            {
-                Type = CanvasAction.ActionType.Modify,
-                Element = element,
-                PrevLeft = prevLeft,
-                PrevTop = prevTop,
-                PrevWidth = prevWidth,
-                PrevHeight = prevHeight,
-                PrevZIndex = prevZIndex,
-                NewLeft = newLeft,
-                NewTop = newTop,
-                NewWidth = newWidth,
-                NewHeight = newHeight,
-                NewZIndex = newZIndex
-            };
-
-            otmenaStack.Push(action);
-            vozvratStack.Clear();
-            ObnovitSostoyanieUndoRedo();
-        }
-        
-        // Метод для записи группового изменения толщины линии
-        private void ZapisatGruppovojeIzmenenieTolschiny(Dictionary<UIElement, double> prevThicknesses, Dictionary<UIElement, double> newThicknesses)
-        {
-            if (prevThicknesses == null || prevThicknesses.Count == 0) return;
-
-            var action = new CanvasAction
-            {
-                Type = CanvasAction.ActionType.ChangeThickness,
-                PrevThicknesses = new Dictionary<UIElement, double>(prevThicknesses),
-                NewThicknesses = new Dictionary<UIElement, double>(newThicknesses)
-            };
-
-            otmenaStack.Push(action);
-            vozvratStack.Clear();
-            ObnovitSostoyanieUndoRedo();
+            return false;
         }
 
         private void Marker_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -1872,11 +1732,6 @@ namespace UseCaseApplication
             nachatoRealnoeMashtabirovanie = false;
             elementDlyaMashtabirovaniya = vybranniyElement;
             tochkaNachalaMashtabirovaniya = e.GetPosition(HolstSoderzhanie);
-            
-            // Сохраняем состояние элемента перед масштабированием
-            elementDoIzmeneniya = vybranniyElement;
-            SohranitSostoyanie(vybranniyElement, out leftDoIzmeneniya, out topDoIzmeneniya, 
-                             out widthDoIzmeneniya, out heightDoIzmeneniya, out zIndexDoIzmeneniya);
 
             // Получаем текущие размеры элемента (с учетом масштабирования)
             var currentBounds = PoluchitGranitsyElementa(elementDlyaMashtabirovaniya);
@@ -2187,28 +2042,6 @@ namespace UseCaseApplication
                     Canvas.SetTop(shape, top);
                 }
             }
-            // Для текстовых контейнеров (Border с TextBlock) НЕ применяем масштабирование
-            // Текст должен оставаться неизменным по размеру
-            else if (YavlyaetsyaTekstovymKontainerom(element) && element is Border textContainer)
-            {
-                if (!originalnyeRazmery.ContainsKey(element))
-                {
-                    textContainer.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                    originalnyeRazmery[element] = new Rect(left, top, textContainer.Width, textContainer.Height);
-                }
-
-                var baseRect = originalnyeRazmery[element];
-                var newWidth = Math.Max(MinTextModuleWidth, baseRect.Width * finalScaleX);
-                var newHeight = Math.Max(MinTextModuleHeight, baseRect.Height * finalScaleY);
-                
-                textContainer.Width = Math.Min(MaxTextModuleWidth, newWidth);
-                textContainer.Height = newHeight;
-                Canvas.SetLeft(textContainer, left);
-                Canvas.SetTop(textContainer, top);
-                
-                // НЕ применяем компенсирующий масштаб при масштабировании объекта
-                // Только при изменении масштаба холста через ObnovitMashtabTeksta()
-            }
             // Для TextBlock изменяем размеры области, не меняя шрифт
             else if (element is TextBlock textBlock)
             {
@@ -2365,12 +2198,12 @@ namespace UseCaseApplication
                         double newTop = originalnayaPozitsiya.Y;
 
                         // Вычисляем новые размеры и позицию в зависимости от маркера
-                        // Маркер следует за курсором мыши напрямую
+                        // Для угловых маркеров используем пропорциональное масштабирование
                         switch (markerIndex)
                         {
                             case 0: // Левый верхний
                                 {
-                                    // Для угловых маркеров используем пропорциональное масштабирование
+                                    // Используем максимальное изменение для сохранения пропорций
                                     double scale = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY)) / Math.Max(originalniyRazmer.Width, originalniyRazmer.Height);
                                     if (deltaX < 0 || deltaY < 0) scale = -scale;
                                     
@@ -2524,19 +2357,11 @@ namespace UseCaseApplication
                 }
                 if (proiskhodiloMashtabirovanieElementa)
                 {
-                    // Записываем действие изменения в историю
-                    if (elementDoIzmeneniya != null)
-                    {
-                        ZapisatDeystvieIzmeneniya(elementDoIzmeneniya, leftDoIzmeneniya, topDoIzmeneniya, 
-                                                widthDoIzmeneniya, heightDoIzmeneniya, zIndexDoIzmeneniya);
-                    }
-                    elementDoIzmeneniya = null;
                     proiskhodiloMashtabirovanieElementa = false;
                     MarkDocumentDirty();
                 }
                 else
                 {
-                    elementDoIzmeneniya = null;
                     proiskhodiloMashtabirovanieElementa = false;
                 }
                 return;
@@ -2601,19 +2426,11 @@ namespace UseCaseApplication
 
             if (proiskhodiloPeremeshenieElementa)
             {
-                // Записываем действие изменения в историю
-                if (elementDoIzmeneniya != null)
-                {
-                    ZapisatDeystvieIzmeneniya(elementDoIzmeneniya, leftDoIzmeneniya, topDoIzmeneniya, 
-                                            widthDoIzmeneniya, heightDoIzmeneniya, zIndexDoIzmeneniya);
-                }
-                elementDoIzmeneniya = null;
                 proiskhodiloPeremeshenieElementa = false;
                 MarkDocumentDirty();
             }
             else
             {
-                elementDoIzmeneniya = null;
                 proiskhodiloPeremeshenieElementa = false;
             }
         }
@@ -2641,104 +2458,47 @@ namespace UseCaseApplication
 
         private void Otmena_Click(object sender, RoutedEventArgs e)
         {
-            if (otmenaStack.Count == 0) return;
-            if (HolstSoderzhanie == null) return;
+            if (HolstSoderzhanie == null || HolstSoderzhanie.Children.Count == 0) return;
 
-            var action = otmenaStack.Pop();
-            
-            // Скрываем рамки и маркеры
-            SkrytRamuMashtabirovaniya();
-            SnytVydelenie();
-
-            switch (action.Type)
+            // Ищем последний реальный элемент (не рамку и не маркеры)
+            UIElement element = null;
+            for (int i = HolstSoderzhanie.Children.Count - 1; i >= 0; i--)
             {
-                case CanvasAction.ActionType.Add:
-                    // Отменяем добавление - удаляем элемент
-                    if (HolstSoderzhanie.Children.Contains(action.Element))
-                    {
-                        HolstSoderzhanie.Children.Remove(action.Element);
-                    }
-                    break;
+                var child = HolstSoderzhanie.Children[i] as UIElement;
+                if (child == null) continue;
 
-                case CanvasAction.ActionType.Remove:
-                    // Отменяем удаление - возвращаем элемент
-                    if (!HolstSoderzhanie.Children.Contains(action.Element))
-                    {
-                        HolstSoderzhanie.Children.Add(action.Element);
-                        Canvas.SetLeft(action.Element, action.NewLeft);
-                        Canvas.SetTop(action.Element, action.NewTop);
-                        Panel.SetZIndex(action.Element, action.NewZIndex);
-                        
-                        // Восстанавливаем размеры если это FrameworkElement
-                        if (action.Element is FrameworkElement fe && action.NewWidth > 0 && action.NewHeight > 0)
-                        {
-                            fe.Width = action.NewWidth;
-                            fe.Height = action.NewHeight;
-                        }
-                    }
-                    break;
+                // Пропускаем рамку и маркеры
+                if (ramkaVydeleniya != null && ReferenceEquals(child, ramkaVydeleniya)) continue;
+                if (markeriMashtaba != null && child is Border marker && markeriMashtaba.Contains(marker)) continue;
+                if (markeriIzgiba != null && child is Border markerIzgiba && markeriIzgiba.Contains(markerIzgiba)) continue;
+                if (aktivnyTextovyEditor != null && ReferenceEquals(child, aktivnyTextovyEditor)) continue;
 
-                case CanvasAction.ActionType.Modify:
-                    // Отменяем изменение - восстанавливаем предыдущее состояние
-                    if (HolstSoderzhanie.Children.Contains(action.Element))
-                    {
-                        Canvas.SetLeft(action.Element, action.PrevLeft);
-                        Canvas.SetTop(action.Element, action.PrevTop);
-                        Panel.SetZIndex(action.Element, action.PrevZIndex);
-                        
-                        // Восстанавливаем размеры
-                        if (action.Element is FrameworkElement fe && action.PrevWidth > 0 && action.PrevHeight > 0)
-                        {
-                            fe.Width = action.PrevWidth;
-                            fe.Height = action.PrevHeight;
-                        }
-                        else if (action.Element is Line line)
-                        {
-                            // Для линий восстанавливаем координаты
-                            if (originalnyeKoordinatyLinij.ContainsKey(line))
-                            {
-                                var coords = originalnyeKoordinatyLinij[line];
-                                line.X1 = coords.X1;
-                                line.Y1 = coords.Y1;
-                                line.X2 = coords.X2;
-                                line.Y2 = coords.Y2;
-                            }
-                        }
-                    }
-                    break;
-
-                case CanvasAction.ActionType.ChangeThickness:
-                    // Отменяем изменение толщины - восстанавливаем предыдущую толщину
-                    if (action.PrevThicknesses != null)
-                    {
-                        // Групповое изменение толщины
-                        foreach (var kvp in action.PrevThicknesses)
-                        {
-                            if (kvp.Key is Shape shape)
-                            {
-                                shape.StrokeThickness = kvp.Value;
-                                if (originalnyeTolschiny.ContainsKey(kvp.Key))
-                                {
-                                    originalnyeTolschiny[kvp.Key] = kvp.Value;
-                                }
-                            }
-                        }
-                    }
-                    else if (action.Element is Shape shape)
-                    {
-                        // Одиночное изменение толщины (для обратной совместимости)
-                        shape.StrokeThickness = action.PrevThickness;
-                        if (originalnyeTolschiny.ContainsKey(action.Element))
-                        {
-                            originalnyeTolschiny[action.Element] = action.PrevThickness;
-                        }
-                    }
-                    break;
+                element = child;
+                break;
             }
 
-            vozvratStack.Push(action);
-            ObnovitSostoyanieUndoRedo();
-            MarkDocumentDirty();
+            if (element == null) return;
+
+            UIElement originalElement = null;
+            if (informaciyaZamen.TryGetValue(element, out var original))
+            {
+                originalElement = original;
+            }
+
+            var elementZIndex = Panel.GetZIndex(element);
+
+            UdalitElementSHolsta(element);
+
+            if (originalElement != null)
+            {
+                if (!HolstSoderzhanie.Children.Contains(originalElement))
+                {
+                    HolstSoderzhanie.Children.Add(originalElement);
+                    Panel.SetZIndex(originalElement, elementZIndex);
+                }
+                vybranniyElement = originalElement;
+                PokazatRamuMashtabirovaniya(originalElement);
+            }
         }
 
         /// <summary>
@@ -2762,16 +2522,14 @@ namespace UseCaseApplication
                 ZavershitRedaktirovanieTeksta(false);
             }
 
-            if (registrirovatUndo)
-            {
-                ZapisatDeystvieUndo(CanvasAction.ActionType.Remove, element);
-            }
-
             HolstSoderzhanie.Children.Remove(element);
 
             if (registrirovatUndo)
             {
+                otmenaStack.Push(element);
+                vozvratStack.Clear();
                 MarkDocumentDirty();
+                ObnovitSostoyanieUndoRedo();
             }
         }
 
@@ -2822,92 +2580,28 @@ namespace UseCaseApplication
 
         private void Vozvrat_Click(object sender, RoutedEventArgs e)
         {
-            if (vozvratStack.Count == 0) return;
-            if (HolstSoderzhanie == null) return;
+            if (otmenaStack.Count == 0) return;
+            var element = otmenaStack.Pop();
 
-            var action = vozvratStack.Pop();
-            
-            // Скрываем рамки и маркеры
-            SkrytRamuMashtabirovaniya();
-            SnytVydelenie();
+             if (informaciyaZamen.TryGetValue(element, out var original) && original != null)
+             {
+                 if (HolstSoderzhanie.Children.Contains(original))
+                 {
+                     HolstSoderzhanie.Children.Remove(original);
+                 }
+             }
 
-            switch (action.Type)
+            HolstSoderzhanie.Children.Add(element);
+            vozvratStack.Push(element);
+
+            // Если это был выбранный элемент, обновляем рамку и маркеры
+            if (vybranniyElement == element || (vybranniyElement == null && vybranniyeElementy.Contains(element)))
             {
-                case CanvasAction.ActionType.Add:
-                    // Повторяем добавление - возвращаем элемент
-                    if (!HolstSoderzhanie.Children.Contains(action.Element))
-                    {
-                        HolstSoderzhanie.Children.Add(action.Element);
-                        Canvas.SetLeft(action.Element, action.NewLeft);
-                        Canvas.SetTop(action.Element, action.NewTop);
-                        Panel.SetZIndex(action.Element, action.NewZIndex);
-                        
-                        // Восстанавливаем размеры если это FrameworkElement
-                        if (action.Element is FrameworkElement fe && action.NewWidth > 0 && action.NewHeight > 0)
-                        {
-                            fe.Width = action.NewWidth;
-                            fe.Height = action.NewHeight;
-                        }
-                    }
-                    break;
-
-                case CanvasAction.ActionType.Remove:
-                    // Повторяем удаление - удаляем элемент
-                    if (HolstSoderzhanie.Children.Contains(action.Element))
-                    {
-                        HolstSoderzhanie.Children.Remove(action.Element);
-                    }
-                    break;
-
-                case CanvasAction.ActionType.Modify:
-                    // Повторяем изменение - применяем новое состояние
-                    if (HolstSoderzhanie.Children.Contains(action.Element))
-                    {
-                        Canvas.SetLeft(action.Element, action.NewLeft);
-                        Canvas.SetTop(action.Element, action.NewTop);
-                        Panel.SetZIndex(action.Element, action.NewZIndex);
-                        
-                        // Восстанавливаем размеры
-                        if (action.Element is FrameworkElement fe && action.NewWidth > 0 && action.NewHeight > 0)
-                        {
-                            fe.Width = action.NewWidth;
-                            fe.Height = action.NewHeight;
-                        }
-                    }
-                    break;
-
-                case CanvasAction.ActionType.ChangeThickness:
-                    // Повторяем изменение толщины - применяем новую толщину
-                    if (action.NewThicknesses != null)
-                    {
-                        // Групповое изменение толщины
-                        foreach (var kvp in action.NewThicknesses)
-                        {
-                            if (kvp.Key is Shape shape)
-                            {
-                                shape.StrokeThickness = kvp.Value;
-                                if (originalnyeTolschiny.ContainsKey(kvp.Key))
-                                {
-                                    originalnyeTolschiny[kvp.Key] = kvp.Value;
-                                }
-                            }
-                        }
-                    }
-                    else if (action.Element is Shape shape)
-                    {
-                        // Одиночное изменение толщины (для обратной совместимости)
-                        shape.StrokeThickness = action.NewThickness;
-                        if (originalnyeTolschiny.ContainsKey(action.Element))
-                        {
-                            originalnyeTolschiny[action.Element] = action.NewThickness;
-                        }
-                    }
-                    break;
+                vybranniyElement = element;
+                PokazatRamuMashtabirovaniya(element);
             }
-
-            otmenaStack.Push(action);
-            ObnovitSostoyanieUndoRedo();
             MarkDocumentDirty();
+            ObnovitSostoyanieUndoRedo();
         }
 
         private void DobavitNaHolst(UIElement element, bool otslezhivatIzmeneniya = true, bool nachatRedaktirovanieTeksta = false)
@@ -2920,12 +2614,7 @@ namespace UseCaseApplication
             }
 
             HolstSoderzhanie.Children.Add(element);
-            
-            // Записываем действие добавления в историю
-            if (otslezhivatIzmeneniya)
-            {
-                ZapisatDeystvieUndo(CanvasAction.ActionType.Add, element);
-            }
+            vozvratStack.Clear();
 
             if (YavlyaetsyaTekstovymKontainerom(element))
             {
@@ -2966,6 +2655,8 @@ namespace UseCaseApplication
             {
                 MarkDocumentDirty();
             }
+
+            ObnovitSostoyanieUndoRedo();
         }
 
         private bool EtoPolzovatelskogoTekstaLegacy(TextBlock textBlock)
@@ -3412,10 +3103,6 @@ namespace UseCaseApplication
             container.Child = textBlock;
             container.MouseLeftButtonDown += TekstovyyKontainer_MouseLeftButtonDown;
             container.ContextMenu = SozdatKontekstnoyeMenyu();
-            
-            // Применяем компенсирующий масштаб к новому текстовому элементу
-            PrimeniKompensiruyushchiyMashtabKTextu(textBlock);
-            
             return container;
         }
 
@@ -3621,20 +3308,6 @@ namespace UseCaseApplication
                 return;
             }
 
-            // Проверяем, находится ли текст внутри пользовательского контейнера
-            var container = PoluchitKontainerTeksta(textBlock);
-            if (container != null)
-            {
-                // Для текста в контейнерах НЕ применяем компенсирующий масштаб
-                // Контейнер сам масштабируется вместе с холстом, текст остается неизменным
-                if (textBlock.RenderTransform != null && textBlock.RenderTransform != Transform.Identity)
-                {
-                    textBlock.RenderTransform = Transform.Identity;
-                }
-                return;
-            }
-
-            // Для обычного текста (не в контейнерах) применяем компенсацию
             var faktor = tekushiyMashtab <= 0 ? 1.0 : 1.0 / tekushiyMashtab;
             if (textBlock.RenderTransform is ScaleTransform scale)
             {
@@ -4075,23 +3748,10 @@ namespace UseCaseApplication
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            // Проверяем, открыто ли меню "Файл"
-            if (FileButton?.ContextMenu != null && FileButton.ContextMenu.IsOpen)
-            {
-                // Если меню "Файл" открыто, не позволяем открыть "Помощь"
-                return;
-            }
-
             if (MainTabControl == null) return;
 
             if (MainTabControl.Items.Count > 0)
             {
-                // Закрываем меню "Файл", если оно открыто
-                if (FileButton?.ContextMenu != null && FileButton.ContextMenu.IsOpen)
-                {
-                    FileButton.ContextMenu.IsOpen = false;
-                }
-
                 MainTabControl.SelectedItem = MainTabControl.Items[0];
                 if (MainTabControl != null)
                 {
@@ -4269,12 +3929,6 @@ namespace UseCaseApplication
 
             helpTab.Content = helpContainer;
 
-            // Закрываем меню "Файл", если оно открыто
-            if (FileButton?.ContextMenu != null && FileButton.ContextMenu.IsOpen)
-            {
-                FileButton.ContextMenu.IsOpen = false;
-            }
-
             MainTabControl.Items.Add(helpTab);
             MainTabControl.SelectedItem = helpTab;
             if (MainTabControl != null)
@@ -4381,56 +4035,14 @@ namespace UseCaseApplication
             var button = sender as Button;
             if (button?.ContextMenu != null)
             {
-                // Проверяем, открыта ли вкладка "Помощь"
-                if (MainTabControl != null && MainTabControl.Items.Count > 0 && MainTabControl.Visibility == Visibility.Visible)
-                {
-                    // Если вкладка "Помощь" открыта, не позволяем открыть меню "Файл"
-                    return;
-                }
-
-                // Используем Dispatcher для корректной проверки состояния меню
-                Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    // Переключаем состояние меню
-                    if (button.ContextMenu.IsOpen)
-                    {
-                        // Если меню открыто, закрываем его
-                        button.ContextMenu.IsOpen = false;
-                    }
-                    else
-                    {
-                        // Открываем меню
-                        button.ContextMenu.PlacementTarget = button;
-                        button.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
-                        button.ContextMenu.IsOpen = true;
-                    }
-                }), System.Windows.Threading.DispatcherPriority.Background);
+                button.ContextMenu.PlacementTarget = button;
+                button.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+                button.ContextMenu.IsOpen = true;
             }
         }
 
         private void FileContextMenu_Opened(object sender, RoutedEventArgs e)
         {
-            // Закрываем вкладку "Помощь", если она открыта
-            if (MainTabControl != null && MainTabControl.Items.Count > 0)
-            {
-                MainTabControl.Items.Clear();
-                MainTabControl.Visibility = Visibility.Collapsed;
-                if (CanvasContent != null)
-                {
-                    CanvasContent.Visibility = Visibility.Visible;
-                }
-                var leftPanel = FindName("LeftPanel") as Border;
-                if (leftPanel != null)
-                {
-                    leftPanel.Visibility = Visibility.Visible;
-                }
-                if (HelpButton != null)
-                {
-                    HelpButton.Background = Brushes.Transparent;
-                    HelpButton.Foreground = Brushes.White;
-                }
-            }
-
             ApplyBlurToWindow();
             if (FileButton != null)
             {
@@ -5633,55 +5245,6 @@ namespace UseCaseApplication
                 prikreplennyeStrelki[strelkaElement] = current;
         }
 
-        private void RasshiritHolstPriMashtabirovanii(Point pozitsiyaKursora)
-        {
-            if (PoleDlyaRisovaniya == null || HolstSoderzhanie == null)
-                return;
-
-            // Получаем текущие размеры холста
-            double currentWidth = PoleDlyaRisovaniya.Width;
-            double currentHeight = PoleDlyaRisovaniya.Height;
-
-            if (double.IsNaN(currentWidth) || currentWidth < MinCanvasWidth)
-                currentWidth = MinCanvasWidth;
-            if (double.IsNaN(currentHeight) || currentHeight < MinCanvasHeight)
-                currentHeight = MinCanvasHeight;
-
-            // Порог для расширения (когда курсор ближе к краю на это расстояние)
-            const double expansionThreshold = 50;
-            bool changed = false;
-
-            // Проверяем, приближается ли курсор к правой границе
-            if (pozitsiyaKursora.X > currentWidth - expansionThreshold)
-            {
-                currentWidth = pozitsiyaKursora.X + CanvasExpandMargin;
-                changed = true;
-            }
-
-            // Проверяем, приближается ли курсор к нижней границе
-            if (pozitsiyaKursora.Y > currentHeight - expansionThreshold)
-            {
-                currentHeight = pozitsiyaKursora.Y + CanvasExpandMargin;
-                changed = true;
-            }
-
-            // Применяем новые размеры только для расширения вправо и вниз
-            if (changed)
-            {
-                PoleDlyaRisovaniya.Width = Math.Max(currentWidth, MinCanvasWidth);
-                PoleDlyaRisovaniya.Height = Math.Max(currentHeight, MinCanvasHeight);
-                HolstSoderzhanie.Width = Math.Max(currentWidth, MinCanvasWidth);
-                HolstSoderzhanie.Height = Math.Max(currentHeight, MinCanvasHeight);
-
-                // Обновляем сетку, если она есть
-                if (FonSetki != null)
-                {
-                    FonSetki.Width = PoleDlyaRisovaniya.Width;
-                    FonSetki.Height = PoleDlyaRisovaniya.Height;
-                }
-            }
-        }
-
         private void RasshiritHolstEsliNeobhodimo(UIElement element)
         {
             if (element == null || PoleDlyaRisovaniya == null || HolstSoderzhanie == null)
@@ -5705,43 +5268,7 @@ namespace UseCaseApplication
             double requiredWidth = bounds.Right + CanvasExpandMargin;
             double requiredHeight = bounds.Bottom + CanvasExpandMargin;
 
-            // Проверяем, не выходит ли элемент за левую или верхнюю границу
-            double offsetX = 0;
-            double offsetY = 0;
-
-            if (bounds.Left < 0)
-            {
-                offsetX = -bounds.Left + CanvasExpandMargin;
-            }
-
-            if (bounds.Top < 0)
-            {
-                offsetY = -bounds.Top + CanvasExpandMargin;
-            }
-
-            // Если нужно сдвинуть все элементы
-            if (offsetX > 0 || offsetY > 0)
-            {
-                // Сдвигаем все элементы на холсте
-                foreach (UIElement child in HolstSoderzhanie.Children)
-                {
-                    double left = Canvas.GetLeft(child);
-                    double top = Canvas.GetTop(child);
-                    if (double.IsNaN(left)) left = 0;
-                    if (double.IsNaN(top)) top = 0;
-
-                    Canvas.SetLeft(child, left + offsetX);
-                    Canvas.SetTop(child, top + offsetY);
-                }
-
-                // Увеличиваем размер холста
-                currentWidth += offsetX;
-                currentHeight += offsetY;
-                requiredWidth += offsetX;
-                requiredHeight += offsetY;
-            }
-
-            // Расширяем холст вправо и вниз, если нужно
+            // Расширяем холст, если нужно
             bool changed = false;
             if (requiredWidth > currentWidth)
             {
@@ -5756,7 +5283,7 @@ namespace UseCaseApplication
             }
 
             // Применяем новые размеры
-            if (changed || offsetX > 0 || offsetY > 0)
+            if (changed)
             {
                 PoleDlyaRisovaniya.Width = currentWidth;
                 PoleDlyaRisovaniya.Height = currentHeight;
