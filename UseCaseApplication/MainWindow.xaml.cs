@@ -62,6 +62,7 @@ namespace UseCaseApplication
         private bool peremeshayuHolst;
         private Point nachaloPeremesheniyaHolsta;
         private bool peremeshayuHolstSredneyKnopkoy;
+        private bool obnovlyayuScrollBary; // Флаг для предотвращения циклических обновлений
 
         // Переменные для масштабирования
         private Border ramkaVydeleniya;
@@ -120,6 +121,19 @@ namespace UseCaseApplication
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             NastroitSetku();
+            InitsializirovatScrollBary();
+        }
+
+        private void InitsializirovatScrollBary()
+        {
+            // Инициализируем скроллбары и синхронизируем с TransformSdviga
+            if (VerticalScrollBar != null && HorizontalScrollBar != null && TransformSdviga != null)
+            {
+                obnovlyayuScrollBary = true;
+                VerticalScrollBar.Value = -TransformSdviga.Y;
+                HorizontalScrollBar.Value = -TransformSdviga.X;
+                obnovlyayuScrollBary = false;
+            }
         }
 
         private void ZagolovokOkna_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -2308,6 +2322,9 @@ namespace UseCaseApplication
                         setkaTranslateTransform.Y += deltaY;
                     }
 
+                    // Обновляем скроллбары при перемещении холста
+                    ObnovitScrollBary();
+
                     nachaloPeremesheniyaHolsta = tekushayaPoz;
                 }
                 else
@@ -2494,7 +2511,45 @@ namespace UseCaseApplication
                 }
             }
             
+            // Обновляем скроллбары при прокрутке колесом
+            ObnovitScrollBary();
+            
             e.Handled = true;
+        }
+
+        private void VerticalScrollBar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (!obnovlyayuScrollBary && TransformSdviga != null)
+            {
+                TransformSdviga.Y = -e.NewValue;
+                if (setkaTranslateTransform != null)
+                {
+                    setkaTranslateTransform.Y = -e.NewValue;
+                }
+            }
+        }
+
+        private void HorizontalScrollBar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (!obnovlyayuScrollBary && TransformSdviga != null)
+            {
+                TransformSdviga.X = -e.NewValue;
+                if (setkaTranslateTransform != null)
+                {
+                    setkaTranslateTransform.X = -e.NewValue;
+                }
+            }
+        }
+
+        private void ObnovitScrollBary()
+        {
+            if (VerticalScrollBar != null && HorizontalScrollBar != null && TransformSdviga != null)
+            {
+                obnovlyayuScrollBary = true;
+                VerticalScrollBar.Value = -TransformSdviga.Y;
+                HorizontalScrollBar.Value = -TransformSdviga.X;
+                obnovlyayuScrollBary = false;
+            }
         }
 
         private void PoleDlyaRisovaniya_PreviewMouseDown(object sender, MouseButtonEventArgs e)
@@ -4492,6 +4547,7 @@ namespace UseCaseApplication
             {
                 TransformSdviga.X = diagram.OffsetX;
                 TransformSdviga.Y = diagram.OffsetY;
+                ObnovitScrollBary();
             }
             if (setkaTranslateTransform != null)
             {
@@ -4540,6 +4596,7 @@ namespace UseCaseApplication
                 {
                     TransformSdviga.X = 0;
                     TransformSdviga.Y = 0;
+                    ObnovitScrollBary();
                 }
                 if (setkaTranslateTransform != null)
                 {
