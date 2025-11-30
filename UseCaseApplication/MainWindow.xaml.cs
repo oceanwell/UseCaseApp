@@ -133,6 +133,7 @@ namespace UseCaseApplication
             if (VerticalScrollBar != null && HorizontalScrollBar != null && TransformSdviga != null)
             {
                 obnovlyayuScrollBary = true;
+                // Инвертируем: TransformSdviga.Y положительный = контент сдвинут вниз = мы видим верхнюю часть = скроллбар должен быть вверху (меньшее значение)
                 VerticalScrollBar.Value = -TransformSdviga.Y;
                 HorizontalScrollBar.Value = -TransformSdviga.X;
                 obnovlyayuScrollBary = false;
@@ -2528,7 +2529,9 @@ namespace UseCaseApplication
             // Прокрутка колесом мыши - перемещаем холст
             // При зажатом Shift - горизонтальная прокрутка, иначе - вертикальная
             double scrollSpeed = 20.0;
-            double delta = e.Delta > 0 ? -scrollSpeed : scrollSpeed;
+            // e.Delta > 0 означает прокрутку вверх (к пользователю), контент должен уходить вниз (TransformSdviga.Y увеличивается)
+            // В WPF TranslateTransform: положительный Y сдвигает контент вниз (мы видим верхнюю часть), отрицательный - вверх
+            double delta = e.Delta > 0 ? scrollSpeed : -scrollSpeed;
             
             bool isShiftPressed = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
             
@@ -2569,6 +2572,10 @@ namespace UseCaseApplication
         {
             if (!obnovlyayuScrollBary && TransformSdviga != null)
             {
+                // Инвертируем: когда пользователь двигает скроллбар вверх (уменьшает значение),
+                // мы хотим видеть верхнюю часть контента, для этого нужно сдвинуть контент вниз
+                // (TransformSdviga.Y должен быть положительным)
+                // В WPF TranslateTransform: положительный Y сдвигает контент вниз (мы видим верхнюю часть)
                 TransformSdviga.Y = -e.NewValue;
                 if (setkaTranslateTransform != null)
                 {
@@ -2581,6 +2588,9 @@ namespace UseCaseApplication
         {
             if (!obnovlyayuScrollBary && TransformSdviga != null)
             {
+                // Инвертируем: когда пользователь двигает скроллбар влево (уменьшает значение),
+                // мы хотим видеть левую часть контента, для этого нужно сдвинуть контент вправо
+                // (TransformSdviga.X должен быть положительным)
                 TransformSdviga.X = -e.NewValue;
                 if (setkaTranslateTransform != null)
                 {
@@ -2594,6 +2604,7 @@ namespace UseCaseApplication
             if (VerticalScrollBar != null && HorizontalScrollBar != null && TransformSdviga != null)
             {
                 obnovlyayuScrollBary = true;
+                // Инвертируем: TransformSdviga.Y положительный = контент сдвинут вниз = мы видим верхнюю часть = скроллбар должен быть вверху (меньшее значение)
                 VerticalScrollBar.Value = -TransformSdviga.Y;
                 HorizontalScrollBar.Value = -TransformSdviga.X;
                 obnovlyayuScrollBary = false;
