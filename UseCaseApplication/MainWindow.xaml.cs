@@ -21,6 +21,7 @@ using System.Windows.Media.Effects;
 using System.Windows.Media.Animation;
 using System.Windows.Markup;
 using Microsoft.Win32;
+using Forms = System.Windows.Forms;
 using ShapesPath = System.Windows.Shapes.Path;
 
 namespace UseCaseApplication
@@ -60,6 +61,7 @@ namespace UseCaseApplication
 
         private bool peremeshayuHolst;
         private Point nachaloPeremesheniyaHolsta;
+        private bool peremeshayuHolstSredneyKnopkoy;
 
         // Переменные для масштабирования
         private Border ramkaVydeleniya;
@@ -1755,8 +1757,8 @@ namespace UseCaseApplication
             originalniyRazmer = new Rect(realLeft, realTop, currentBounds.Width, currentBounds.Height);
             originalnayaPozitsiya = new Point(realLeft, realTop);
 
-            // Захватываем мышь на Canvas, чтобы события продолжали обрабатываться даже если курсор покинет маркер
-            Mouse.Capture(PoleDlyaRisovaniya);
+            // Захватываем мышь на окне, чтобы события продолжали обрабатываться даже если курсор выйдет за границы
+            Mouse.Capture(this);
             e.Handled = true;
         }
 
@@ -2142,7 +2144,54 @@ namespace UseCaseApplication
             {
                 if (e.LeftButton == MouseButtonState.Pressed)
                 {
-                    var tekushayaPoz = e.GetPosition(HolstSoderzhanie);
+                    // Получаем позицию мыши относительно холста
+                    // Используем координаты экрана для надежного получения позиции даже когда курсор вне границ
+                    Point tekushayaPoz;
+                    
+                    // Получаем координаты мыши относительно экрана
+                    var screenPos = new System.Windows.Point();
+                    screenPos.X = Forms.Cursor.Position.X;
+                    screenPos.Y = Forms.Cursor.Position.Y;
+                    
+                    // Преобразуем координаты экрана в координаты окна
+                    var windowPos = this.PointFromScreen(screenPos);
+                    
+                    // Преобразуем координаты окна в координаты HolstSoderzhanie
+                    // Используем TransformToVisual для правильного учета всех трансформаций
+                    var transform = HolstSoderzhanie.TransformToVisual(this);
+                    if (transform != null)
+                    {
+                        var inverseTransform = transform.Inverse;
+                        if (inverseTransform != null)
+                        {
+                            tekushayaPoz = inverseTransform.Transform(windowPos);
+                        }
+                        else
+                        {
+                            // Если обратное преобразование недоступно, вычисляем вручную
+                            var holstOrigin = transform.Transform(new Point(0, 0));
+                            // Учитываем масштаб и смещение холста
+                            if (TransformMashtaba != null && TransformSdviga != null)
+                            {
+                                var relativeX = windowPos.X - holstOrigin.X;
+                                var relativeY = windowPos.Y - holstOrigin.Y;
+                                tekushayaPoz = new Point(
+                                    (relativeX - TransformSdviga.X) / TransformMashtaba.ScaleX,
+                                    (relativeY - TransformSdviga.Y) / TransformMashtaba.ScaleY
+                                );
+                            }
+                            else
+                            {
+                                tekushayaPoz = new Point(windowPos.X - holstOrigin.X, windowPos.Y - holstOrigin.Y);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Если преобразование недоступно, используем прямой способ
+                        tekushayaPoz = Mouse.GetPosition(HolstSoderzhanie);
+                    }
+                    
                     var deltaX = tekushayaPoz.X - tochkaNachalaMashtabirovaniya.X;
                     var deltaY = tekushayaPoz.Y - tochkaNachalaMashtabirovaniya.Y;
 
@@ -2237,9 +2286,12 @@ namespace UseCaseApplication
                 return;
             }
 
-            if (peremeshayuHolst)
+            if (peremeshayuHolst || peremeshayuHolstSredneyKnopkoy)
             {
-                if (e.LeftButton == MouseButtonState.Pressed)
+                bool isLeftButton = e.LeftButton == MouseButtonState.Pressed;
+                bool isMiddleButton = e.MiddleButton == MouseButtonState.Pressed;
+                
+                if (isLeftButton || isMiddleButton)
                 {
                     var tekushayaPoz = e.GetPosition(this);
                     var deltaX = tekushayaPoz.X - nachaloPeremesheniyaHolsta.X;
@@ -2261,6 +2313,7 @@ namespace UseCaseApplication
                 else
                 {
                     peremeshayuHolst = false;
+                    peremeshayuHolstSredneyKnopkoy = false;
                     Mouse.Capture(null);
                     PoleDlyaRisovaniya.Cursor = Cursors.Arrow;
                 }
@@ -2297,6 +2350,16 @@ namespace UseCaseApplication
             }
         }
 
+        private void MainWindow_MouseMove(object sender, MouseEventArgs e)
+        {
+            // Когда мышь захвачена и идет масштабирование, обрабатываем события даже когда курсор вне границ
+            if (mashtabiruyuElement && aktivniyMarker != null && elementDlyaMashtabirovaniya != null)
+            {
+                // Вызываем ту же логику, что и в PoleDlyaRisovaniya_MouseMove
+                PoleDlyaRisovaniya_MouseMove(sender, e);
+            }
+        }
+
         private void PoleDlyaRisovaniya_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (mashtabiruyuElement)
@@ -2323,6 +2386,13 @@ namespace UseCaseApplication
             if (peremeshayuHolst)
             {
                 peremeshayuHolst = false;
+                Mouse.Capture(null);
+                PoleDlyaRisovaniya.Cursor = Cursors.Arrow;
+            }
+
+            if (peremeshayuHolstSredneyKnopkoy)
+            {
+                peremeshayuHolstSredneyKnopkoy = false;
                 Mouse.Capture(null);
                 PoleDlyaRisovaniya.Cursor = Cursors.Arrow;
             }
@@ -2385,6 +2455,71 @@ namespace UseCaseApplication
             else
             {
                 proiskhodiloPeremeshenieElementa = false;
+            }
+        }
+
+        private void PoleDlyaRisovaniya_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // Прокрутка колесом мыши - перемещаем холст
+            // При зажатом Shift - горизонтальная прокрутка, иначе - вертикальная
+            double scrollSpeed = 20.0;
+            double delta = e.Delta > 0 ? -scrollSpeed : scrollSpeed;
+            
+            bool isShiftPressed = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+            
+            if (TransformSdviga != null)
+            {
+                if (isShiftPressed)
+                {
+                    // Горизонтальная прокрутка
+                    TransformSdviga.X += delta;
+                }
+                else
+                {
+                    // Вертикальная прокрутка
+                    TransformSdviga.Y += delta;
+                }
+            }
+            if (setkaTranslateTransform != null)
+            {
+                if (isShiftPressed)
+                {
+                    // Горизонтальная прокрутка
+                    setkaTranslateTransform.X += delta;
+                }
+                else
+                {
+                    // Вертикальная прокрутка
+                    setkaTranslateTransform.Y += delta;
+                }
+            }
+            
+            e.Handled = true;
+        }
+
+        private void PoleDlyaRisovaniya_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            // Обрабатываем нажатие средней кнопки мыши для начала перемещения холста
+            if (e.ChangedButton == MouseButton.Middle)
+            {
+                SnytVydelenie();
+                peremeshayuHolstSredneyKnopkoy = true;
+                nachaloPeremesheniyaHolsta = e.GetPosition(this);
+                Mouse.Capture(PoleDlyaRisovaniya);
+                PoleDlyaRisovaniya.Cursor = Cursors.Hand;
+                e.Handled = true;
+            }
+        }
+
+        private void PoleDlyaRisovaniya_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            // Обрабатываем отпускание средней кнопки мыши для окончания перемещения холста
+            if (e.ChangedButton == MouseButton.Middle && peremeshayuHolstSredneyKnopkoy)
+            {
+                peremeshayuHolstSredneyKnopkoy = false;
+                Mouse.Capture(null);
+                PoleDlyaRisovaniya.Cursor = Cursors.Arrow;
+                e.Handled = true;
             }
         }
 

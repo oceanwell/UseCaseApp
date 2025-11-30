@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="UCA" Height="600" Width="900" MinHeight="450" MinWidth="800"
         WindowStyle="None" AllowsTransparency="True" ResizeMode="CanResize" Background="Transparent"
-        FontFamily="Inter">
+        FontFamily="Inter" MouseMove="MainWindow_MouseMove">
     <Window.Resources>
         <Style x:Key="ToolButtonStyle" TargetType="Button">
             <Setter Property="Foreground" Value="White"/>
@@ -1019,6 +1019,9 @@
                                             MouseLeftButtonDown="PoleDlyaRisovaniya_MouseLeftButtonDown" 
                                             MouseMove="PoleDlyaRisovaniya_MouseMove" 
                                             MouseLeftButtonUp="PoleDlyaRisovaniya_MouseLeftButtonUp"
+                                            MouseWheel="PoleDlyaRisovaniya_MouseWheel"
+                                            PreviewMouseDown="PoleDlyaRisovaniya_PreviewMouseDown"
+                                            PreviewMouseUp="PoleDlyaRisovaniya_PreviewMouseUp"
                                             Drop="PoleDlyaRisovaniya_Drop"
                                             DragOver="PoleDlyaRisovaniya_DragOver" Grid.ColumnSpan="2">
                                         <Canvas x:Name="HolstSoderzhanie" Background="Transparent"
