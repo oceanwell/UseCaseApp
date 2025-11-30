@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UseCaseApplication"
         mc:Ignorable="d"
-        Title="UCA" Height="600" Width="900" MinHeight="450" MinWidth="800"
+        Title="UCA" Height="600" Width="900" MinHeight="450" MinWidth="800" MaxHeight="720" MaxWidth="1280"
         WindowStyle="None" AllowsTransparency="True" ResizeMode="CanResize" Background="Transparent"
-        FontFamily="Inter" MouseMove="MainWindow_MouseMove">
+        FontFamily="Inter" MouseMove="MainWindow_MouseMove" MouseLeftButtonUp="MainWindow_MouseLeftButtonUp">
     <Window.Resources>
         <Style x:Key="ToolButtonStyle" TargetType="Button">
             <Setter Property="Foreground" Value="White"/>
@@ -702,7 +702,8 @@
     </Window.Resources>
 
     <Border Background="#2b2b2b" CornerRadius="12" ClipToBounds="True" BorderBrush="#2b2b2b" BorderThickness="0">
-        <Grid x:Name="MainContentGrid">
+        <Grid>
+            <Grid x:Name="MainContentGrid">
         <Grid.RowDefinitions>
             <RowDefinition Height="32"/>
             <RowDefinition Height="*"/>
@@ -732,7 +733,6 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Style="{StaticResource WindowButtonStyle}" Content="—" Click="Svernyt_Click" FontSize="16"/>
-                    <Button Style="{StaticResource WindowButtonStyle}" Content="□" Click="Razvernut_Click" FontSize="14"/>
                     <Button Style="{StaticResource CloseButtonStyle}" Content="✕" Click="Zakryt_Click" FontSize="16"/>
                 </StackPanel>
             </Grid>
@@ -1208,6 +1208,41 @@
                 </TabControl>
             </Grid>
         </DockPanel>
+        </Grid>
+        
+        <!-- Элемент для изменения размера окна в нижнем правом углу -->
+        <Border x:Name="ResizeGrip" 
+                HorizontalAlignment="Right" 
+                VerticalAlignment="Bottom"
+                Width="20" 
+                Height="20"
+                Background="Transparent"
+                Cursor="SizeNWSE"
+                Panel.ZIndex="100"
+                IsHitTestVisible="True"
+                MouseLeftButtonDown="ResizeGrip_MouseLeftButtonDown"
+                MouseMove="ResizeGrip_MouseMove"
+                MouseLeftButtonUp="ResizeGrip_MouseLeftButtonUp"
+                Margin="0,0,2,2">
+            <Ellipse Width="8" 
+                     Height="8" 
+                     Fill="White" 
+                     Opacity="0.7"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center">
+                <Ellipse.Style>
+                    <Style TargetType="Ellipse">
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="1.0"/>
+                                <Setter Property="Width" Value="10"/>
+                                <Setter Property="Height" Value="10"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Ellipse.Style>
+            </Ellipse>
+        </Border>
         </Grid>
     </Border>
 </Window>

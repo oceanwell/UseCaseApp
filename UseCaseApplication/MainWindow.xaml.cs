@@ -63,6 +63,9 @@ namespace UseCaseApplication
         private Point nachaloPeremesheniyaHolsta;
         private bool peremeshayuHolstSredneyKnopkoy;
         private bool obnovlyayuScrollBary; // Флаг для предотвращения циклических обновлений
+        private bool izmenyayuRazmerOkna;
+        private System.Drawing.Point nachaloIzmeneniyaRazmera; // Используем System.Drawing.Point для координат экрана
+        private Size nachalnyyRazmerOkna;
 
         // Переменные для масштабирования
         private Border ramkaVydeleniya;
@@ -138,11 +141,9 @@ namespace UseCaseApplication
 
         private void ZagolovokOkna_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ClickCount == 2)
-            {
-                WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
-            }
-            else
+            // Убираем двойной клик для разворачивания, чтобы не мешало масштабированию
+            // Оставляем только перемещение окна
+            if (e.ClickCount == 1)
             {
                 DragMove();
             }
@@ -2369,11 +2370,58 @@ namespace UseCaseApplication
 
         private void MainWindow_MouseMove(object sender, MouseEventArgs e)
         {
+            // Обрабатываем изменение размера окна
+            if (izmenyayuRazmerOkna && e.LeftButton == MouseButtonState.Pressed)
+            {
+                // Используем координаты экрана для точного расчета
+                var tekushayaPoz = Forms.Cursor.Position;
+                var deltaX = tekushayaPoz.X - nachaloIzmeneniyaRazmera.X;
+                var deltaY = tekushayaPoz.Y - nachaloIzmeneniyaRazmera.Y;
+
+                var newWidth = nachalnyyRazmerOkna.Width + deltaX;
+                var newHeight = nachalnyyRazmerOkna.Height + deltaY;
+
+                // Ограничиваем размер окна минимальными и максимальными значениями
+                newWidth = Math.Max(MinWidth, Math.Min(MaxWidth, newWidth));
+                newHeight = Math.Max(MinHeight, Math.Min(MaxHeight, newHeight));
+
+                // Обновляем размер только если он изменился
+                if (Math.Abs(this.Width - newWidth) > 0.1)
+                {
+                    this.Width = newWidth;
+                }
+                if (Math.Abs(this.Height - newHeight) > 0.1)
+                {
+                    this.Height = newHeight;
+                }
+
+                // Обновляем начальную позицию и размер, если достигли границ
+                // Это предотвращает накопление ошибок при достижении максимального размера
+                if (newWidth >= MaxWidth || newWidth <= MinWidth || 
+                    newHeight >= MaxHeight || newHeight <= MinHeight)
+                {
+                    nachaloIzmeneniyaRazmera = tekushayaPoz;
+                    nachalnyyRazmerOkna = new Size(this.Width, this.Height);
+                }
+                return;
+            }
+
             // Когда мышь захвачена и идет масштабирование, обрабатываем события даже когда курсор вне границ
             if (mashtabiruyuElement && aktivniyMarker != null && elementDlyaMashtabirovaniya != null)
             {
                 // Вызываем ту же логику, что и в PoleDlyaRisovaniya_MouseMove
                 PoleDlyaRisovaniya_MouseMove(sender, e);
+            }
+        }
+
+        private void MainWindow_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            // Освобождаем захват мыши при изменении размера, если кнопка была отпущена
+            if (izmenyayuRazmerOkna)
+            {
+                izmenyayuRazmerOkna = false;
+                Mouse.Capture(null);
+                e.Handled = true;
             }
         }
 
@@ -2549,6 +2597,62 @@ namespace UseCaseApplication
                 VerticalScrollBar.Value = -TransformSdviga.Y;
                 HorizontalScrollBar.Value = -TransformSdviga.X;
                 obnovlyayuScrollBary = false;
+            }
+        }
+
+        private void ResizeGrip_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            izmenyayuRazmerOkna = true;
+            nachaloIzmeneniyaRazmera = Forms.Cursor.Position;
+            nachalnyyRazmerOkna = new Size(this.ActualWidth, this.ActualHeight);
+            Mouse.Capture(this);
+            e.Handled = true;
+        }
+
+        private void ResizeGrip_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (izmenyayuRazmerOkna && e.LeftButton == MouseButtonState.Pressed)
+            {
+                // Используем координаты экрана для точного расчета
+                var tekushayaPoz = Forms.Cursor.Position;
+                var deltaX = tekushayaPoz.X - nachaloIzmeneniyaRazmera.X;
+                var deltaY = tekushayaPoz.Y - nachaloIzmeneniyaRazmera.Y;
+
+                var newWidth = nachalnyyRazmerOkna.Width + deltaX;
+                var newHeight = nachalnyyRazmerOkna.Height + deltaY;
+
+                // Ограничиваем размер окна минимальными и максимальными значениями
+                newWidth = Math.Max(MinWidth, Math.Min(MaxWidth, newWidth));
+                newHeight = Math.Max(MinHeight, Math.Min(MaxHeight, newHeight));
+
+                // Обновляем размер только если он изменился
+                if (Math.Abs(this.Width - newWidth) > 0.1)
+                {
+                    this.Width = newWidth;
+                }
+                if (Math.Abs(this.Height - newHeight) > 0.1)
+                {
+                    this.Height = newHeight;
+                }
+
+                // Обновляем начальную позицию и размер, если достигли границ
+                // Это предотвращает накопление ошибок при достижении максимального размера
+                if (newWidth >= MaxWidth || newWidth <= MinWidth || 
+                    newHeight >= MaxHeight || newHeight <= MinHeight)
+                {
+                    nachaloIzmeneniyaRazmera = tekushayaPoz;
+                    nachalnyyRazmerOkna = new Size(this.Width, this.Height);
+                }
+            }
+        }
+
+        private void ResizeGrip_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (izmenyayuRazmerOkna)
+            {
+                izmenyayuRazmerOkna = false;
+                Mouse.Capture(null);
+                e.Handled = true;
             }
         }
 
