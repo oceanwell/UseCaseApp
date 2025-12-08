@@ -28,9 +28,6 @@ namespace UseCaseApplication
 {
     public partial class MainWindow : Window
     {
-        private readonly Stack<UIElement> otmenaStack = new Stack<UIElement>();
-        private readonly Stack<UIElement> vozvratStack = new Stack<UIElement>();
-        private readonly Dictionary<UIElement, UIElement> informaciyaZamen = new Dictionary<UIElement, UIElement>();
         private const double standartnayaTolschinaLinii = 1.0;
         private const string TagPolzovatelskogoTeksta = "uca-user-text";
         private const double ShirinaAktoraPoUmolchaniyu = 60.0;
@@ -107,6 +104,11 @@ namespace UseCaseApplication
         private bool normalizuyuTekstRedaktora;
         private string posledniyKorrektnyyTekstRedaktora = string.Empty;
 
+        private readonly List<DiagramFile> istoriyaSnimkov = new List<DiagramFile>();
+        private int tekushiyIndeksIstorii = -1;
+        private bool vypolnyayuOtmenuIliPovtor;
+        private const int MaksimalnoeChisloSnimkov = 50;
+
 
         public MainWindow()
         {
@@ -125,6 +127,7 @@ namespace UseCaseApplication
         {
             NastroitSetku();
             InitsializirovatScrollBary();
+            SbrositIstoriyuNaTekuscheeSostoyanie();
         }
 
         private void InitsializirovatScrollBary()
@@ -138,6 +141,77 @@ namespace UseCaseApplication
                 HorizontalScrollBar.Value = -TransformSdviga.X;
                 obnovlyayuScrollBary = false;
             }
+        }
+
+        private void SbrositIstoriyuNaTekuscheeSostoyanie()
+        {
+            if (HolstSoderzhanie == null)
+            {
+                return;
+            }
+
+            var snapshot = PostroitSnimokDiagrammy();
+            istoriyaSnimkov.Clear();
+            istoriyaSnimkov.Add(snapshot);
+            tekushiyIndeksIstorii = istoriyaSnimkov.Count - 1;
+            ObnovitSostoyanieUndoRedo();
+        }
+
+        private bool MozhnoOtkatit()
+        {
+            return tekushiyIndeksIstorii > 0;
+        }
+
+        private bool MozhnoPovtorit()
+        {
+            return tekushiyIndeksIstorii >= 0 && tekushiyIndeksIstorii < istoriyaSnimkov.Count - 1;
+        }
+
+        private void ZafiksirovatSnimokIstorii()
+        {
+            if (blokirovatOtslezhivanieIzmeneniy || vypolnyayuOtmenuIliPovtor || HolstSoderzhanie == null)
+            {
+                return;
+            }
+
+            var snapshot = PostroitSnimokDiagrammy();
+
+            if (tekushiyIndeksIstorii >= 0 && tekushiyIndeksIstorii < istoriyaSnimkov.Count - 1)
+            {
+                istoriyaSnimkov.RemoveRange(tekushiyIndeksIstorii + 1, istoriyaSnimkov.Count - tekushiyIndeksIstorii - 1);
+            }
+
+            istoriyaSnimkov.Add(snapshot);
+
+            if (istoriyaSnimkov.Count > MaksimalnoeChisloSnimkov)
+            {
+                istoriyaSnimkov.RemoveAt(0);
+            }
+
+            tekushiyIndeksIstorii = istoriyaSnimkov.Count - 1;
+            ObnovitSostoyanieUndoRedo();
+        }
+
+        private void PrimeniSnimokIstorii(DiagramFile snapshot)
+        {
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            blokirovatOtslezhivanieIzmeneniy = true;
+            try
+            {
+                OchistitHolstCore();
+                PriminitDiagrammu(snapshot);
+            }
+            finally
+            {
+                blokirovatOtslezhivanieIzmeneniy = false;
+            }
+
+            estNesokhrannyeIzmeneniya = true;
+            ObnovitZagolovokOkna();
         }
 
         private void ZagolovokOkna_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -1669,12 +1743,12 @@ namespace UseCaseApplication
         {
             if (UndoButton != null)
             {
-                UndoButton.IsEnabled = EstElementDlyaUndo();
+                UndoButton.IsEnabled = MozhnoOtkatit();
             }
 
             if (RedoButton != null)
             {
-                RedoButton.IsEnabled = otmenaStack.Count > 0;
+                RedoButton.IsEnabled = MozhnoPovtorit();
             }
         }
 
@@ -2716,46 +2790,23 @@ namespace UseCaseApplication
 
         private void Otmena_Click(object sender, RoutedEventArgs e)
         {
-            if (HolstSoderzhanie == null || HolstSoderzhanie.Children.Count == 0) return;
-
-            // Ищем последний реальный элемент (не рамку и не маркеры)
-            UIElement element = null;
-            for (int i = HolstSoderzhanie.Children.Count - 1; i >= 0; i--)
+            if (!MozhnoOtkatit())
             {
-                var child = HolstSoderzhanie.Children[i] as UIElement;
-                if (child == null) continue;
-
-                // Пропускаем рамку и маркеры
-                if (ramkaVydeleniya != null && ReferenceEquals(child, ramkaVydeleniya)) continue;
-                if (markeriMashtaba != null && child is Border marker && markeriMashtaba.Contains(marker)) continue;
-                if (markeriIzgiba != null && child is Border markerIzgiba && markeriIzgiba.Contains(markerIzgiba)) continue;
-                if (aktivnyTextovyEditor != null && ReferenceEquals(child, aktivnyTextovyEditor)) continue;
-
-                element = child;
-                break;
+                return;
             }
 
-            if (element == null) return;
-
-            UIElement originalElement = null;
-            if (informaciyaZamen.TryGetValue(element, out var original))
+            vypolnyayuOtmenuIliPovtor = true;
+            try
             {
-                originalElement = original;
+                var targetIndex = tekushiyIndeksIstorii - 1;
+                var snapshot = istoriyaSnimkov[targetIndex];
+                PrimeniSnimokIstorii(snapshot);
+                tekushiyIndeksIstorii = targetIndex;
             }
-
-            var elementZIndex = Panel.GetZIndex(element);
-
-            UdalitElementSHolsta(element);
-
-            if (originalElement != null)
+            finally
             {
-                if (!HolstSoderzhanie.Children.Contains(originalElement))
-                {
-                    HolstSoderzhanie.Children.Add(originalElement);
-                    Panel.SetZIndex(originalElement, elementZIndex);
-                }
-                vybranniyElement = originalElement;
-                PokazatRamuMashtabirovaniya(originalElement);
+                vypolnyayuOtmenuIliPovtor = false;
+                ObnovitSostoyanieUndoRedo();
             }
         }
 
@@ -2784,8 +2835,6 @@ namespace UseCaseApplication
 
             if (registrirovatUndo)
             {
-                otmenaStack.Push(element);
-                vozvratStack.Clear();
                 MarkDocumentDirty();
                 ObnovitSostoyanieUndoRedo();
             }
@@ -2831,35 +2880,29 @@ namespace UseCaseApplication
 
             UdalitElementSHolsta(holstElement, registrirovatUndo: false);
             DobavitNaHolst(newElement);
-
-            informaciyaZamen[newElement] = holstElement;
             MarkDocumentDirty();
         }
 
         private void Vozvrat_Click(object sender, RoutedEventArgs e)
         {
-            if (otmenaStack.Count == 0) return;
-            var element = otmenaStack.Pop();
-
-             if (informaciyaZamen.TryGetValue(element, out var original) && original != null)
-             {
-                 if (HolstSoderzhanie.Children.Contains(original))
-                 {
-                     HolstSoderzhanie.Children.Remove(original);
-                 }
-             }
-
-            HolstSoderzhanie.Children.Add(element);
-            vozvratStack.Push(element);
-
-            // Если это был выбранный элемент, обновляем рамку и маркеры
-            if (vybranniyElement == element || (vybranniyElement == null && vybranniyeElementy.Contains(element)))
+            if (!MozhnoPovtorit())
             {
-                vybranniyElement = element;
-                PokazatRamuMashtabirovaniya(element);
+                return;
             }
-            MarkDocumentDirty();
-            ObnovitSostoyanieUndoRedo();
+
+            vypolnyayuOtmenuIliPovtor = true;
+            try
+            {
+                var targetIndex = tekushiyIndeksIstorii + 1;
+                var snapshot = istoriyaSnimkov[targetIndex];
+                PrimeniSnimokIstorii(snapshot);
+                tekushiyIndeksIstorii = targetIndex;
+            }
+            finally
+            {
+                vypolnyayuOtmenuIliPovtor = false;
+                ObnovitSostoyanieUndoRedo();
+            }
         }
 
         private void DobavitNaHolst(UIElement element, bool otslezhivatIzmeneniya = true, bool nachatRedaktirovanieTeksta = false)
@@ -2872,7 +2915,6 @@ namespace UseCaseApplication
             }
 
             HolstSoderzhanie.Children.Add(element);
-            vozvratStack.Clear();
 
             if (YavlyaetsyaTekstovymKontainerom(element))
             {
@@ -4586,6 +4628,7 @@ namespace UseCaseApplication
                 }
 
                 tekushiyPutFayla = filePath;
+                SbrositIstoriyuNaTekuscheeSostoyanie();
                 MarkDocumentClean();
                 ObnovitSostoyanieUndoRedo();
                 return true;
@@ -4688,8 +4731,6 @@ namespace UseCaseApplication
             SnytVydelenie();
             SkrytRamuMashtabirovaniya();
             HolstSoderzhanie?.Children.Clear();
-            otmenaStack.Clear();
-            vozvratStack.Clear();
             originalnyeRazmery.Clear();
             originalnyeTolschiny.Clear();
             originalnyeKoordinatyLinij.Clear();
@@ -4758,6 +4799,7 @@ namespace UseCaseApplication
 
             tekushiyPutFayla = null;
             MarkDocumentClean();
+            SbrositIstoriyuNaTekuscheeSostoyanie();
             ObnovitSostoyanieUndoRedo();
         }
 
@@ -4793,6 +4835,7 @@ namespace UseCaseApplication
 
             estNesokhrannyeIzmeneniya = true;
             ObnovitZagolovokOkna();
+            ZafiksirovatSnimokIstorii();
         }
 
         private void MarkDocumentClean()
@@ -4810,9 +4853,19 @@ namespace UseCaseApplication
                     Otmena_Click(this, new RoutedEventArgs());
                     e.Handled = true;
                 }
-                else if (e.Key == Key.U)
+                else if (e.Key == Key.Y)
                 {
                     Vozvrat_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.S)
+                {
+                    SaveFile_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.O)
+                {
+                    OpenFile_Click(this, new RoutedEventArgs());
                     e.Handled = true;
                 }
                 else if (e.Key == Key.C)
@@ -4866,12 +4919,6 @@ namespace UseCaseApplication
                         ClipboardManager.Copy(realElement);
                         UdalitElementSHolsta(realElement);
 
-                        // Вырезание не должно добавлять запись в стек Redo
-                        if (otmenaStack.Count > 0 && ReferenceEquals(otmenaStack.Peek(), realElement))
-                        {
-                            otmenaStack.Pop();
-                            ObnovitSostoyanieUndoRedo();
-                        }
                         e.Handled = true;
                     }
                 }
