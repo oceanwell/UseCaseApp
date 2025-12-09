@@ -128,6 +128,31 @@ namespace UseCaseApplication
             NastroitSetku();
             InitsializirovatScrollBary();
             SbrositIstoriyuNaTekuscheeSostoyanie();
+            ZagruzitIzobrazheniyaDlyaSlaydera();
+        }
+
+        private void ZagruzitIzobrazheniyaDlyaSlaydera()
+        {
+            try
+            {
+                // Пытаемся загрузить изображения для слайдера
+                var basePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "image");
+                
+                // Если изображения не загрузились через pack://, пробуем загрузить из папки рядом с exe
+                if (LineTrack != null && LineTrack.Source == null)
+                {
+                    var linePath = System.IO.Path.Combine(basePath, "Line 6.png");
+                    if (System.IO.File.Exists(linePath))
+                    {
+                        LineTrack.Source = new BitmapImage(new Uri(linePath, UriKind.Absolute));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Игнорируем ошибки загрузки изображений
+                System.Diagnostics.Debug.WriteLine($"Ошибка загрузки изображений для слайдера: {ex.Message}");
+            }
         }
 
         private void InitsializirovatScrollBary()
