@@ -1191,15 +1191,87 @@
                                 </Button>
                             </StackPanel>
 
-                            <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="150,0,10,15" Background="#2b2b2b" BorderBrush="#444" BorderThickness="1" CornerRadius="6" Padding="8,6">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="−" Foreground="White" Margin="0,0,6,0" FontSize="13" VerticalAlignment="Center" Cursor="Hand" MouseLeftButtonDown="DecreaseZoom_Click"/>
-                                    <Slider x:Name="PolzunokMashtaba" Minimum="10" Maximum="200" Value="100" Width="140" SmallChange="1" LargeChange="10" ValueChanged="PolzunokMashtaba_ValueChanged"/>
-                                    <TextBlock Text="+" Foreground="White" Margin="6,0,6,0" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" Cursor="Hand" MouseLeftButtonDown="IncreaseZoom_Click"/>
-                                    <Border Background="#1e1e1e" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="4,2" MinWidth="35">
-                                        <TextBlock x:Name="MetkaMashtaba" Text="100%" Foreground="White" TextAlignment="Center" FontSize="10"/>
-                                    </Border>
-                                </StackPanel>
+                            <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="150,0,10,15">
+                                <Grid HorizontalAlignment="Left" VerticalAlignment="Top">
+                                    <!-- Rectangle 16 (1) - фон -->
+                                    <Image Source="image/Rectangle 16 (1).png" Stretch="None"/>
+                                    
+                                    <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Margin="8,0">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <Grid Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+                                            
+                                            <!-- Group 8 - кнопка минус -->
+                                            <Image Source="image/Group 8.png" Stretch="None" Grid.Column="0" Grid.Row="0" VerticalAlignment="Center" Margin="0,0,12,0" Cursor="Hand" MouseLeftButtonDown="DecreaseZoom_Click"/>
+                                            
+                                            <!-- Слайдер с кастомным стилем -->
+                                            <Grid Grid.Column="1" Grid.Row="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                
+                                                <!-- Line 6 - линия трека -->
+                                                <Image x:Name="LineTrack" Source="image/Line 6.png" Stretch="None" Grid.Row="0" VerticalAlignment="Center">
+                                                    <Image.RenderTransform>
+                                                        <TranslateTransform Y="12"/>
+                                                    </Image.RenderTransform>
+                                                </Image>
+                                                
+                                                <!-- Slider с кастомным шаблоном -->
+                                                <Slider x:Name="PolzunokMashtaba" Minimum="10" Maximum="200" Value="100" SmallChange="1" LargeChange="10" ValueChanged="PolzunokMashtaba_ValueChanged" Grid.Row="0" VerticalAlignment="Center">
+                                                    <Slider.RenderTransform>
+                                                        <TranslateTransform Y="12"/>
+                                                    </Slider.RenderTransform>
+                                                    <Slider.Width>
+                                                        <Binding ElementName="LineTrack" Path="ActualWidth"/>
+                                                    </Slider.Width>
+                                                    <Slider.Template>
+                                                        <ControlTemplate TargetType="Slider">
+                                                            <Grid>
+                                                                <Track x:Name="PART_Track">
+                                                                    <Track.DecreaseRepeatButton>
+                                                                        <RepeatButton Template="{x:Null}"/>
+                                                                    </Track.DecreaseRepeatButton>
+                                                                    <Track.IncreaseRepeatButton>
+                                                                        <RepeatButton Template="{x:Null}"/>
+                                                                    </Track.IncreaseRepeatButton>
+                                                                    <Track.Thumb>
+                                                                        <Thumb x:Name="Thumb" OverridesDefaultStyle="True">
+                                                                            <Thumb.Template>
+                                                                                <ControlTemplate TargetType="Thumb">
+                                                                                    <!-- Ellipse 1 - ползунок -->
+                                                                                    <Image Source="image/Ellipse 1.png" Stretch="None"/>
+                                                                                </ControlTemplate>
+                                                                            </Thumb.Template>
+                                                                        </Thumb>
+                                                                    </Track.Thumb>
+                                                                </Track>
+                                                            </Grid>
+                                                        </ControlTemplate>
+                                                    </Slider.Template>
+                                                </Slider>
+                                                
+                                                <!-- Метка процента по центру под слайдером -->
+                                                <TextBlock x:Name="MetkaMashtaba" Text="100%" Foreground="White" TextAlignment="Center" FontSize="10" Grid.Row="1" HorizontalAlignment="Left" Margin="-25,12,0,0"/>
+                                            </Grid>
+                                            
+                                            <!-- Group 9 - кнопка плюс -->
+                                            <Image Source="image/Group 9.png" Stretch="None" Grid.Column="2" Grid.Row="0" VerticalAlignment="Center" Cursor="Hand" MouseLeftButtonDown="IncreaseZoom_Click"/>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
                             </Border>
 
                         </Grid>
