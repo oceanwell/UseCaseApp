@@ -135,6 +135,9 @@ namespace UseCaseApplication
 
         // Храним прикрепленные стрелки: стрелка -> (начало, конец)
         private Dictionary<UIElement, Tuple<UIElement, UIElement>> prikreplennyeStrelki = new Dictionary<UIElement, Tuple<UIElement, UIElement>>();
+        // Храним точки привязки: (стрелка, индекс точки) -> (объект, относительная позиция на контуре)
+        // Относительная позиция: для прямоугольника - (0-1 по ширине, 0-1 по высоте), для эллипса - угол в радианах
+        private Dictionary<Tuple<UIElement, int>, Tuple<UIElement, Point>> tochkiPrikrepleniya = new Dictionary<Tuple<UIElement, int>, Tuple<UIElement, Point>>();
         private const double RadiusPrikrepleniya = 200; // Увеличенный радиус для полного охвата объектов
 
         // Подсветка объектов при приближении стрелки
@@ -1269,7 +1272,9 @@ namespace UseCaseApplication
 
                         if (objToAttach != null)
                         {
-                            PrivyazatTochkuKObektu(tekushayaLiniyaDlyaIzgiba, aktivnayaTochkaIzgiba, objToAttach);
+                            // Используем позицию мыши для точной привязки
+                            var mousePos = e.GetPosition(HolstSoderzhanie);
+                            PrivyazatTochkuKObektu(tekushayaLiniyaDlyaIzgiba, aktivnayaTochkaIzgiba, objToAttach, mousePos);
                         }
                         else
                         {
@@ -2569,7 +2574,9 @@ namespace UseCaseApplication
 
                         if (objToAttach != null)
                         {
-                            PrivyazatTochkuKObektu(tekushayaLiniyaDlyaIzgiba, aktivnayaTochkaIzgiba, objToAttach);
+                            // Используем позицию мыши для точной привязки
+                            var mousePos = e.GetPosition(HolstSoderzhanie);
+                            PrivyazatTochkuKObektu(tekushayaLiniyaDlyaIzgiba, aktivnayaTochkaIzgiba, objToAttach, mousePos);
                         }
                         else
                         {
@@ -5207,11 +5214,30 @@ namespace UseCaseApplication
 
             if (obj1 != null)
             {
-                // Всегда используем направление от центра объекта к другой точке линии
-                // Направляемся на вторую точку линии (absP2), чтобы конец линии был направлен на неё
-                Point target = absP2;
-                // Используем NaytiTochkuNaGranitseOtTsentra для правильного направления на другую точку
-                var t = NaytiTochkuNaGranitseOtTsentra(target, obj1);
+                // Используем сохраненную относительную позицию на контуре объекта
+                var key1 = new Tuple<UIElement, int>(strelka, 0);
+                Point t;
+                if (tochkiPrikrepleniya.ContainsKey(key1) && tochkiPrikrepleniya[key1].Item1 == obj1)
+                {
+                    // Восстанавливаем точку по сохраненной относительной позиции
+                    var otnositelnayaPozitsiya = tochkiPrikrepleniya[key1].Item2;
+                    t = VosstanovitTochkuNaKonture(otnositelnayaPozitsiya, obj1);
+                }
+                else
+                {
+                    // Если сохраненной позиции нет, используем центр obj2 как target
+                    Point target;
+                    if (obj2 != null)
+                    {
+                        var bounds2 = PoluchitGranitsyElementa(obj2);
+                        target = new Point(bounds2.X + bounds2.Width / 2, bounds2.Y + bounds2.Height / 2);
+                    }
+                    else
+                    {
+                        target = absP2;
+                    }
+                    t = NaytiTochkuNaGranitseOtTsentra(target, obj1);
+                }
                 if (canvas != null)
                     polyline.Points[0] = new Point(t.X - canvasLeft, t.Y - canvasTop);
                 else
@@ -5221,12 +5247,31 @@ namespace UseCaseApplication
 
             if (obj2 != null)
             {
-                // Всегда используем направление от центра объекта к другой точке линии
-                // Направляемся на первую точку линии (absP1), чтобы конец линии был направлен на неё
-                Point target = absP1;
-                // Используем NaytiTochkuNaGranitseOtTsentra для правильного направления на другую точку
-                var t = NaytiTochkuNaGranitseOtTsentra(target, obj2);
+                // Используем сохраненную относительную позицию на контуре объекта
                 var idx = polyline.Points.Count - 1;
+                var key2 = new Tuple<UIElement, int>(strelka, idx);
+                Point t;
+                if (tochkiPrikrepleniya.ContainsKey(key2) && tochkiPrikrepleniya[key2].Item1 == obj2)
+                {
+                    // Восстанавливаем точку по сохраненной относительной позиции
+                    var otnositelnayaPozitsiya = tochkiPrikrepleniya[key2].Item2;
+                    t = VosstanovitTochkuNaKonture(otnositelnayaPozitsiya, obj2);
+                }
+                else
+                {
+                    // Если сохраненной позиции нет, используем центр obj1 как target
+                    Point target;
+                    if (obj1 != null)
+                    {
+                        var bounds1 = PoluchitGranitsyElementa(obj1);
+                        target = new Point(bounds1.X + bounds1.Width / 2, bounds1.Y + bounds1.Height / 2);
+                    }
+                    else
+                    {
+                        target = absP1;
+                    }
+                    t = NaytiTochkuNaGranitseOtTsentra(target, obj2);
+                }
                 if (canvas != null)
                     polyline.Points[idx] = new Point(t.X - canvasLeft, t.Y - canvasTop);
                 else
@@ -5503,29 +5548,26 @@ namespace UseCaseApplication
             
             // Выбираем ближайшее пересечение
             var t = Math.Min(tX, tY);
-            var x = center.X + dx * t;
-            var y = center.Y + dy * t;
             
-            // Ограничиваем точку границами прямоугольника и привязываем к краю
-            x = Math.Max(bounds.Left, Math.Min(bounds.Right, x));
-            y = Math.Max(bounds.Top, Math.Min(bounds.Bottom, y));
-            
-            // Определяем, на какой стороне находится точка
-            var distToLeft = Math.Abs(x - bounds.Left);
-            var distToRight = Math.Abs(x - bounds.Right);
-            var distToTop = Math.Abs(y - bounds.Top);
-            var distToBottom = Math.Abs(y - bounds.Bottom);
-            
-            var minDist = Math.Min(Math.Min(distToLeft, distToRight), Math.Min(distToTop, distToBottom));
-            
-            if (minDist == distToLeft)
-                return new Point(bounds.Left, y);
-            else if (minDist == distToRight)
-                return new Point(bounds.Right, y);
-            else if (minDist == distToTop)
-                return new Point(x, bounds.Top);
+            // Определяем, какая сторона пересекается первой на основе значения t
+            if (tX < tY)
+            {
+                // Пересекается вертикальная сторона (левая или правая)
+                var x = dx > 0 ? bounds.Right : bounds.Left;
+                var y = center.Y + dy * t;
+                // Ограничиваем y границами прямоугольника
+                y = Math.Max(bounds.Top, Math.Min(bounds.Bottom, y));
+                return new Point(x, y);
+            }
             else
-                return new Point(x, bounds.Bottom);
+            {
+                // Пересекается горизонтальная сторона (верхняя или нижняя)
+                var x = center.X + dx * t;
+                var y = dy > 0 ? bounds.Bottom : bounds.Top;
+                // Ограничиваем x границами прямоугольника
+                x = Math.Max(bounds.Left, Math.Min(bounds.Right, x));
+                return new Point(x, y);
+            }
         }
 
         private void ObnovitStrelku(Canvas canvas, Polyline polyline)
@@ -5545,7 +5587,103 @@ namespace UseCaseApplication
             }
             podsvetkiObektov.Clear();
         }
-        private void PrivyazatTochkuKObektu(Polyline polyline, int indexTochki, UIElement obj)
+        // Вычисляет относительную позицию точки на контуре объекта (для сохранения)
+        private Point VychislitOtnositelnuyuPozitsiyuNaKonture(Point mousePos, UIElement obj)
+        {
+            var bounds = PoluchitGranitsyElementa(obj);
+            var center = new Point(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
+            var dx = mousePos.X - center.X;
+            var dy = mousePos.Y - center.Y;
+            
+            // Для эллипсов сохраняем угол
+            if (obj is Ellipse && bounds.Width > 0 && bounds.Height > 0)
+            {
+                var angle = Math.Atan2(dy, dx);
+                return new Point(angle, 0); // X = угол, Y = 0 (не используется)
+            }
+            
+            // Для прямоугольников сохраняем относительную позицию на стороне
+            // Определяем, на какой стороне находится точка
+            var halfWidth = bounds.Width / 2;
+            var halfHeight = bounds.Height / 2;
+            
+            double tX = double.MaxValue, tY = double.MaxValue;
+            if (Math.Abs(dx) > 0.0001)
+            {
+                if (dx > 0) tX = halfWidth / dx;
+                else tX = -halfWidth / dx;
+            }
+            if (Math.Abs(dy) > 0.0001)
+            {
+                if (dy > 0) tY = halfHeight / dy;
+                else tY = -halfHeight / dy;
+            }
+            
+            var t = Math.Min(tX, tY);
+            var x = center.X + dx * t;
+            var y = center.Y + dy * t;
+            
+            // Определяем сторону и сохраняем относительную позицию
+            if (tX < tY)
+            {
+                // Вертикальная сторона (левая или правая)
+                var side = dx > 0 ? 1.0 : -1.0; // 1 = правая, -1 = левая
+                var relY = (y - bounds.Top) / bounds.Height; // Относительная позиция по высоте (0-1)
+                return new Point(side, relY);
+            }
+            else
+            {
+                // Горизонтальная сторона (верхняя или нижняя)
+                var side = dy > 0 ? 2.0 : -2.0; // 2 = нижняя, -2 = верхняя
+                var relX = (x - bounds.Left) / bounds.Width; // Относительная позиция по ширине (0-1)
+                return new Point(side, relX);
+            }
+        }
+        
+        // Восстанавливает точку на контуре по относительной позиции
+        private Point VosstanovitTochkuNaKonture(Point otnositelnayaPozitsiya, UIElement obj)
+        {
+            var bounds = PoluchitGranitsyElementa(obj);
+            var center = new Point(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
+            
+            // Для эллипсов используем угол
+            if (obj is Ellipse && bounds.Width > 0 && bounds.Height > 0)
+            {
+                var angle = otnositelnayaPozitsiya.X;
+                var a = bounds.Width / 2;
+                var b = bounds.Height / 2;
+                var x = center.X + a * Math.Cos(angle);
+                var y = center.Y + b * Math.Sin(angle);
+                return new Point(x, y);
+            }
+            
+            // Для прямоугольников используем сохраненную сторону и относительную позицию
+            var side = otnositelnayaPozitsiya.X;
+            var relPos = otnositelnayaPozitsiya.Y;
+            
+            if (Math.Abs(side - 1.0) < 0.1) // Правая сторона
+            {
+                var y = bounds.Top + relPos * bounds.Height;
+                return new Point(bounds.Right, y);
+            }
+            else if (Math.Abs(side + 1.0) < 0.1) // Левая сторона
+            {
+                var y = bounds.Top + relPos * bounds.Height;
+                return new Point(bounds.Left, y);
+            }
+            else if (Math.Abs(side - 2.0) < 0.1) // Нижняя сторона
+            {
+                var x = bounds.Left + relPos * bounds.Width;
+                return new Point(x, bounds.Bottom);
+            }
+            else // Верхняя сторона
+            {
+                var x = bounds.Left + relPos * bounds.Width;
+                return new Point(x, bounds.Top);
+            }
+        }
+        
+        private void PrivyazatTochkuKObektu(Polyline polyline, int indexTochki, UIElement obj, Point? mousePos = null)
         {
             if (polyline == null || obj == null || indexTochki < 0 || indexTochki >= polyline.Points.Count) return;
 
@@ -5566,7 +5704,16 @@ namespace UseCaseApplication
                 absTochka = polyline.Points[indexTochki];
             }
 
-            var tochkaPrikrepleniya = NaytiTochkuNaGranitse(absTochka, obj);
+            // Используем позицию мыши, если она предоставлена, иначе используем текущую позицию точки
+            Point tochkaDlyaPrikrepleniya = mousePos ?? absTochka;
+            
+            // Вычисляем и сохраняем относительную позицию на контуре
+            var otnositelnayaPozitsiya = VychislitOtnositelnuyuPozitsiyuNaKonture(tochkaDlyaPrikrepleniya, obj);
+            var key = new Tuple<UIElement, int>(strelkaElement, indexTochki);
+            tochkiPrikrepleniya[key] = new Tuple<UIElement, Point>(obj, otnositelnayaPozitsiya);
+            
+            // Восстанавливаем точку на контуре по сохраненной относительной позиции
+            var tochkaPrikrepleniya = VosstanovitTochkuNaKonture(otnositelnayaPozitsiya, obj);
 
             if (parent != null && parent != HolstSoderzhanie)
             {
@@ -5616,6 +5763,13 @@ namespace UseCaseApplication
 
             var parent = VisualTreeHelper.GetParent(polyline) as Canvas;
             UIElement strelkaElement = parent != null && parent != HolstSoderzhanie ? (UIElement)parent : polyline;
+            
+            // Удаляем сохраненную точку привязки
+            var key = new Tuple<UIElement, int>(strelkaElement, indexTochki);
+            if (tochkiPrikrepleniya.ContainsKey(key))
+            {
+                tochkiPrikrepleniya.Remove(key);
+            }
 
             if (!prikreplennyeStrelki.ContainsKey(strelkaElement)) return;
             var current = prikreplennyeStrelki[strelkaElement];
