@@ -17,33 +17,33 @@ namespace UseCaseApplication
 {
     public partial class MainWindow : Window
     {
-        private readonly Stack<UIElement> otmenaStack = new Stack<UIElement>();
-        private readonly Stack<UIElement> vozvratStack = new Stack<UIElement>();
-        private double tekushayaTolschinaLinii = 2.0;
+        private readonly Stack<UIElement> undoStack = new Stack<UIElement>();
+        private readonly Stack<UIElement> redoStack = new Stack<UIElement>();
+        private double currentLineThickness = 2.0;
         
-        private Point tochkaNachalaPeretaskivaniya;
-        private Button istochnikKnopki;
-        private bool peretaskivayuIzPaneli;
+        private Point dragStartPoint;
+        private Button sourceButton;
+        private bool draggingFromPanel;
         
-        private UIElement vybranniyElement;
-        private List<UIElement> vybranniyeElementy = new List<UIElement>();
-        private Point nachaloPeremesheniya;
-        private bool peremeshayuElement;
+        private UIElement selectedElement;
+        private List<UIElement> selectedElements = new List<UIElement>();
+        private Point moveStartPoint;
+        private bool movingElement;
         private double originalLeft;
         private double originalTop;
         
-        private bool peremeshayuHolst;
-        private Point nachaloPeremesheniyaHolsta;
+        private bool movingCanvas;
+        private Point canvasMoveStartPoint;
         
 
         public MainWindow()
         {
             InitializeComponent();
             
-            TekstTolschiny.Text = tekushayaTolschinaLinii.ToString();
+            LineThicknessText.Text = currentLineThickness.ToString();
         }
 
-        private void ZagolovokOkna_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void WindowTitle_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount == 2)
             {
@@ -55,218 +55,218 @@ namespace UseCaseApplication
             }
         }
 
-        private void Svernyt_Click(object sender, RoutedEventArgs e)
+        private void Minimize_Click(object sender, RoutedEventArgs e)
         {
             WindowState = WindowState.Minimized;
         }
 
-        private void Razvernut_Click(object sender, RoutedEventArgs e)
+        private void Maximize_Click(object sender, RoutedEventArgs e)
         {
             WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
         }
 
-        private void Zakryt_Click(object sender, RoutedEventArgs e)
+        private void Close_Click(object sender, RoutedEventArgs e)
         {
             Close();
         }
 
-        private void KnopkaInstrumenta_MouseDown(object sender, MouseButtonEventArgs e)
+        private void ToolButton_MouseDown(object sender, MouseButtonEventArgs e)
         {
             var button = sender as Button;
             if (button != null)
             {
-                istochnikKnopki = button;
-                tochkaNachalaPeretaskivaniya = e.GetPosition(button);
-                peretaskivayuIzPaneli = false;
+                sourceButton = button;
+                dragStartPoint = e.GetPosition(button);
+                draggingFromPanel = false;
             }
         }
 
-        private void KnopkaInstrumenta_MouseMove(object sender, MouseEventArgs e)
+        private void ToolButton_MouseMove(object sender, MouseEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed && istochnikKnopki != null && !peretaskivayuIzPaneli)
+            if (e.LeftButton == MouseButtonState.Pressed && sourceButton != null && !draggingFromPanel)
             {
-                var tekushayaPozitsiya = e.GetPosition(istochnikKnopki);
+                var currentPosition = e.GetPosition(sourceButton);
                 
-                if (Math.Abs(tekushayaPozitsiya.X - tochkaNachalaPeretaskivaniya.X) > SystemParameters.MinimumHorizontalDragDistance ||
-                    Math.Abs(tekushayaPozitsiya.Y - tochkaNachalaPeretaskivaniya.Y) > SystemParameters.MinimumVerticalDragDistance)
+                if (Math.Abs(currentPosition.X - dragStartPoint.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                    Math.Abs(currentPosition.Y - dragStartPoint.Y) > SystemParameters.MinimumVerticalDragDistance)
                 {
-                    string instrument = istochnikKnopki.Tag as string ?? string.Empty;
-                    if (!string.IsNullOrEmpty(instrument))
+                    string tool = sourceButton.Tag as string ?? string.Empty;
+                    if (!string.IsNullOrEmpty(tool))
                     {
-                        peretaskivayuIzPaneli = true;
-                        DragDrop.DoDragDrop(istochnikKnopki, instrument, DragDropEffects.Copy);
-                        peretaskivayuIzPaneli = false;
+                        draggingFromPanel = true;
+                        DragDrop.DoDragDrop(sourceButton, tool, DragDropEffects.Copy);
+                        draggingFromPanel = false;
                     }
-                    istochnikKnopki = null;
+                    sourceButton = null;
                 }
             }
         }
 
-        private void PolzunokMashtaba_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void ZoomSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (TransformMashtaba == null || MetkaMashtaba == null) return;
-            var mashtab = e.NewValue / 100.0;
+            if (CanvasScaleTransform == null || ZoomLabel == null) return;
+            var scale = e.NewValue / 100.0;
             
-            var animatsiyaX = new System.Windows.Media.Animation.DoubleAnimation
+            var animationX = new System.Windows.Media.Animation.DoubleAnimation
             {
-                To = mashtab,
+                To = scale,
                 Duration = TimeSpan.FromMilliseconds(50),
                 EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
             };
             
-            var animatsiyaY = new System.Windows.Media.Animation.DoubleAnimation
+            var animationY = new System.Windows.Media.Animation.DoubleAnimation
             {
-                To = mashtab,
+                To = scale,
                 Duration = TimeSpan.FromMilliseconds(50),
                 EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
             };
             
-            TransformMashtaba.BeginAnimation(ScaleTransform.ScaleXProperty, animatsiyaX);
-            TransformMashtaba.BeginAnimation(ScaleTransform.ScaleYProperty, animatsiyaY);
-            MetkaMashtaba.Text = $"{(int)e.NewValue}%";
+            CanvasScaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, animationX);
+            CanvasScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, animationY);
+            ZoomLabel.Text = $"{(int)e.NewValue}%";
         }
 
-        private void PerekyuchatelSetki_Changed(object sender, RoutedEventArgs e)
+        private void GridToggle_Changed(object sender, RoutedEventArgs e)
         {
-            if (FonSetki == null) return;
+            if (GridBackground == null) return;
             
-            if (PerekyuchatelSetki.IsChecked == true)
+            if (GridToggle != null && GridToggle.IsChecked == true)
             {
-                FonSetki.Visibility = Visibility.Visible;
+                GridBackground.Visibility = Visibility.Visible;
             }
             else
             {
-                FonSetki.Visibility = Visibility.Hidden;
+                GridBackground.Visibility = Visibility.Hidden;
             }
         }
 
-        private void UmenshitTolshinu_Click(object sender, RoutedEventArgs e)
+        private void DecreaseThickness_Click(object sender, RoutedEventArgs e)
         {
-            if (tekushayaTolschinaLinii > 1)
+            if (currentLineThickness > 1)
             {
-                tekushayaTolschinaLinii--;
-                TekstTolschiny.Text = tekushayaTolschinaLinii.ToString();
-                ObnovitTolshinuLinii();
+                currentLineThickness--;
+                LineThicknessText.Text = currentLineThickness.ToString();
+                UpdateLineThickness();
             }
         }
 
-        private void UvelichitTolshinu_Click(object sender, RoutedEventArgs e)
+        private void IncreaseThickness_Click(object sender, RoutedEventArgs e)
         {
-            if (tekushayaTolschinaLinii < 10)
+            if (currentLineThickness < 10)
             {
-                tekushayaTolschinaLinii++;
-                TekstTolschiny.Text = tekushayaTolschinaLinii.ToString();
-                ObnovitTolshinuLinii();
+                currentLineThickness++;
+                LineThicknessText.Text = currentLineThickness.ToString();
+                UpdateLineThickness();
             }
         }
 
-        private void ObnovitTolshinuLinii()
+        private void UpdateLineThickness()
         {
-            if (PoleDlyaRisovaniya == null) return;
-            foreach (var element in PoleDlyaRisovaniya.Children.OfType<Shape>())
+            if (DrawingCanvas == null) return;
+            foreach (var element in DrawingCanvas.Children.OfType<Shape>())
             {
-                element.StrokeThickness = tekushayaTolschinaLinii;
+                element.StrokeThickness = currentLineThickness;
             }
         }
 
-        private void PoleDlyaRisovaniya_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void DrawingCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (peretaskivayuIzPaneli)
+            if (draggingFromPanel)
             {
                 return;
             }
             
             var element = e.OriginalSource as UIElement;
             
-            if (element == PoleDlyaRisovaniya || element == FonSetki)
+            if (element == DrawingCanvas || element == GridBackground)
             {
-                SnytVydelenie();
-                peremeshayuHolst = true;
-                nachaloPeremesheniyaHolsta = e.GetPosition(this);
-                Mouse.Capture(PoleDlyaRisovaniya);
-                PoleDlyaRisovaniya.Cursor = Cursors.Hand;
+                ClearSelection();
+                movingCanvas = true;
+                canvasMoveStartPoint = e.GetPosition(this);
+                Mouse.Capture(DrawingCanvas);
+                DrawingCanvas.Cursor = Cursors.Hand;
                 return;
             }
             
-            var roditelskiyElement = NaytiElementNaHolste(element);
+            var parentElement = FindElementOnCanvas(element);
             
-            if (roditelskiyElement != null && PoleDlyaRisovaniya.Children.Contains(roditelskiyElement))
+            if (parentElement != null && DrawingCanvas.Children.Contains(parentElement))
             {
-                bool shiftNazhat = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
+                bool shiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
                 
-                if (!shiftNazhat)
+                if (!shiftPressed)
                 {
-                    SnytVydelenie();
+                    ClearSelection();
                 }
                 
-                vybranniyElement = roditelskiyElement;
-                peremeshayuElement = true;
-                nachaloPeremesheniya = e.GetPosition(PoleDlyaRisovaniya);
+                selectedElement = parentElement;
+                movingElement = true;
+                moveStartPoint = e.GetPosition(DrawingCanvas);
                 
-                var tekushiyLeft = Canvas.GetLeft(vybranniyElement);
-                var tekushiyTop = Canvas.GetTop(vybranniyElement);
-                originalLeft = double.IsNaN(tekushiyLeft) ? 0 : tekushiyLeft;
-                originalTop = double.IsNaN(tekushiyTop) ? 0 : tekushiyTop;
+                var currentLeft = Canvas.GetLeft(selectedElement);
+                var currentTop = Canvas.GetTop(selectedElement);
+                originalLeft = double.IsNaN(currentLeft) ? 0 : currentLeft;
+                originalTop = double.IsNaN(currentTop) ? 0 : currentTop;
                 
-                Mouse.Capture(PoleDlyaRisovaniya);
+                Mouse.Capture(DrawingCanvas);
                 
-                if (!vybranniyeElementy.Contains(vybranniyElement))
+                if (!selectedElements.Contains(selectedElement))
                 {
-                    vybranniyeElementy.Add(vybranniyElement);
+                    selectedElements.Add(selectedElement);
                 }
                 
-                VydelitElement(vybranniyElement);
+                HighlightElement(selectedElement);
             }
         }
         
-        private void VydelitElement(UIElement element)
+        private void HighlightElement(UIElement element)
         {
-            if (element is Shape forma)
+            if (element is Shape shape)
             {
-                forma.Stroke = Brushes.DodgerBlue;
-                forma.StrokeThickness = 2;
+                shape.Stroke = Brushes.DodgerBlue;
+                shape.StrokeThickness = 2;
             }
             else if (element is Canvas canvas)
             {
-                foreach (var docherniy in canvas.Children.OfType<Shape>())
+                foreach (var child in canvas.Children.OfType<Shape>())
                 {
-                    docherniy.Stroke = Brushes.DodgerBlue;
-                    docherniy.StrokeThickness = 2;
+                    child.Stroke = Brushes.DodgerBlue;
+                    child.StrokeThickness = 2;
                 }
             }
         }
         
-        private void SnytVydelenie()
+        private void ClearSelection()
         {
-            foreach (var element in vybranniyeElementy.ToList())
+            foreach (var element in selectedElements.ToList())
             {
-                if (element is Shape forma)
+                if (element is Shape shape)
                 {
-                    forma.Stroke = Brushes.Black;
-                    forma.StrokeThickness = tekushayaTolschinaLinii;
+                    shape.Stroke = Brushes.Black;
+                    shape.StrokeThickness = currentLineThickness;
                 }
                 else if (element is Canvas canvas)
                 {
-                    foreach (var docherniy in canvas.Children.OfType<Shape>())
+                    foreach (var child in canvas.Children.OfType<Shape>())
                     {
-                        docherniy.Stroke = Brushes.Black;
-                        docherniy.StrokeThickness = tekushayaTolschinaLinii;
+                        child.Stroke = Brushes.Black;
+                        child.StrokeThickness = currentLineThickness;
                     }
                 }
             }
-            vybranniyeElementy.Clear();
+            selectedElements.Clear();
         }
         
-        private void PoleDlyaRisovaniya_DragOver(object sender, DragEventArgs e)
+        private void DrawingCanvas_DragOver(object sender, DragEventArgs e)
         {
-            if (peremeshayuElement || peremeshayuHolst)
+            if (movingElement || movingCanvas)
             {
                 e.Effects = DragDropEffects.None;
                 e.Handled = true;
                 return;
             }
             
-            if (peretaskivayuIzPaneli && e.Data.GetDataPresent(DataFormats.StringFormat))
+            if (draggingFromPanel && e.Data.GetDataPresent(DataFormats.StringFormat))
             {
                 e.Effects = DragDropEffects.Copy;
             }
@@ -276,71 +276,71 @@ namespace UseCaseApplication
             }
         }
 
-        private void PoleDlyaRisovaniya_MouseMove(object sender, MouseEventArgs e)
+        private void DrawingCanvas_MouseMove(object sender, MouseEventArgs e)
         {
-            if (peremeshayuHolst)
+            if (movingCanvas)
             {
                 if (e.LeftButton == MouseButtonState.Pressed)
                 {
-                    var tekushayaPoz = e.GetPosition(this);
-                    var deltaX = tekushayaPoz.X - nachaloPeremesheniyaHolsta.X;
-                    var deltaY = tekushayaPoz.Y - nachaloPeremesheniyaHolsta.Y;
+                    var currentPos = e.GetPosition(this);
+                    var deltaX = currentPos.X - canvasMoveStartPoint.X;
+                    var deltaY = currentPos.Y - canvasMoveStartPoint.Y;
                     
-                    TransformSdviga.X += deltaX;
-                    TransformSdviga.Y += deltaY;
+                    CanvasTranslateTransform.X += deltaX;
+                    CanvasTranslateTransform.Y += deltaY;
                     
-                    nachaloPeremesheniyaHolsta = tekushayaPoz;
+                    canvasMoveStartPoint = currentPos;
                 }
                 else
                 {
-                    peremeshayuHolst = false;
+                    movingCanvas = false;
                     Mouse.Capture(null);
-                    PoleDlyaRisovaniya.Cursor = Cursors.Arrow;
+                    DrawingCanvas.Cursor = Cursors.Arrow;
                 }
                 return;
             }
             
-            if (peremeshayuElement && vybranniyElement != null)
+            if (movingElement && selectedElement != null)
             {
                 if (e.LeftButton == MouseButtonState.Pressed)
                 {
-                    var tekushayaPoz = e.GetPosition(PoleDlyaRisovaniya);
+                    var currentPos = e.GetPosition(DrawingCanvas);
                     
-                    var smeshenieX = tekushayaPoz.X - nachaloPeremesheniya.X;
-                    var smeshenieY = tekushayaPoz.Y - nachaloPeremesheniya.Y;
+                    var offsetX = currentPos.X - moveStartPoint.X;
+                    var offsetY = currentPos.Y - moveStartPoint.Y;
                     
-                    Canvas.SetLeft(vybranniyElement, originalLeft + smeshenieX);
-                    Canvas.SetTop(vybranniyElement, originalTop + smeshenieY);
+                    Canvas.SetLeft(selectedElement, originalLeft + offsetX);
+                    Canvas.SetTop(selectedElement, originalTop + offsetY);
                 }
                 else
                 {
-                    peremeshayuElement = false;
+                    movingElement = false;
                     Mouse.Capture(null);
-                    vybranniyElement = null;
+                    selectedElement = null;
                 }
             }
         }
 
-        private void PoleDlyaRisovaniya_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void DrawingCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (peremeshayuHolst)
+            if (movingCanvas)
             {
-                peremeshayuHolst = false;
+                movingCanvas = false;
                 Mouse.Capture(null);
                 PoleDlyaRisovaniya.Cursor = Cursors.Arrow;
             }
             
-            if (peremeshayuElement)
+            if (movingElement)
             {
-                peremeshayuElement = false;
+                movingElement = false;
                 Mouse.Capture(null);
-                vybranniyElement = null;
+                selectedElement = null;
             }
         }
 
-        private void PoleDlyaRisovaniya_Drop(object sender, DragEventArgs e)
+        private void DrawingCanvas_Drop(object sender, DragEventArgs e)
         {
-            if (peremeshayuElement || peremeshayuHolst || !peretaskivayuIzPaneli)
+            if (movingElement || movingCanvas || !draggingFromPanel)
             {
                 e.Handled = true;
                 return;
@@ -348,207 +348,207 @@ namespace UseCaseApplication
             
             if (!e.Data.GetDataPresent(DataFormats.StringFormat)) return;
             
-            var instrument = (string)e.Data.GetData(DataFormats.StringFormat);
-            var tochkaSbrosa = e.GetPosition(PoleDlyaRisovaniya);
+            var tool = (string)e.Data.GetData(DataFormats.StringFormat);
+            var dropPoint = e.GetPosition(DrawingCanvas);
 
-            UIElement element = SozdatElementPoInstrumentu(instrument, tochkaSbrosa);
+            UIElement element = CreateElementByTool(tool, dropPoint);
             if (element != null)
             {
-                DobavitNaHolst(element);
+                AddToCanvas(element);
             }
         }
 
-        private void Otmena_Click(object sender, RoutedEventArgs e)
+        private void Undo_Click(object sender, RoutedEventArgs e)
         {
-            if (PoleDlyaRisovaniya.Children.Count == 0) return;
-            var element = PoleDlyaRisovaniya.Children[PoleDlyaRisovaniya.Children.Count - 1] as UIElement;
-            PoleDlyaRisovaniya.Children.RemoveAt(PoleDlyaRisovaniya.Children.Count - 1);
-            otmenaStack.Push(element);
-            vozvratStack.Clear();
+            if (DrawingCanvas.Children.Count == 0) return;
+            var element = DrawingCanvas.Children[DrawingCanvas.Children.Count - 1] as UIElement;
+            DrawingCanvas.Children.RemoveAt(DrawingCanvas.Children.Count - 1);
+            undoStack.Push(element);
+            redoStack.Clear();
         }
 
-        private void Vozvrat_Click(object sender, RoutedEventArgs e)
+        private void Redo_Click(object sender, RoutedEventArgs e)
         {
-            if (otmenaStack.Count == 0) return;
-            var element = otmenaStack.Pop();
-            PoleDlyaRisovaniya.Children.Add(element);
-            vozvratStack.Push(element);
+            if (undoStack.Count == 0) return;
+            var element = undoStack.Pop();
+            DrawingCanvas.Children.Add(element);
+            redoStack.Push(element);
         }
 
-        private void DobavitNaHolst(UIElement element)
+        private void AddToCanvas(UIElement element)
         {
-            PoleDlyaRisovaniya.Children.Add(element);
-            vozvratStack.Clear();
+            DrawingCanvas.Children.Add(element);
+            redoStack.Clear();
         }
 
-        private UIElement NaytiElementNaHolste(UIElement element)
+        private UIElement FindElementOnCanvas(UIElement element)
         {
-            var tekushiy = element;
-            while (tekushiy != null && tekushiy != PoleDlyaRisovaniya)
+            var current = element;
+            while (current != null && current != DrawingCanvas)
             {
-                var roditel = VisualTreeHelper.GetParent(tekushiy) as UIElement;
-                if (roditel == PoleDlyaRisovaniya)
+                var parent = VisualTreeHelper.GetParent(current) as UIElement;
+                if (parent == DrawingCanvas)
                 {
-                    return tekushiy;
+                    return current;
                 }
-                tekushiy = roditel;
+                current = parent;
             }
             return null;
         }
 
-        private UIElement SozdatChelovechka()
+        private UIElement CreateActor()
         {
-            var gruppa = new Canvas();
+            var group = new Canvas();
 
-            var golova = new Ellipse { Width = 30, Height = 30, Stroke = Brushes.Black, StrokeThickness = tekushayaTolschinaLinii, Fill = Brushes.Black };
-            Canvas.SetLeft(golova, 50);
-            Canvas.SetTop(golova, 30);
+            var head = new Ellipse { Width = 30, Height = 30, Stroke = Brushes.Black, StrokeThickness = currentLineThickness, Fill = Brushes.Black };
+            Canvas.SetLeft(head, 50);
+            Canvas.SetTop(head, 30);
 
-            var telo = new Line { X1 = 65, Y1 = 60, X2 = 65, Y2 = 120, Stroke = Brushes.Black, StrokeThickness = tekushayaTolschinaLinii };
-            var rukaL = new Line { X1 = 35, Y1 = 80, X2 = 95, Y2 = 80, Stroke = Brushes.Black, StrokeThickness = tekushayaTolschinaLinii };
-            var nogaL = new Line { X1 = 65, Y1 = 120, X2 = 45, Y2 = 150, Stroke = Brushes.Black, StrokeThickness = tekushayaTolschinaLinii };
-            var nogaR = new Line { X1 = 65, Y1 = 120, X2 = 85, Y2 = 150, Stroke = Brushes.Black, StrokeThickness = tekushayaTolschinaLinii };
+            var body = new Line { X1 = 65, Y1 = 60, X2 = 65, Y2 = 120, Stroke = Brushes.Black, StrokeThickness = currentLineThickness };
+            var leftArm = new Line { X1 = 35, Y1 = 80, X2 = 95, Y2 = 80, Stroke = Brushes.Black, StrokeThickness = currentLineThickness };
+            var leftLeg = new Line { X1 = 65, Y1 = 120, X2 = 45, Y2 = 150, Stroke = Brushes.Black, StrokeThickness = currentLineThickness };
+            var rightLeg = new Line { X1 = 65, Y1 = 120, X2 = 85, Y2 = 150, Stroke = Brushes.Black, StrokeThickness = currentLineThickness };
 
-            gruppa.Children.Add(golova);
-            gruppa.Children.Add(telo);
-            gruppa.Children.Add(rukaL);
-            gruppa.Children.Add(nogaL);
-            gruppa.Children.Add(nogaR);
+            group.Children.Add(head);
+            group.Children.Add(body);
+            group.Children.Add(leftArm);
+            group.Children.Add(leftLeg);
+            group.Children.Add(rightLeg);
 
-            Canvas.SetLeft(gruppa, 0);
-            Canvas.SetTop(gruppa, 0);
-            return gruppa;
+            Canvas.SetLeft(group, 0);
+            Canvas.SetTop(group, 0);
+            return group;
         }
 
-        private UIElement SozdatElementPoInstrumentu(string instrument, Point tochka)
+        private UIElement CreateElementByTool(string tool, Point point)
         {
-            switch (instrument)
+            switch (tool)
             {
                 case "aktor":
                 {
-                    var akter = SozdatChelovechka();
-                    Canvas.SetLeft(akter, tochka.X - 65);
-                    Canvas.SetTop(akter, tochka.Y - 90);
-                    return akter;
+                    var actor = CreateActor();
+                    Canvas.SetLeft(actor, point.X - 65);
+                    Canvas.SetTop(actor, point.Y - 90);
+                    return actor;
                 }
                 case "pretsedent":
                 {
-                    var ellips = new Ellipse
+                    var ellipse = new Ellipse
                     {
                         Width = 120,
                         Height = 60,
                         Stroke = Brushes.Black,
-                        StrokeThickness = tekushayaTolschinaLinii,
+                        StrokeThickness = currentLineThickness,
                         Fill = Brushes.White
                     };
-                    Canvas.SetLeft(ellips, tochka.X - 60);
-                    Canvas.SetTop(ellips, tochka.Y - 30);
-                    return ellips;
+                    Canvas.SetLeft(ellipse, point.X - 60);
+                    Canvas.SetTop(ellipse, point.Y - 30);
+                    return ellipse;
                 }
                 case "sistema":
                 {
-                    var pryamougolnik = new Rectangle
+                    var rectangle = new Rectangle
                     {
                         Width = 240,
                         Height = 160,
                         Stroke = Brushes.Black,
-                        StrokeThickness = tekushayaTolschinaLinii,
+                        StrokeThickness = currentLineThickness,
                         Fill = Brushes.Transparent,
                         RadiusX = 4,
                         RadiusY = 4
                     };
-                    Canvas.SetLeft(pryamougolnik, tochka.X - 120);
-                    Canvas.SetTop(pryamougolnik, tochka.Y - 80);
-                    return pryamougolnik;
+                    Canvas.SetLeft(rectangle, point.X - 120);
+                    Canvas.SetTop(rectangle, point.Y - 80);
+                    return rectangle;
                 }
                 case "liniya":
                 {
-                    var liniya = new Line
+                    var line = new Line
                     {
-                        X1 = tochka.X,
-                        Y1 = tochka.Y,
-                        X2 = tochka.X + 120,
-                        Y2 = tochka.Y + 60,
+                        X1 = point.X,
+                        Y1 = point.Y,
+                        X2 = point.X + 120,
+                        Y2 = point.Y + 60,
                         Stroke = Brushes.Black,
-                        StrokeThickness = tekushayaTolschinaLinii
+                        StrokeThickness = currentLineThickness
                     };
-                    return liniya;
+                    return line;
                 }
                 case "vklyuchit":
                 {
-                    var gruppa = new Canvas();
-                    var liniya = new Line
+                    var group = new Canvas();
+                    var line = new Line
                     {
                         X1 = 0,
                         Y1 = 20,
                         X2 = 130,
                         Y2 = 20,
                         Stroke = Brushes.Black,
-                        StrokeThickness = tekushayaTolschinaLinii,
+                        StrokeThickness = currentLineThickness,
                         StrokeDashArray = new DoubleCollection { 5, 3 }
                     };
-                    var strelka = new System.Windows.Shapes.Polygon
+                    var arrow = new System.Windows.Shapes.Polygon
                     {
                         Points = new PointCollection { new Point(140, 20), new Point(130, 16), new Point(130, 24) },
                         Fill = Brushes.Black
                     };
-                    var tekst = new TextBlock { Text = "<<include>>", Background = Brushes.LightYellow, FontSize = 11 };
-                    Canvas.SetLeft(tekst, 45);
-                    Canvas.SetTop(tekst, 2);
-                    gruppa.Children.Add(liniya);
-                    gruppa.Children.Add(strelka);
-                    gruppa.Children.Add(tekst);
-                    Canvas.SetLeft(gruppa, tochka.X - 70);
-                    Canvas.SetTop(gruppa, tochka.Y - 20);
-                    return gruppa;
+                    var text = new TextBlock { Text = "<<include>>", Background = Brushes.LightYellow, FontSize = 11 };
+                    Canvas.SetLeft(text, 45);
+                    Canvas.SetTop(text, 2);
+                    group.Children.Add(line);
+                    group.Children.Add(arrow);
+                    group.Children.Add(text);
+                    Canvas.SetLeft(group, point.X - 70);
+                    Canvas.SetTop(group, point.Y - 20);
+                    return group;
                 }
                 case "rasshirit":
                 {
-                    var gruppa = new Canvas();
-                    var liniya = new Line
+                    var group = new Canvas();
+                    var line = new Line
                     {
                         X1 = 0,
                         Y1 = 20,
                         X2 = 130,
                         Y2 = 20,
                         Stroke = Brushes.Black,
-                        StrokeThickness = tekushayaTolschinaLinii,
+                        StrokeThickness = currentLineThickness,
                         StrokeDashArray = new DoubleCollection { 5, 3 }
                     };
-                    var strelka = new System.Windows.Shapes.Polygon
+                    var arrow = new System.Windows.Shapes.Polygon
                     {
                         Points = new PointCollection { new Point(140, 20), new Point(130, 16), new Point(130, 24) },
                         Fill = Brushes.Black
                     };
-                    var tekst = new TextBlock { Text = "<<extend>>", Background = Brushes.LightYellow, FontSize = 11 };
-                    Canvas.SetLeft(tekst, 45);
-                    Canvas.SetTop(tekst, 2);
-                    gruppa.Children.Add(liniya);
-                    gruppa.Children.Add(strelka);
-                    gruppa.Children.Add(tekst);
-                    Canvas.SetLeft(gruppa, tochka.X - 70);
-                    Canvas.SetTop(gruppa, tochka.Y - 20);
-                    return gruppa;
+                    var text = new TextBlock { Text = "<<extend>>", Background = Brushes.LightYellow, FontSize = 11 };
+                    Canvas.SetLeft(text, 45);
+                    Canvas.SetTop(text, 2);
+                    group.Children.Add(line);
+                    group.Children.Add(arrow);
+                    group.Children.Add(text);
+                    Canvas.SetLeft(group, point.X - 70);
+                    Canvas.SetTop(group, point.Y - 20);
+                    return group;
                 }
                 case "obobshenie":
                 {
-                    var put = new Path
+                    var path = new Path
                     {
                         Stroke = Brushes.Black,
-                        StrokeThickness = tekushayaTolschinaLinii,
+                        StrokeThickness = currentLineThickness,
                         Fill = Brushes.White,
                         Data = Geometry.Parse("M 0 20 L 100 20 L 100 10 L 120 20 L 100 30 L 100 20")
                     };
-                    Canvas.SetLeft(put, tochka.X - 60);
-                    Canvas.SetTop(put, tochka.Y - 20);
-                    return put;
+                    Canvas.SetLeft(path, point.X - 60);
+                    Canvas.SetTop(path, point.Y - 20);
+                    return path;
                 }
                 case "tekst":
                 {
-                    var blokTeksta = new TextBlock { Text = "Текст", FontSize = 16, Foreground = Brushes.Black };
-                    Canvas.SetLeft(blokTeksta, tochka.X - 20);
-                    Canvas.SetTop(blokTeksta, tochka.Y - 10);
-                    return blokTeksta;
+                    var textBlock = new TextBlock { Text = "Текст", FontSize = 16, Foreground = Brushes.Black };
+                    Canvas.SetLeft(textBlock, point.X - 20);
+                    Canvas.SetTop(textBlock, point.Y - 10);
+                    return textBlock;
                 }
                 default:
                     return null;
@@ -625,25 +625,25 @@ namespace UseCaseApplication
             }
         }
 
-        private void NoviyFayl_Click(object sender, RoutedEventArgs e)
+        private void NewFile_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("Функция 'Новый файл' пока не реализована", "Информация", 
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private void Otkryt_Click(object sender, RoutedEventArgs e)
+        private void OpenFile_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("Функция 'Открыть' пока не реализована", "Информация", 
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private void Sohranit_Click(object sender, RoutedEventArgs e)
+        private void SaveFile_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("Функция 'Сохранить' пока не реализована", "Информация", 
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private void SohranitKak_Click(object sender, RoutedEventArgs e)
+        private void SaveAsFile_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("Функция 'Сохранить как' пока не реализована", "Информация", 
                 MessageBoxButton.OK, MessageBoxImage.Information);
@@ -651,17 +651,17 @@ namespace UseCaseApplication
 
         private void DecreaseZoom_Click(object sender, MouseButtonEventArgs e)
         {
-            if (PolzunokMashtaba != null && PolzunokMashtaba.Value > PolzunokMashtaba.Minimum)
+            if (ZoomSlider != null && ZoomSlider.Value > ZoomSlider.Minimum)
             {
-                PolzunokMashtaba.Value = Math.Max(PolzunokMashtaba.Minimum, PolzunokMashtaba.Value - 5);
+                ZoomSlider.Value = Math.Max(ZoomSlider.Minimum, ZoomSlider.Value - 5);
             }
         }
 
         private void IncreaseZoom_Click(object sender, MouseButtonEventArgs e)
         {
-            if (PolzunokMashtaba != null && PolzunokMashtaba.Value < PolzunokMashtaba.Maximum)
+            if (ZoomSlider != null && ZoomSlider.Value < ZoomSlider.Maximum)
             {
-                PolzunokMashtaba.Value = Math.Min(PolzunokMashtaba.Maximum, PolzunokMashtaba.Value + 5);
+                ZoomSlider.Value = Math.Min(ZoomSlider.Maximum, ZoomSlider.Value + 5);
             }
         }
 
