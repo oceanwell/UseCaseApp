@@ -40,7 +40,7 @@ namespace UseCaseApplication
         {
             InitializeComponent();
             
-            TekstTolschiny.Text = currentLineThickness.ToString();
+            ThicknessText.Text = currentLineThickness.ToString();
         }
 
         private void WindowHeader_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -104,7 +104,7 @@ namespace UseCaseApplication
 
         private void ZoomSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (TransformMashtaba == null || MetkaMashtaba == null) return;
+            if (ScaleTransform == null || ZoomLabel == null) return;
             var scale = e.NewValue / 100.0;
             
             var animationX = new System.Windows.Media.Animation.DoubleAnimation
@@ -121,22 +121,22 @@ namespace UseCaseApplication
                 EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
             };
             
-            TransformMashtaba.BeginAnimation(ScaleTransform.ScaleXProperty, animationX);
-            TransformMashtaba.BeginAnimation(ScaleTransform.ScaleYProperty, animationY);
-            MetkaMashtaba.Text = $"{(int)e.NewValue}%";
+            ScaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, animationX);
+            ScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, animationY);
+            ZoomLabel.Text = $"{(int)e.NewValue}%";
         }
 
         private void GridToggle_Changed(object sender, RoutedEventArgs e)
         {
-            if (FonSetki == null) return;
+            if (GridBackground == null) return;
             
-            if (PerekyuchatelSetki.IsChecked == true)
+            if (GridToggle.IsChecked == true)
             {
-                FonSetki.Visibility = Visibility.Visible;
+                GridBackground.Visibility = Visibility.Visible;
             }
             else
             {
-                FonSetki.Visibility = Visibility.Hidden;
+                GridBackground.Visibility = Visibility.Hidden;
             }
         }
 
@@ -145,7 +145,7 @@ namespace UseCaseApplication
             if (currentLineThickness > 1)
             {
                 currentLineThickness--;
-                TekstTolschiny.Text = currentLineThickness.ToString();
+                ThicknessText.Text = currentLineThickness.ToString();
                 UpdateLineThickness();
             }
         }
@@ -155,15 +155,15 @@ namespace UseCaseApplication
             if (currentLineThickness < 10)
             {
                 currentLineThickness++;
-                TekstTolschiny.Text = currentLineThickness.ToString();
+                ThicknessText.Text = currentLineThickness.ToString();
                 UpdateLineThickness();
             }
         }
 
         private void UpdateLineThickness()
         {
-            if (PoleDlyaRisovaniya == null) return;
-            foreach (var element in PoleDlyaRisovaniya.Children.OfType<Shape>())
+            if (DrawingCanvas == null) return;
+            foreach (var element in DrawingCanvas.Children.OfType<Shape>())
             {
                 element.StrokeThickness = currentLineThickness;
             }
@@ -178,19 +178,19 @@ namespace UseCaseApplication
             
             var element = e.OriginalSource as UIElement;
             
-            if (element == PoleDlyaRisovaniya || element == FonSetki)
+            if (element == DrawingCanvas || element == GridBackground)
             {
                 ClearSelection();
                 movingCanvas = true;
                 canvasMoveStartPoint = e.GetPosition(this);
-                Mouse.Capture(PoleDlyaRisovaniya);
-                PoleDlyaRisovaniya.Cursor = Cursors.Hand;
+                Mouse.Capture(DrawingCanvas);
+                DrawingCanvas.Cursor = Cursors.Hand;
                 return;
             }
             
             var parentElement = FindElementOnCanvas(element);
             
-            if (parentElement != null && PoleDlyaRisovaniya.Children.Contains(parentElement))
+            if (parentElement != null && DrawingCanvas.Children.Contains(parentElement))
             {
                 bool shiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
                 
@@ -201,14 +201,14 @@ namespace UseCaseApplication
                 
                 selectedElement = parentElement;
                 movingElement = true;
-                moveStartPoint = e.GetPosition(PoleDlyaRisovaniya);
+                moveStartPoint = e.GetPosition(DrawingCanvas);
                 
                 var currentLeft = Canvas.GetLeft(selectedElement);
                 var currentTop = Canvas.GetTop(selectedElement);
                 originalLeft = double.IsNaN(currentLeft) ? 0 : currentLeft;
                 originalTop = double.IsNaN(currentTop) ? 0 : currentTop;
                 
-                Mouse.Capture(PoleDlyaRisovaniya);
+                Mouse.Capture(DrawingCanvas);
                 
                 if (!selectedElements.Contains(selectedElement))
                 {
@@ -286,8 +286,8 @@ namespace UseCaseApplication
                     var deltaX = currentPos.X - canvasMoveStartPoint.X;
                     var deltaY = currentPos.Y - canvasMoveStartPoint.Y;
                     
-                    TransformSdviga.X += deltaX;
-                    TransformSdviga.Y += deltaY;
+                    TranslateTransform.X += deltaX;
+                    TranslateTransform.Y += deltaY;
                     
                     canvasMoveStartPoint = currentPos;
                 }
@@ -295,7 +295,7 @@ namespace UseCaseApplication
                 {
                     movingCanvas = false;
                     Mouse.Capture(null);
-                    PoleDlyaRisovaniya.Cursor = Cursors.Arrow;
+                    DrawingCanvas.Cursor = Cursors.Arrow;
                 }
                 return;
             }
@@ -304,7 +304,7 @@ namespace UseCaseApplication
             {
                 if (e.LeftButton == MouseButtonState.Pressed)
                 {
-                    var currentPos = e.GetPosition(PoleDlyaRisovaniya);
+                    var currentPos = e.GetPosition(DrawingCanvas);
                     
                     var offsetX = currentPos.X - moveStartPoint.X;
                     var offsetY = currentPos.Y - moveStartPoint.Y;
@@ -327,7 +327,7 @@ namespace UseCaseApplication
             {
                 movingCanvas = false;
                 Mouse.Capture(null);
-                PoleDlyaRisovaniya.Cursor = Cursors.Arrow;
+                DrawingCanvas.Cursor = Cursors.Arrow;
             }
             
             if (movingElement)
@@ -349,7 +349,7 @@ namespace UseCaseApplication
             if (!e.Data.GetDataPresent(DataFormats.StringFormat)) return;
             
             var instrument = (string)e.Data.GetData(DataFormats.StringFormat);
-            var dropPoint = e.GetPosition(PoleDlyaRisovaniya);
+            var dropPoint = e.GetPosition(DrawingCanvas);
 
             UIElement element = CreateElementByTool(instrument, dropPoint);
             if (element != null)
@@ -360,9 +360,9 @@ namespace UseCaseApplication
 
         private void Undo_Click(object sender, RoutedEventArgs e)
         {
-            if (PoleDlyaRisovaniya.Children.Count == 0) return;
-            var element = PoleDlyaRisovaniya.Children[PoleDlyaRisovaniya.Children.Count - 1] as UIElement;
-            PoleDlyaRisovaniya.Children.RemoveAt(PoleDlyaRisovaniya.Children.Count - 1);
+            if (DrawingCanvas.Children.Count == 0) return;
+            var element = DrawingCanvas.Children[DrawingCanvas.Children.Count - 1] as UIElement;
+            DrawingCanvas.Children.RemoveAt(DrawingCanvas.Children.Count - 1);
             undoStack.Push(element);
             redoStack.Clear();
         }
@@ -371,23 +371,23 @@ namespace UseCaseApplication
         {
             if (undoStack.Count == 0) return;
             var element = undoStack.Pop();
-            PoleDlyaRisovaniya.Children.Add(element);
+            DrawingCanvas.Children.Add(element);
             redoStack.Push(element);
         }
 
         private void AddToCanvas(UIElement element)
         {
-            PoleDlyaRisovaniya.Children.Add(element);
+            DrawingCanvas.Children.Add(element);
             redoStack.Clear();
         }
 
         private UIElement FindElementOnCanvas(UIElement element)
         {
             var current = element;
-            while (current != null && current != PoleDlyaRisovaniya)
+            while (current != null && current != DrawingCanvas)
             {
                 var parent = VisualTreeHelper.GetParent(current) as UIElement;
-                if (parent == PoleDlyaRisovaniya)
+                if (parent == DrawingCanvas)
                 {
                     return current;
                 }
