@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UseCaseApplication"
         mc:Ignorable="d"
-        Title="UCA" Height="600" Width="900" MinHeight="450" MinWidth="800" MaxHeight="720" MaxWidth="1280"
+        Title="UCA" Height="600" Width="900" MinHeight="450" MinWidth="800"
         WindowStyle="None" AllowsTransparency="True" ResizeMode="CanResize" Background="Transparent"
         FontFamily="Inter" MouseMove="MainWindow_MouseMove" MouseLeftButtonUp="MainWindow_MouseLeftButtonUp">
     <Window.Resources>
@@ -733,6 +733,7 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Style="{StaticResource WindowButtonStyle}" Content="—" Click="Svernyt_Click" FontSize="16"/>
+                    <Button Style="{StaticResource WindowButtonStyle}" Content="▢" Click="Razvernut_Click" FontSize="14"/>
                     <Button Style="{StaticResource CloseButtonStyle}" Content="✕" Click="Zakryt_Click" FontSize="16"/>
                 </StackPanel>
             </Grid>
