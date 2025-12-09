@@ -10,22 +10,22 @@ namespace UseCaseApplication
             InitializeComponent();
         }
 
-        private void WindowTitle_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void ZagolovokOkna_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             this.DragMove();
         }
 
-        private void Minimize_Click(object sender, RoutedEventArgs e)
+        private void Svernyt_Click(object sender, RoutedEventArgs e)
         {
             this.WindowState = WindowState.Minimized;
         }
 
-        private void Maximize_Click(object sender, RoutedEventArgs e)
+        private void Razvernut_Click(object sender, RoutedEventArgs e)
         {
             this.WindowState = this.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
         }
 
-        private void Close_Click(object sender, RoutedEventArgs e)
+        private void Zakryt_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
         }

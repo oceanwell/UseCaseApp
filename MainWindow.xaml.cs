@@ -40,10 +40,10 @@ namespace UseCaseApplication
         {
             InitializeComponent();
             
-            LineThicknessText.Text = currentLineThickness.ToString();
+            TekstTolschiny.Text = currentLineThickness.ToString();
         }
 
-        private void WindowTitle_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void WindowHeader_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount == 2)
             {
@@ -90,11 +90,11 @@ namespace UseCaseApplication
                 if (Math.Abs(currentPosition.X - dragStartPoint.X) > SystemParameters.MinimumHorizontalDragDistance ||
                     Math.Abs(currentPosition.Y - dragStartPoint.Y) > SystemParameters.MinimumVerticalDragDistance)
                 {
-                    string tool = sourceButton.Tag as string ?? string.Empty;
-                    if (!string.IsNullOrEmpty(tool))
+                    string instrument = sourceButton.Tag as string ?? string.Empty;
+                    if (!string.IsNullOrEmpty(instrument))
                     {
                         draggingFromPanel = true;
-                        DragDrop.DoDragDrop(sourceButton, tool, DragDropEffects.Copy);
+                        DragDrop.DoDragDrop(sourceButton, instrument, DragDropEffects.Copy);
                         draggingFromPanel = false;
                     }
                     sourceButton = null;
@@ -104,7 +104,7 @@ namespace UseCaseApplication
 
         private void ZoomSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (CanvasScaleTransform == null || ZoomLabel == null) return;
+            if (TransformMashtaba == null || MetkaMashtaba == null) return;
             var scale = e.NewValue / 100.0;
             
             var animationX = new System.Windows.Media.Animation.DoubleAnimation
@@ -121,22 +121,22 @@ namespace UseCaseApplication
                 EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
             };
             
-            CanvasScaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, animationX);
-            CanvasScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, animationY);
-            ZoomLabel.Text = $"{(int)e.NewValue}%";
+            TransformMashtaba.BeginAnimation(ScaleTransform.ScaleXProperty, animationX);
+            TransformMashtaba.BeginAnimation(ScaleTransform.ScaleYProperty, animationY);
+            MetkaMashtaba.Text = $"{(int)e.NewValue}%";
         }
 
         private void GridToggle_Changed(object sender, RoutedEventArgs e)
         {
-            if (GridBackground == null) return;
+            if (FonSetki == null) return;
             
-            if (GridToggle != null && GridToggle.IsChecked == true)
+            if (PerekyuchatelSetki.IsChecked == true)
             {
-                GridBackground.Visibility = Visibility.Visible;
+                FonSetki.Visibility = Visibility.Visible;
             }
             else
             {
-                GridBackground.Visibility = Visibility.Hidden;
+                FonSetki.Visibility = Visibility.Hidden;
             }
         }
 
@@ -145,7 +145,7 @@ namespace UseCaseApplication
             if (currentLineThickness > 1)
             {
                 currentLineThickness--;
-                LineThicknessText.Text = currentLineThickness.ToString();
+                TekstTolschiny.Text = currentLineThickness.ToString();
                 UpdateLineThickness();
             }
         }
@@ -155,15 +155,15 @@ namespace UseCaseApplication
             if (currentLineThickness < 10)
             {
                 currentLineThickness++;
-                LineThicknessText.Text = currentLineThickness.ToString();
+                TekstTolschiny.Text = currentLineThickness.ToString();
                 UpdateLineThickness();
             }
         }
 
         private void UpdateLineThickness()
         {
-            if (DrawingCanvas == null) return;
-            foreach (var element in DrawingCanvas.Children.OfType<Shape>())
+            if (PoleDlyaRisovaniya == null) return;
+            foreach (var element in PoleDlyaRisovaniya.Children.OfType<Shape>())
             {
                 element.StrokeThickness = currentLineThickness;
             }
@@ -178,19 +178,19 @@ namespace UseCaseApplication
             
             var element = e.OriginalSource as UIElement;
             
-            if (element == DrawingCanvas || element == GridBackground)
+            if (element == PoleDlyaRisovaniya || element == FonSetki)
             {
                 ClearSelection();
                 movingCanvas = true;
                 canvasMoveStartPoint = e.GetPosition(this);
-                Mouse.Capture(DrawingCanvas);
-                DrawingCanvas.Cursor = Cursors.Hand;
+                Mouse.Capture(PoleDlyaRisovaniya);
+                PoleDlyaRisovaniya.Cursor = Cursors.Hand;
                 return;
             }
             
             var parentElement = FindElementOnCanvas(element);
             
-            if (parentElement != null && DrawingCanvas.Children.Contains(parentElement))
+            if (parentElement != null && PoleDlyaRisovaniya.Children.Contains(parentElement))
             {
                 bool shiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
                 
@@ -201,14 +201,14 @@ namespace UseCaseApplication
                 
                 selectedElement = parentElement;
                 movingElement = true;
-                moveStartPoint = e.GetPosition(DrawingCanvas);
+                moveStartPoint = e.GetPosition(PoleDlyaRisovaniya);
                 
                 var currentLeft = Canvas.GetLeft(selectedElement);
                 var currentTop = Canvas.GetTop(selectedElement);
                 originalLeft = double.IsNaN(currentLeft) ? 0 : currentLeft;
                 originalTop = double.IsNaN(currentTop) ? 0 : currentTop;
                 
-                Mouse.Capture(DrawingCanvas);
+                Mouse.Capture(PoleDlyaRisovaniya);
                 
                 if (!selectedElements.Contains(selectedElement))
                 {
@@ -286,8 +286,8 @@ namespace UseCaseApplication
                     var deltaX = currentPos.X - canvasMoveStartPoint.X;
                     var deltaY = currentPos.Y - canvasMoveStartPoint.Y;
                     
-                    CanvasTranslateTransform.X += deltaX;
-                    CanvasTranslateTransform.Y += deltaY;
+                    TransformSdviga.X += deltaX;
+                    TransformSdviga.Y += deltaY;
                     
                     canvasMoveStartPoint = currentPos;
                 }
@@ -295,7 +295,7 @@ namespace UseCaseApplication
                 {
                     movingCanvas = false;
                     Mouse.Capture(null);
-                    DrawingCanvas.Cursor = Cursors.Arrow;
+                    PoleDlyaRisovaniya.Cursor = Cursors.Arrow;
                 }
                 return;
             }
@@ -304,7 +304,7 @@ namespace UseCaseApplication
             {
                 if (e.LeftButton == MouseButtonState.Pressed)
                 {
-                    var currentPos = e.GetPosition(DrawingCanvas);
+                    var currentPos = e.GetPosition(PoleDlyaRisovaniya);
                     
                     var offsetX = currentPos.X - moveStartPoint.X;
                     var offsetY = currentPos.Y - moveStartPoint.Y;
@@ -348,10 +348,10 @@ namespace UseCaseApplication
             
             if (!e.Data.GetDataPresent(DataFormats.StringFormat)) return;
             
-            var tool = (string)e.Data.GetData(DataFormats.StringFormat);
-            var dropPoint = e.GetPosition(DrawingCanvas);
+            var instrument = (string)e.Data.GetData(DataFormats.StringFormat);
+            var dropPoint = e.GetPosition(PoleDlyaRisovaniya);
 
-            UIElement element = CreateElementByTool(tool, dropPoint);
+            UIElement element = CreateElementByTool(instrument, dropPoint);
             if (element != null)
             {
                 AddToCanvas(element);
@@ -360,9 +360,9 @@ namespace UseCaseApplication
 
         private void Undo_Click(object sender, RoutedEventArgs e)
         {
-            if (DrawingCanvas.Children.Count == 0) return;
-            var element = DrawingCanvas.Children[DrawingCanvas.Children.Count - 1] as UIElement;
-            DrawingCanvas.Children.RemoveAt(DrawingCanvas.Children.Count - 1);
+            if (PoleDlyaRisovaniya.Children.Count == 0) return;
+            var element = PoleDlyaRisovaniya.Children[PoleDlyaRisovaniya.Children.Count - 1] as UIElement;
+            PoleDlyaRisovaniya.Children.RemoveAt(PoleDlyaRisovaniya.Children.Count - 1);
             undoStack.Push(element);
             redoStack.Clear();
         }
@@ -371,23 +371,23 @@ namespace UseCaseApplication
         {
             if (undoStack.Count == 0) return;
             var element = undoStack.Pop();
-            DrawingCanvas.Children.Add(element);
+            PoleDlyaRisovaniya.Children.Add(element);
             redoStack.Push(element);
         }
 
         private void AddToCanvas(UIElement element)
         {
-            DrawingCanvas.Children.Add(element);
+            PoleDlyaRisovaniya.Children.Add(element);
             redoStack.Clear();
         }
 
         private UIElement FindElementOnCanvas(UIElement element)
         {
             var current = element;
-            while (current != null && current != DrawingCanvas)
+            while (current != null && current != PoleDlyaRisovaniya)
             {
                 var parent = VisualTreeHelper.GetParent(current) as UIElement;
-                if (parent == DrawingCanvas)
+                if (parent == PoleDlyaRisovaniya)
                 {
                     return current;
                 }
@@ -420,9 +420,9 @@ namespace UseCaseApplication
             return group;
         }
 
-        private UIElement CreateElementByTool(string tool, Point point)
+        private UIElement CreateElementByTool(string instrument, Point point)
         {
-            switch (tool)
+            switch (instrument)
             {
                 case "aktor":
                 {
@@ -631,19 +631,19 @@ namespace UseCaseApplication
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private void OpenFile_Click(object sender, RoutedEventArgs e)
+        private void Open_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("Функция 'Открыть' пока не реализована", "Информация", 
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private void SaveFile_Click(object sender, RoutedEventArgs e)
+        private void Save_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("Функция 'Сохранить' пока не реализована", "Информация", 
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private void SaveAsFile_Click(object sender, RoutedEventArgs e)
+        private void SaveAs_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("Функция 'Сохранить как' пока не реализована", "Информация", 
                 MessageBoxButton.OK, MessageBoxImage.Information);
