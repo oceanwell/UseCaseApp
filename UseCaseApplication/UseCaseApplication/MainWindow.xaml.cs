@@ -28,12 +28,8 @@ namespace UseCaseApplication
 {
     public partial class MainWindow : Window
     {
-        private readonly Stack<UIElement> otmenaStack = new Stack<UIElement>();
-        private readonly Stack<UIElement> vozvratStack = new Stack<UIElement>();
-        private readonly Dictionary<UIElement, UIElement> informaciyaZamen = new Dictionary<UIElement, UIElement>();
         private const double standartnayaTolschinaLinii = 1.0;
         private const string TagPolzovatelskogoTeksta = "uca-user-text";
-        private const string TagAktora = "uca-actor";
         private const double ShirinaAktoraPoUmolchaniyu = 60.0;
         private const double VysotaAktoraPoUmolchaniyu = 120.0;
         private const string PodderzhivaemoeRasshirenie = ".uca";
@@ -42,13 +38,10 @@ namespace UseCaseApplication
         private const double MinTextModuleWidth = 120.0;
         private const double MinTextModuleHeight = 42.0;
         private const double MaxTextModuleWidth = 480.0;
-        private const double AvtoPanOtsup = 48.0;
-        private const double PorogKursoraDlyaAvtoPana = 80.0;
         private double tekushayaTolschinaLinii = 2.0;
         private double tekushiyMashtab = 1.0;
         private const int MaksimalnayaDlinaStrokiTeksta = 20;
         private const int MaksimalnayaDlinaVsegoTeksta = 255;
-        private Point? poslednyayaPozitsiyaKursoraNaPole;
 
         private Point tochkaNachalaPeretaskivaniya;
         private Button istochnikKnopki;
@@ -81,7 +74,6 @@ namespace UseCaseApplication
         private Point originalnayaPozitsiya;
         private UIElement elementDlyaMashtabirovaniya;
         private bool nachatoRealnoeMashtabirovanie;
-        private Rect predydushchiyRazmerAktora = Rect.Empty; // Для отслеживания изменения размера
 
         // Переменные для точек изгиба линий
         private List<Border> markeriIzgiba;
@@ -112,6 +104,11 @@ namespace UseCaseApplication
         private bool normalizuyuTekstRedaktora;
         private string posledniyKorrektnyyTekstRedaktora = string.Empty;
 
+        private readonly List<DiagramFile> istoriyaSnimkov = new List<DiagramFile>();
+        private int tekushiyIndeksIstorii = -1;
+        private bool vypolnyayuOtmenuIliPovtor;
+        private const int MaksimalnoeChisloSnimkov = 50;
+
 
         public MainWindow()
         {
@@ -130,6 +127,7 @@ namespace UseCaseApplication
         {
             NastroitSetku();
             InitsializirovatScrollBary();
+            SbrositIstoriyuNaTekuscheeSostoyanie();
         }
 
         private void InitsializirovatScrollBary()
@@ -143,6 +141,77 @@ namespace UseCaseApplication
                 HorizontalScrollBar.Value = -TransformSdviga.X;
                 obnovlyayuScrollBary = false;
             }
+        }
+
+        private void SbrositIstoriyuNaTekuscheeSostoyanie()
+        {
+            if (HolstSoderzhanie == null)
+            {
+                return;
+            }
+
+            var snapshot = PostroitSnimokDiagrammy();
+            istoriyaSnimkov.Clear();
+            istoriyaSnimkov.Add(snapshot);
+            tekushiyIndeksIstorii = istoriyaSnimkov.Count - 1;
+            ObnovitSostoyanieUndoRedo();
+        }
+
+        private bool MozhnoOtkatit()
+        {
+            return tekushiyIndeksIstorii > 0;
+        }
+
+        private bool MozhnoPovtorit()
+        {
+            return tekushiyIndeksIstorii >= 0 && tekushiyIndeksIstorii < istoriyaSnimkov.Count - 1;
+        }
+
+        private void ZafiksirovatSnimokIstorii()
+        {
+            if (blokirovatOtslezhivanieIzmeneniy || vypolnyayuOtmenuIliPovtor || HolstSoderzhanie == null)
+            {
+                return;
+            }
+
+            var snapshot = PostroitSnimokDiagrammy();
+
+            if (tekushiyIndeksIstorii >= 0 && tekushiyIndeksIstorii < istoriyaSnimkov.Count - 1)
+            {
+                istoriyaSnimkov.RemoveRange(tekushiyIndeksIstorii + 1, istoriyaSnimkov.Count - tekushiyIndeksIstorii - 1);
+            }
+
+            istoriyaSnimkov.Add(snapshot);
+
+            if (istoriyaSnimkov.Count > MaksimalnoeChisloSnimkov)
+            {
+                istoriyaSnimkov.RemoveAt(0);
+            }
+
+            tekushiyIndeksIstorii = istoriyaSnimkov.Count - 1;
+            ObnovitSostoyanieUndoRedo();
+        }
+
+        private void PrimeniSnimokIstorii(DiagramFile snapshot)
+        {
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            blokirovatOtslezhivanieIzmeneniy = true;
+            try
+            {
+                OchistitHolstCore();
+                PriminitDiagrammu(snapshot);
+            }
+            finally
+            {
+                blokirovatOtslezhivanieIzmeneniy = false;
+            }
+
+            estNesokhrannyeIzmeneniya = true;
+            ObnovitZagolovokOkna();
         }
 
         private void ZagolovokOkna_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -1175,9 +1244,19 @@ namespace UseCaseApplication
 
                         if (isPervayaTochka || isPoslednyayaTochka)
                         {
-                            // Используем позицию мыши вместо позиции точки для правильного прикрепления
-                            var mousePos = e.GetPosition(HolstSoderzhanie);
-                            objToAttach = NaytiObektVDiapazone(mousePos, RadiusPrikrepleniya);
+                            var parent = VisualTreeHelper.GetParent(tekushayaLiniyaDlyaIzgiba) as Canvas;
+                            Point absPoint;
+                            if (parent != null && parent != HolstSoderzhanie)
+                            {
+                                var canvasLeft = Canvas.GetLeft(parent); if (double.IsNaN(canvasLeft)) canvasLeft = 0;
+                                var canvasTop = Canvas.GetTop(parent); if (double.IsNaN(canvasTop)) canvasTop = 0;
+                                absPoint = new Point(points[aktivnayaTochkaIzgiba].X + canvasLeft, points[aktivnayaTochkaIzgiba].Y + canvasTop);
+                            }
+                            else
+                            {
+                                absPoint = points[aktivnayaTochkaIzgiba];
+                            }
+                            objToAttach = NaytiObektVDiapazone(absPoint, RadiusPrikrepleniya);
                         }
 
                         if (objToAttach != null)
@@ -1217,15 +1296,6 @@ namespace UseCaseApplication
             {
                 scaleX = scaleTransform.ScaleX;
                 scaleY = scaleTransform.ScaleY;
-            }
-            else if (element.RenderTransform is TransformGroup transformGroup)
-            {
-                // Для TransformGroup перемножаем все ScaleTransform
-                foreach (var transform in transformGroup.Children.OfType<ScaleTransform>())
-                {
-                    scaleX *= transform.ScaleX;
-                    scaleY *= transform.ScaleY;
-                }
             }
 
             if (element is Shape shape)
@@ -1379,18 +1449,6 @@ namespace UseCaseApplication
                     width = canvas.Width * scaleX;
                 if (!double.IsNaN(canvas.Height) && canvas.Height > 0)
                     height = canvas.Height * scaleY;
-            }
-            else if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
-            {
-                // Для текстовых контейнеров не учитываем RenderTransform
-                // Размеры Border меняются напрямую, без трансформаций
-                border.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                width = !double.IsNaN(border.Width) && border.Width > 0
-                    ? border.Width
-                    : border.DesiredSize.Width;
-                height = !double.IsNaN(border.Height) && border.Height > 0
-                    ? border.Height
-                    : border.DesiredSize.Height;
             }
             else if (element is TextBlock textBlock)
             {
@@ -1576,18 +1634,6 @@ namespace UseCaseApplication
                 if (!double.IsNaN(canvas.Height) && canvas.Height > 0)
                     height = canvas.Height;
             }
-            else if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
-            {
-                // Для текстовых контейнеров получаем размеры напрямую
-                // Border не использует RenderTransform для масштабирования
-                border.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                width = !double.IsNaN(border.Width) && border.Width > 0
-                    ? border.Width
-                    : border.DesiredSize.Width;
-                height = !double.IsNaN(border.Height) && border.Height > 0
-                    ? border.Height
-                    : border.DesiredSize.Height;
-            }
             else if (element is TextBlock textBlock)
             {
                 textBlock.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -1697,12 +1743,12 @@ namespace UseCaseApplication
         {
             if (UndoButton != null)
             {
-                UndoButton.IsEnabled = EstElementDlyaUndo();
+                UndoButton.IsEnabled = MozhnoOtkatit();
             }
 
             if (RedoButton != null)
             {
-                RedoButton.IsEnabled = otmenaStack.Count > 0;
+                RedoButton.IsEnabled = MozhnoPovtorit();
             }
         }
 
@@ -1754,20 +1800,12 @@ namespace UseCaseApplication
             aktivniyMarker = sender as Border;
             if (aktivniyMarker == null) return;
 
-            SbrostAvtopanaPoKursoru();
             peremeshayuElement = false;
             proiskhodiloPeremeshenieElementa = false;
             mashtabiruyuElement = true;
             nachatoRealnoeMashtabirovanie = false;
             elementDlyaMashtabirovaniya = vybranniyElement;
             tochkaNachalaMashtabirovaniya = e.GetPosition(HolstSoderzhanie);
-            
-            // Инициализируем предыдущий размер актора при начале нового масштабирования
-            if (YavlyaetsyaAktorom(vybranniyElement))
-            {
-                var nachalnyeGranitsyAktora = PoluchitGranitsyElementa(vybranniyElement);
-                predydushchiyRazmerAktora = nachalnyeGranitsyAktora;
-            }
 
             // Получаем текущие размеры элемента (с учетом масштабирования)
             var currentBounds = PoluchitGranitsyElementa(elementDlyaMashtabirovaniya);
@@ -1832,10 +1870,6 @@ namespace UseCaseApplication
                 }
                 aktivniyMarker = null;
                 Mouse.Capture(null);
-                SbrostAvtopanaPoKursoru();
-                
-                // Сбрасываем предыдущий размер актора при окончании масштабирования
-                predydushchiyRazmerAktora = Rect.Empty;
 
                 if (elementDlyaMashtabirovaniya != null && proiskhodiloMashtabirovanieElementa)
                 {
@@ -1939,60 +1973,24 @@ namespace UseCaseApplication
                 // Принудительно обновляем визуализацию
                 canvas.InvalidateVisual();
                 canvas.UpdateLayout();
-
-                if (YavlyaetsyaAktorom(canvas))
-                {
-                    var novyeGranitsy = new Rect(left, top, width, height);
-                    PodvizhatPoleVmesteSAktorom(novyeGranitsy);
-                    // Обновляем предыдущий размер после каждого масштабирования
-                    predydushchiyRazmerAktora = novyeGranitsy;
-                }
             }
-            // Текстовые контейнеры - меняем только размеры Border, текст остается одного размера
+            // Текстовые контейнеры масштабируем как карточки
             else if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
             {
-                // Сохраняем оригинальные размеры при первом масштабировании
-                if (!originalnyeRazmery.ContainsKey(border))
-                {
-                    var realBounds = PoluchitGranitsyBezMashtaba(border);
-                    originalnyeRazmery[border] = realBounds;
-                }
-
-                // Ограничиваем размеры минимальными и максимальными значениями
                 var clampedWidth = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, width));
                 var clampedHeight = Math.Max(MinTextModuleHeight, height);
-                
-                // Меняем размеры Border напрямую (без RenderTransform)
-                // Border не должен иметь RenderTransform для масштабирования
-                // Убираем RenderTransform, если он есть
-                if (border.RenderTransform != null)
-                {
-                    border.RenderTransform = null;
-                }
-                
                 border.Width = clampedWidth;
                 border.Height = clampedHeight;
-                
-                // Устанавливаем позицию
                 Canvas.SetLeft(border, left);
                 Canvas.SetTop(border, top);
 
-                // Обновляем размеры TextBlock внутри
                 if (border.Child is TextBlock inner)
                 {
                     var contentWidth = Math.Max(16, clampedWidth - (border.Padding.Left + border.Padding.Right));
                     inner.Width = contentWidth;
                     inner.TextWrapping = TextWrapping.Wrap;
                     inner.TextAlignment = TextAlignment.Center;
-                    
-                    // Применяем компенсирующий масштаб к TextBlock
-                    // Это компенсирует масштаб холста, чтобы текст оставался одного размера на экране
-                    PrimeniKompensiruyushchiyMashtabKTextu(inner);
                 }
-
-                // Принудительно обновляем визуализацию
-                border.InvalidateVisual();
-                border.UpdateLayout();
                 return;
             }
             // Для Shape изменяем размеры напрямую или через трансформацию
@@ -2247,29 +2245,6 @@ namespace UseCaseApplication
                     
                     // Преобразуем координаты экрана в координаты окна
                     var windowPos = this.PointFromScreen(screenPos);
-
-                    Point? pozitsiyaNaPole = null;
-                    if (PoleDlyaRisovaniya != null)
-                    {
-                        try
-                        {
-                            var transformKPolu = PoleDlyaRisovaniya.TransformToVisual(this);
-                            var inverse = transformKPolu?.Inverse;
-                            if (inverse != null)
-                            {
-                                pozitsiyaNaPole = inverse.Transform(windowPos);
-                            }
-                        }
-                        catch
-                        {
-                            // Игнорируем сбои преобразования и используем запасной вариант ниже
-                        }
-
-                        if (!pozitsiyaNaPole.HasValue)
-                        {
-                            pozitsiyaNaPole = Mouse.GetPosition(PoleDlyaRisovaniya);
-                        }
-                    }
                     
                     // Преобразуем координаты окна в координаты HolstSoderzhanie
                     // Используем TransformToVisual для правильного учета всех трансформаций
@@ -2307,29 +2282,6 @@ namespace UseCaseApplication
                         tekushayaPoz = Mouse.GetPosition(HolstSoderzhanie);
                     }
                     
-                    // Делаем автопан по курсору (если нужно) и получаем величину сдвига
-                    Vector sdvigAvtopana = new Vector(0, 0);
-                    if (pozitsiyaNaPole.HasValue)
-                    {
-                        sdvigAvtopana = PanPolePoPozitsiiKursora(pozitsiyaNaPole.Value);
-                    }
-
-                    // Компенсируем точку масштабирования с учетом сдвига автопана
-                    if (Math.Abs(sdvigAvtopana.X) > 0.01 || Math.Abs(sdvigAvtopana.Y) > 0.01)
-                    {
-                        if (TransformMashtaba != null)
-                        {
-                            double scaleX = Math.Abs(TransformMashtaba.ScaleX) < 0.0001 ? 1.0 : TransformMashtaba.ScaleX;
-                            double scaleY = Math.Abs(TransformMashtaba.ScaleY) < 0.0001 ? 1.0 : TransformMashtaba.ScaleY;
-                            // Сдвиг в экранных координатах нужно преобразовать в координаты холста
-                            double deltaHolstaX = sdvigAvtopana.X / scaleX;
-                            double deltaHolstaY = sdvigAvtopana.Y / scaleY;
-                            tochkaNachalaMashtabirovaniya = new Point(
-                                tochkaNachalaMashtabirovaniya.X - deltaHolstaX,
-                                tochkaNachalaMashtabirovaniya.Y - deltaHolstaY);
-                        }
-                    }
-
                     var deltaX = tekushayaPoz.X - tochkaNachalaMashtabirovaniya.X;
                     var deltaY = tekushayaPoz.Y - tochkaNachalaMashtabirovaniya.Y;
 
@@ -2420,10 +2372,6 @@ namespace UseCaseApplication
                     nachatoRealnoeMashtabirovanie = false;
                     aktivniyMarker = null;
                     Mouse.Capture(null);
-                    SbrostAvtopanaPoKursoru();
-                    
-                    // Сбрасываем предыдущий размер актора при окончании масштабирования
-                    predydushchiyRazmerAktora = Rect.Empty;
                 }
                 return;
             }
@@ -2559,10 +2507,6 @@ namespace UseCaseApplication
                 mashtabiruyuElement = false;
                 aktivniyMarker = null;
                 Mouse.Capture(null);
-                SbrostAvtopanaPoKursoru();
-                
-                // Сбрасываем предыдущий размер актора при окончании масштабирования
-                predydushchiyRazmerAktora = Rect.Empty;
                 if (elementDlyaMashtabirovaniya != null)
                 {
                     PokazatRamuMashtabirovaniya(elementDlyaMashtabirovaniya);
@@ -2741,265 +2685,6 @@ namespace UseCaseApplication
             }
         }
 
-        private void KompensirovatTochkuMashtabirovaniyaPriPan(double sdvigX, double sdvigY)
-        {
-            if (!mashtabiruyuElement || elementDlyaMashtabirovaniya == null)
-            {
-                return;
-            }
-
-            if (TransformMashtaba == null)
-            {
-                return;
-            }
-
-            double scaleX = Math.Abs(TransformMashtaba.ScaleX) < 0.0001 ? 1.0 : TransformMashtaba.ScaleX;
-            double scaleY = Math.Abs(TransformMashtaba.ScaleY) < 0.0001 ? 1.0 : TransformMashtaba.ScaleY;
-
-            double deltaHolstaX = Math.Abs(sdvigX) > 0.001 ? sdvigX / scaleX : 0;
-            double deltaHolstaY = Math.Abs(sdvigY) > 0.001 ? sdvigY / scaleY : 0;
-
-            if (deltaHolstaX != 0 || deltaHolstaY != 0)
-            {
-                tochkaNachalaMashtabirovaniya = new Point(
-                    tochkaNachalaMashtabirovaniya.X - deltaHolstaX,
-                    tochkaNachalaMashtabirovaniya.Y - deltaHolstaY);
-            }
-        }
-
-        private void PodvizhatPoleVmesteSAktorom(Rect aktualnyeGranitsyAktora)
-        {
-            if (PoleDlyaRisovaniya == null || TransformMashtaba == null || TransformSdviga == null)
-            {
-                return;
-            }
-
-            // Проверяем, увеличивается ли актор (не уменьшается)
-            // Если актор уменьшается, не двигаем поле - оно должно остаться на месте
-            if (!predydushchiyRazmerAktora.IsEmpty)
-            {
-                double predydushchayaPloshchad = predydushchiyRazmerAktora.Width * predydushchiyRazmerAktora.Height;
-                double tekushayaPloshchad = aktualnyeGranitsyAktora.Width * aktualnyeGranitsyAktora.Height;
-                
-                // Также проверяем размеры по отдельности для большей надежности
-                double predydushchayaShirina = predydushchiyRazmerAktora.Width;
-                double predydushchayaVysota = predydushchiyRazmerAktora.Height;
-                double tekushayaShirina = aktualnyeGranitsyAktora.Width;
-                double tekushayaVysota = aktualnyeGranitsyAktora.Height;
-                
-                // Если площадь уменьшилась ИЛИ оба размера уменьшились, не двигаем поле
-                bool ploshchadUmenshilas = tekushayaPloshchad < predydushchayaPloshchad * 0.99;
-                bool obaRazmeraUmenshilis = (tekushayaShirina < predydushchayaShirina * 0.99) && 
-                                           (tekushayaVysota < predydushchayaVysota * 0.99);
-                
-                if (ploshchadUmenshilas || obaRazmeraUmenshilis)
-                {
-                    // Обновляем предыдущий размер, но не двигаем поле
-                    predydushchiyRazmerAktora = aktualnyeGranitsyAktora;
-                    return;
-                }
-            }
-
-            double poleWidth = PoleDlyaRisovaniya.ActualWidth;
-            double poleHeight = PoleDlyaRisovaniya.ActualHeight;
-            if (poleWidth <= 0 || poleHeight <= 0)
-            {
-                return;
-            }
-
-            double scaleX = Math.Abs(TransformMashtaba.ScaleX) < 0.0001 ? 0.0001 : TransformMashtaba.ScaleX;
-            double scaleY = Math.Abs(TransformMashtaba.ScaleY) < 0.0001 ? 0.0001 : TransformMashtaba.ScaleY;
-
-            double leftNaEkrane = aktualnyeGranitsyAktora.Left * scaleX + TransformSdviga.X;
-            double rightNaEkrane = aktualnyeGranitsyAktora.Right * scaleX + TransformSdviga.X;
-            double topNaEkrane = aktualnyeGranitsyAktora.Top * scaleY + TransformSdviga.Y;
-            double bottomNaEkrane = aktualnyeGranitsyAktora.Bottom * scaleY + TransformSdviga.Y;
-
-            double dopusk = Math.Min(AvtoPanOtsup, Math.Min(poleWidth, poleHeight) / 4.0);
-            double sdvigX = 0;
-            double sdvigY = 0;
-
-            if (leftNaEkrane < dopusk)
-            {
-                sdvigX = dopusk - leftNaEkrane;
-            }
-            else if (rightNaEkrane > poleWidth - dopusk)
-            {
-                sdvigX = (poleWidth - dopusk) - rightNaEkrane;
-            }
-
-            if (topNaEkrane < dopusk)
-            {
-                sdvigY = dopusk - topNaEkrane;
-            }
-            else if (bottomNaEkrane > poleHeight - dopusk)
-            {
-                sdvigY = (poleHeight - dopusk) - bottomNaEkrane;
-            }
-
-            if (Math.Abs(sdvigX) > 0.01 || Math.Abs(sdvigY) > 0.01)
-            {
-                TransformSdviga.X += sdvigX;
-                TransformSdviga.Y += sdvigY;
-
-                if (setkaTranslateTransform != null)
-                {
-                    setkaTranslateTransform.X += sdvigX;
-                    setkaTranslateTransform.Y += sdvigY;
-                }
-
-                KompensirovatTochkuMashtabirovaniyaPriPan(sdvigX, sdvigY);
-                ObnovitScrollBary();
-            }
-        }
-
-        private Vector PanPolePoPozitsiiKursora(Point kursorNaPole)
-        {
-            if (!mashtabiruyuElement || elementDlyaMashtabirovaniya == null)
-            {
-                poslednyayaPozitsiyaKursoraNaPole = null;
-                return new Vector(0, 0);
-            }
-
-            if (!(elementDlyaMashtabirovaniya is UIElement target) || !YavlyaetsyaAktorom(target))
-            {
-                poslednyayaPozitsiyaKursoraNaPole = null;
-                return new Vector(0, 0);
-            }
-
-            // Проверяем, не уменьшается ли актор - если уменьшается, не делаем автопан
-            if (!predydushchiyRazmerAktora.IsEmpty)
-            {
-                var tekushieGranitsy = PoluchitGranitsyElementa(elementDlyaMashtabirovaniya);
-                double predydushchayaPloshchad = predydushchiyRazmerAktora.Width * predydushchiyRazmerAktora.Height;
-                double tekushayaPloshchad = tekushieGranitsy.Width * tekushieGranitsy.Height;
-                
-                // Если площадь уменьшилась, не делаем автопан
-                if (tekushayaPloshchad < predydushchayaPloshchad * 0.99)
-                {
-                    return new Vector(0, 0);
-                }
-            }
-
-            if (PoleDlyaRisovaniya == null || TransformSdviga == null)
-            {
-                poslednyayaPozitsiyaKursoraNaPole = null;
-                return new Vector(0, 0);
-            }
-
-            if (double.IsNaN(kursorNaPole.X) || double.IsNaN(kursorNaPole.Y))
-            {
-                poslednyayaPozitsiyaKursoraNaPole = null;
-                return new Vector(0, 0);
-            }
-
-            double poleWidth = PoleDlyaRisovaniya.ActualWidth;
-            double poleHeight = PoleDlyaRisovaniya.ActualHeight;
-            if (poleWidth <= 0 || poleHeight <= 0)
-            {
-                poslednyayaPozitsiyaKursoraNaPole = null;
-                return new Vector(0, 0);
-            }
-
-            // Вычисляем дельту движения курсора
-            Vector deltaKursora = new Vector(0, 0);
-            if (poslednyayaPozitsiyaKursoraNaPole.HasValue)
-            {
-                deltaKursora = kursorNaPole - poslednyayaPozitsiyaKursoraNaPole.Value;
-            }
-            poslednyayaPozitsiyaKursoraNaPole = kursorNaPole;
-
-            // Если курсор не двигался, не делаем автопан
-            if (Math.Abs(deltaKursora.X) < 0.1 && Math.Abs(deltaKursora.Y) < 0.1)
-            {
-                return new Vector(0, 0);
-            }
-
-            // Определяем зоны автопана (20% от края)
-            double thresholdX = Math.Max(20.0, poleWidth * 0.2);
-            double thresholdY = Math.Max(20.0, poleHeight * 0.2);
-
-            double shiftX = 0;
-            double shiftY = 0;
-
-            // Горизонтальный автопан
-            if (thresholdX > 0)
-            {
-                double distanceFromLeft = kursorNaPole.X;
-                double distanceFromRight = poleWidth - kursorNaPole.X;
-
-                // Курсор близко к левому краю
-                if (distanceFromLeft < thresholdX)
-                {
-                    double intensity = 1.0 - (distanceFromLeft / thresholdX);
-                    intensity = Math.Pow(intensity, 0.7); // Плавная кривая
-                    shiftX = -deltaKursora.X * intensity;
-                }
-                // Курсор близко к правому краю
-                else if (distanceFromRight < thresholdX)
-                {
-                    double intensity = 1.0 - (distanceFromRight / thresholdX);
-                    intensity = Math.Pow(intensity, 0.7); // Плавная кривая
-                    shiftX = -deltaKursora.X * intensity;
-                }
-            }
-
-            // Вертикальный автопан
-            if (thresholdY > 0)
-            {
-                double distanceFromTop = kursorNaPole.Y;
-                double distanceFromBottom = poleHeight - kursorNaPole.Y;
-
-                // Курсор близко к верхнему краю
-                if (distanceFromTop < thresholdY)
-                {
-                    double intensity = 1.0 - (distanceFromTop / thresholdY);
-                    intensity = Math.Pow(intensity, 0.7); // Плавная кривая
-                    shiftY = -deltaKursora.Y * intensity;
-                }
-                // Курсор близко к нижнему краю
-                else if (distanceFromBottom < thresholdY)
-                {
-                    double intensity = 1.0 - (distanceFromBottom / thresholdY);
-                    intensity = Math.Pow(intensity, 0.7); // Плавная кривая
-                    shiftY = -deltaKursora.Y * intensity;
-                }
-            }
-
-            // Ограничиваем максимальную скорость сдвига для плавности
-            double maxShiftPerFrame = 8.0;
-            if (Math.Abs(shiftX) > maxShiftPerFrame)
-            {
-                shiftX = Math.Sign(shiftX) * maxShiftPerFrame;
-            }
-            if (Math.Abs(shiftY) > maxShiftPerFrame)
-            {
-                shiftY = Math.Sign(shiftY) * maxShiftPerFrame;
-            }
-
-            if (Math.Abs(shiftX) > 0.01 || Math.Abs(shiftY) > 0.01)
-            {
-                TransformSdviga.X += shiftX;
-                TransformSdviga.Y += shiftY;
-
-                if (setkaTranslateTransform != null)
-                {
-                    setkaTranslateTransform.X += shiftX;
-                    setkaTranslateTransform.Y += shiftY;
-                }
-
-                ObnovitScrollBary();
-                return new Vector(shiftX, shiftY);
-            }
-
-            return new Vector(0, 0);
-        }
-
-        private void SbrostAvtopanaPoKursoru()
-        {
-            poslednyayaPozitsiyaKursoraNaPole = null;
-        }
-
         private void ResizeGrip_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             izmenyayuRazmerOkna = true;
@@ -3105,46 +2790,23 @@ namespace UseCaseApplication
 
         private void Otmena_Click(object sender, RoutedEventArgs e)
         {
-            if (HolstSoderzhanie == null || HolstSoderzhanie.Children.Count == 0) return;
-
-            // Ищем последний реальный элемент (не рамку и не маркеры)
-            UIElement element = null;
-            for (int i = HolstSoderzhanie.Children.Count - 1; i >= 0; i--)
+            if (!MozhnoOtkatit())
             {
-                var child = HolstSoderzhanie.Children[i] as UIElement;
-                if (child == null) continue;
-
-                // Пропускаем рамку и маркеры
-                if (ramkaVydeleniya != null && ReferenceEquals(child, ramkaVydeleniya)) continue;
-                if (markeriMashtaba != null && child is Border marker && markeriMashtaba.Contains(marker)) continue;
-                if (markeriIzgiba != null && child is Border markerIzgiba && markeriIzgiba.Contains(markerIzgiba)) continue;
-                if (aktivnyTextovyEditor != null && ReferenceEquals(child, aktivnyTextovyEditor)) continue;
-
-                element = child;
-                break;
+                return;
             }
 
-            if (element == null) return;
-
-            UIElement originalElement = null;
-            if (informaciyaZamen.TryGetValue(element, out var original))
+            vypolnyayuOtmenuIliPovtor = true;
+            try
             {
-                originalElement = original;
+                var targetIndex = tekushiyIndeksIstorii - 1;
+                var snapshot = istoriyaSnimkov[targetIndex];
+                PrimeniSnimokIstorii(snapshot);
+                tekushiyIndeksIstorii = targetIndex;
             }
-
-            var elementZIndex = Panel.GetZIndex(element);
-
-            UdalitElementSHolsta(element);
-
-            if (originalElement != null)
+            finally
             {
-                if (!HolstSoderzhanie.Children.Contains(originalElement))
-                {
-                    HolstSoderzhanie.Children.Add(originalElement);
-                    Panel.SetZIndex(originalElement, elementZIndex);
-                }
-                vybranniyElement = originalElement;
-                PokazatRamuMashtabirovaniya(originalElement);
+                vypolnyayuOtmenuIliPovtor = false;
+                ObnovitSostoyanieUndoRedo();
             }
         }
 
@@ -3173,8 +2835,6 @@ namespace UseCaseApplication
 
             if (registrirovatUndo)
             {
-                otmenaStack.Push(element);
-                vozvratStack.Clear();
                 MarkDocumentDirty();
                 ObnovitSostoyanieUndoRedo();
             }
@@ -3220,35 +2880,29 @@ namespace UseCaseApplication
 
             UdalitElementSHolsta(holstElement, registrirovatUndo: false);
             DobavitNaHolst(newElement);
-
-            informaciyaZamen[newElement] = holstElement;
             MarkDocumentDirty();
         }
 
         private void Vozvrat_Click(object sender, RoutedEventArgs e)
         {
-            if (otmenaStack.Count == 0) return;
-            var element = otmenaStack.Pop();
-
-             if (informaciyaZamen.TryGetValue(element, out var original) && original != null)
-             {
-                 if (HolstSoderzhanie.Children.Contains(original))
-                 {
-                     HolstSoderzhanie.Children.Remove(original);
-                 }
-             }
-
-            HolstSoderzhanie.Children.Add(element);
-            vozvratStack.Push(element);
-
-            // Если это был выбранный элемент, обновляем рамку и маркеры
-            if (vybranniyElement == element || (vybranniyElement == null && vybranniyeElementy.Contains(element)))
+            if (!MozhnoPovtorit())
             {
-                vybranniyElement = element;
-                PokazatRamuMashtabirovaniya(element);
+                return;
             }
-            MarkDocumentDirty();
-            ObnovitSostoyanieUndoRedo();
+
+            vypolnyayuOtmenuIliPovtor = true;
+            try
+            {
+                var targetIndex = tekushiyIndeksIstorii + 1;
+                var snapshot = istoriyaSnimkov[targetIndex];
+                PrimeniSnimokIstorii(snapshot);
+                tekushiyIndeksIstorii = targetIndex;
+            }
+            finally
+            {
+                vypolnyayuOtmenuIliPovtor = false;
+                ObnovitSostoyanieUndoRedo();
+            }
         }
 
         private void DobavitNaHolst(UIElement element, bool otslezhivatIzmeneniya = true, bool nachatRedaktirovanieTeksta = false)
@@ -3261,7 +2915,6 @@ namespace UseCaseApplication
             }
 
             HolstSoderzhanie.Children.Add(element);
-            vozvratStack.Clear();
 
             if (YavlyaetsyaTekstovymKontainerom(element))
             {
@@ -3357,8 +3010,7 @@ namespace UseCaseApplication
             var gruppa = new Canvas
             {
                 Width = ShirinaAktoraPoUmolchaniyu,
-                Height = VysotaAktoraPoUmolchaniyu,
-                Tag = TagAktora
+                Height = VysotaAktoraPoUmolchaniyu
             };
 
             // Голова актора - черная
@@ -3779,28 +3431,6 @@ namespace UseCaseApplication
             return false;
         }
 
-        private bool YavlyaetsyaAktorom(UIElement element)
-        {
-            if (element is Canvas canvas)
-            {
-                if (canvas.Tag is string tag && tag == TagAktora)
-                {
-                    return true;
-                }
-
-                bool estGolova = canvas.Children.OfType<Ellipse>().Any();
-                if (!estGolova)
-                {
-                    return false;
-                }
-
-                int kolichestvoLinij = canvas.Children.OfType<Line>().Count();
-                return kolichestvoLinij >= 3;
-            }
-
-            return false;
-        }
-
         private Border PoluchitKontainerTeksta(TextBlock textBlock)
         {
             if (textBlock == null) return null;
@@ -3965,43 +3595,17 @@ namespace UseCaseApplication
                 return;
             }
 
-            // Получаем контейнер Border для текста
-            var container = PoluchitKontainerTeksta(textBlock);
-            if (container == null)
+            var faktor = tekushiyMashtab <= 0 ? 1.0 : 1.0 / tekushiyMashtab;
+            if (textBlock.RenderTransform is ScaleTransform scale)
             {
-                // Если контейнера нет, применяем масштаб напрямую к TextBlock (legacy)
-                var faktor = tekushiyMashtab <= 0 ? 1.0 : 1.0 / tekushiyMashtab;
-                if (textBlock.RenderTransform is ScaleTransform scale)
-                {
-                    scale.ScaleX = faktor;
-                    scale.ScaleY = faktor;
-                }
-                else
-                {
-                    scale = new ScaleTransform(faktor, faktor);
-                    textBlock.RenderTransform = scale;
-                }
-                textBlock.RenderTransformOrigin = new Point(0.5, 0.5);
-                return;
-            }
-
-            // Применяем компенсирующий масштаб к TextBlock внутри Border
-            // Это компенсирует масштаб холста, чтобы текст оставался одного размера на экране
-            // При уменьшении масштаба холста компенсирующий масштаб увеличивается
-            // При увеличении масштаба холста компенсирующий масштаб уменьшается
-            var kompensiruyushchiyFaktor = tekushiyMashtab <= 0 ? 1.0 : 1.0 / tekushiyMashtab;
-            
-            if (textBlock.RenderTransform is ScaleTransform textScale)
-            {
-                textScale.ScaleX = kompensiruyushchiyFaktor;
-                textScale.ScaleY = kompensiruyushchiyFaktor;
+                scale.ScaleX = faktor;
+                scale.ScaleY = faktor;
             }
             else
             {
-                textScale = new ScaleTransform(kompensiruyushchiyFaktor, kompensiruyushchiyFaktor);
-                textBlock.RenderTransform = textScale;
+                scale = new ScaleTransform(faktor, faktor);
+                textBlock.RenderTransform = scale;
             }
-            // Используем центр для масштабирования, чтобы текст масштабировался от центра
             textBlock.RenderTransformOrigin = new Point(0.5, 0.5);
         }
 
@@ -5024,6 +4628,7 @@ namespace UseCaseApplication
                 }
 
                 tekushiyPutFayla = filePath;
+                SbrositIstoriyuNaTekuscheeSostoyanie();
                 MarkDocumentClean();
                 ObnovitSostoyanieUndoRedo();
                 return true;
@@ -5126,8 +4731,6 @@ namespace UseCaseApplication
             SnytVydelenie();
             SkrytRamuMashtabirovaniya();
             HolstSoderzhanie?.Children.Clear();
-            otmenaStack.Clear();
-            vozvratStack.Clear();
             originalnyeRazmery.Clear();
             originalnyeTolschiny.Clear();
             originalnyeKoordinatyLinij.Clear();
@@ -5196,6 +4799,7 @@ namespace UseCaseApplication
 
             tekushiyPutFayla = null;
             MarkDocumentClean();
+            SbrositIstoriyuNaTekuscheeSostoyanie();
             ObnovitSostoyanieUndoRedo();
         }
 
@@ -5231,6 +4835,7 @@ namespace UseCaseApplication
 
             estNesokhrannyeIzmeneniya = true;
             ObnovitZagolovokOkna();
+            ZafiksirovatSnimokIstorii();
         }
 
         private void MarkDocumentClean()
@@ -5248,9 +4853,19 @@ namespace UseCaseApplication
                     Otmena_Click(this, new RoutedEventArgs());
                     e.Handled = true;
                 }
-                else if (e.Key == Key.U)
+                else if (e.Key == Key.Y)
                 {
                     Vozvrat_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.S)
+                {
+                    SaveFile_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.O)
+                {
+                    OpenFile_Click(this, new RoutedEventArgs());
                     e.Handled = true;
                 }
                 else if (e.Key == Key.C)
@@ -5304,12 +4919,6 @@ namespace UseCaseApplication
                         ClipboardManager.Copy(realElement);
                         UdalitElementSHolsta(realElement);
 
-                        // Вырезание не должно добавлять запись в стек Redo
-                        if (otmenaStack.Count > 0 && ReferenceEquals(otmenaStack.Peek(), realElement))
-                        {
-                            otmenaStack.Pop();
-                            ObnovitSostoyanieUndoRedo();
-                        }
                         e.Handled = true;
                     }
                 }
@@ -5470,21 +5079,11 @@ namespace UseCaseApplication
 
             if (obj1 != null)
             {
-                Point t;
-                // Для акторов используем центр объекта, для остальных - точку на границе
-                if (YavlyaetsyaAktorom(obj1))
-                {
-                    var bounds = PoluchitGranitsyElementa(obj1);
-                    t = new Point(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
-                }
-                else
-                {
-                    // Всегда используем направление от центра объекта к другой точке линии
-                    // Направляемся на вторую точку линии (absP2), чтобы конец линии был направлен на неё
-                    Point target = absP2;
-                    // Используем NaytiTochkuNaGranitseOtTsentra для правильного направления на другую точку
-                    t = NaytiTochkuNaGranitseOtTsentra(target, obj1);
-                }
+                // Всегда используем направление от центра объекта к другой точке линии
+                // Направляемся на вторую точку линии (absP2), чтобы конец линии был направлен на неё
+                Point target = absP2;
+                // Используем NaytiTochkuNaGranitseOtTsentra для правильного направления на другую точку
+                var t = NaytiTochkuNaGranitseOtTsentra(target, obj1);
                 if (canvas != null)
                     polyline.Points[0] = new Point(t.X - canvasLeft, t.Y - canvasTop);
                 else
@@ -5494,21 +5093,11 @@ namespace UseCaseApplication
 
             if (obj2 != null)
             {
-                Point t;
-                // Для акторов используем центр объекта, для остальных - точку на границе
-                if (YavlyaetsyaAktorom(obj2))
-                {
-                    var bounds = PoluchitGranitsyElementa(obj2);
-                    t = new Point(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
-                }
-                else
-                {
-                    // Всегда используем направление от центра объекта к другой точке линии
-                    // Направляемся на первую точку линии (absP1), чтобы конец линии был направлен на неё
-                    Point target = absP1;
-                    // Используем NaytiTochkuNaGranitseOtTsentra для правильного направления на другую точку
-                    t = NaytiTochkuNaGranitseOtTsentra(target, obj2);
-                }
+                // Всегда используем направление от центра объекта к другой точке линии
+                // Направляемся на первую точку линии (absP1), чтобы конец линии был направлен на неё
+                Point target = absP1;
+                // Используем NaytiTochkuNaGranitseOtTsentra для правильного направления на другую точку
+                var t = NaytiTochkuNaGranitseOtTsentra(target, obj2);
                 var idx = polyline.Points.Count - 1;
                 if (canvas != null)
                     polyline.Points[idx] = new Point(t.X - canvasLeft, t.Y - canvasTop);
@@ -5849,17 +5438,7 @@ namespace UseCaseApplication
                 absTochka = polyline.Points[indexTochki];
             }
 
-            Point tochkaPrikrepleniya;
-            // Для акторов используем центр объекта, для остальных - точку на границе
-            if (YavlyaetsyaAktorom(obj))
-            {
-                var bounds = PoluchitGranitsyElementa(obj);
-                tochkaPrikrepleniya = new Point(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
-            }
-            else
-            {
-                tochkaPrikrepleniya = NaytiTochkuNaGranitse(absTochka, obj);
-            }
+            var tochkaPrikrepleniya = NaytiTochkuNaGranitse(absTochka, obj);
 
             if (parent != null && parent != HolstSoderzhanie)
             {
