@@ -387,6 +387,7 @@ UseCaseApplication/
 MIT License
 
 Copyright (c) 2024 UseCase Application
+Copyright (c) 2024-2025 UseCase Application
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -407,6 +408,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+---
 
 <div align="center">
 
@@ -417,3 +419,4 @@ SOFTWARE.
 [⬆ Наверх](#-usecase-application-uca)
 
 </div>
+
