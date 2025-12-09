@@ -726,6 +726,7 @@
                                 <MenuItem Header="Открыть..." Click="OpenFile_Click" Style="{StaticResource NoIconMenuItemStyle}"/>
                                 <MenuItem Header="Сохранить" Click="SaveFile_Click" Style="{StaticResource NoIconMenuItemStyle}"/>
                                 <MenuItem Header="Сохранить как..." Click="SaveAsFile_Click" Style="{StaticResource NoIconMenuItemStyle}"/>
+                                <MenuItem Header="Сохранить как PNG..." Click="SaveAsPng_Click" Style="{StaticResource NoIconMenuItemStyle}"/>
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>

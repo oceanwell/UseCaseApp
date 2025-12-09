@@ -4495,6 +4495,82 @@ namespace UseCaseApplication
             SohranitDiagrammu(true);
         }
 
+        private void SaveAsPng_Click(object sender, RoutedEventArgs e)
+        {
+            SohranitKakPng();
+        }
+
+        private bool SohranitKakPng()
+        {
+            if (PoleDlyaRisovaniya == null)
+            {
+                return false;
+            }
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "PNG Image (*.png)|*.png",
+                DefaultExt = "png",
+                AddExtension = true,
+                Title = "Сохранить изображение",
+                FileName = string.IsNullOrWhiteSpace(tekushiyPutFayla) ? "Диаграмма" : System.IO.Path.GetFileNameWithoutExtension(tekushiyPutFayla)
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return false;
+            }
+
+            try
+            {
+                // Находим родительский Grid, который содержит и сетку, и Canvas
+                var parentGrid = PoleDlyaRisovaniya.Parent as Grid;
+                if (parentGrid == null)
+                {
+                    MessageBox.Show("Не удалось найти рабочую область для сохранения.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+
+                // Получаем размер рабочей области (родительский Grid содержит сетку и Canvas)
+                var width = (int)parentGrid.ActualWidth;
+                var height = (int)parentGrid.ActualHeight;
+
+                if (width <= 0 || height <= 0)
+                {
+                    MessageBox.Show("Рабочая область не имеет размеров для сохранения.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+
+                // Обновляем layout перед рендерингом
+                parentGrid.Measure(new Size(width, height));
+                parentGrid.Arrange(new Rect(0, 0, width, height));
+
+                // Создаем RenderTargetBitmap для рендеринга рабочей области с сеткой
+                var renderTarget = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+                
+                // Рендерим родительский Grid (который содержит сетку и Canvas)
+                renderTarget.Render(parentGrid);
+
+                // Создаем PNG encoder
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(renderTarget));
+
+                // Сохраняем в файл
+                using (var stream = new FileStream(dialog.FileName, FileMode.Create))
+                {
+                    encoder.Save(stream);
+                }
+
+                // Важно: НЕ вызываем MarkDocumentClean(), чтобы при выходе все равно предлагалось сохранить проект в .uca
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Не удалось сохранить изображение.\n{ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+        }
+
         private bool SohranitDiagrammu(bool prinuditelnoyeVyborMesta = false)
         {
             if (HolstSoderzhanie == null)
