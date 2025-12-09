@@ -29,22 +29,10 @@ namespace UseCaseApplication
     {
         private readonly Stack<UIElement> otmenaStack = new Stack<UIElement>();
         private readonly Stack<UIElement> vozvratStack = new Stack<UIElement>();
-        private readonly Dictionary<UIElement, UIElement> informaciyaZamen = new Dictionary<UIElement, UIElement>();
         private const double standartnayaTolschinaLinii = 1.0;
         private const string TagPolzovatelskogoTeksta = "uca-user-text";
-        private const double ShirinaAktoraPoUmolchaniyu = 60.0;
-        private const double VysotaAktoraPoUmolchaniyu = 120.0;
-        private const string PodderzhivaemoeRasshirenie = ".uca";
-        private const double DefaultTextModuleWidth = 220.0;
-        private const double DefaultTextModuleHeight = 84.0;
-        private const double MinTextModuleWidth = 120.0;
-        private const double MinTextModuleHeight = 42.0;
-        private const double MaxTextModuleWidth = 480.0;
         private double tekushayaTolschinaLinii = 2.0;
         private double tekushiyMashtab = 1.0;
-        private const int MaksimalnayaDlinaStrokiTeksta = 50;
-        private const int MaksimalnayaDlinaVsegoTeksta = 500;
-        private const int MaksimalnoeKolichestvoStrok = 10;
 
         private Point tochkaNachalaPeretaskivaniya;
         private Button istochnikKnopki;
@@ -71,7 +59,6 @@ namespace UseCaseApplication
         private Rect originalniyRazmer;
         private Point originalnayaPozitsiya;
         private UIElement elementDlyaMashtabirovaniya;
-        private bool nachatoRealnoeMashtabirovanie;
 
         // Переменные для точек изгиба линий
         private List<Border> markeriIzgiba;
@@ -99,13 +86,6 @@ namespace UseCaseApplication
         // Редактирование текста
         private TextBox aktivnyTextovyEditor;
         private TextBlock redaktiruemyTextovyElement;
-        private bool normalizuyuTekstRedaktora;
-        private string posledniyKorrektnyyTekstRedaktora = string.Empty;
-
-        // Динамическое расширение холста
-        private const double MinCanvasWidth = 800;
-        private const double MinCanvasHeight = 600;
-        private const double CanvasExpandMargin = 200; // Отступ для расширения
 
 
         public MainWindow()
@@ -116,26 +96,12 @@ namespace UseCaseApplication
             Closing += MainWindow_Closing;
             Loaded += MainWindow_Loaded;
             MarkDocumentClean();
-            ObnovitSostoyanieUndoRedo();
-            PreviewKeyDown += MainWindow_PreviewKeyDown;
         }
 
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             NastroitSetku();
-            
-            // Инициализируем начальные размеры холста
-            if (PoleDlyaRisovaniya != null)
-            {
-                PoleDlyaRisovaniya.Width = MinCanvasWidth;
-                PoleDlyaRisovaniya.Height = MinCanvasHeight;
-            }
-            if (HolstSoderzhanie != null)
-            {
-                HolstSoderzhanie.Width = MinCanvasWidth;
-                HolstSoderzhanie.Height = MinCanvasHeight;
-            }
         }
 
         private void ZagolovokOkna_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -466,12 +432,6 @@ namespace UseCaseApplication
                     // Сохраняем текущую толщину линии при выделении
                     // docherniy.StrokeThickness остается без изменений
                 }
-            }
-            else if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
-            {
-                border.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#CD853F"));
-                border.BorderThickness = new Thickness(2);
-                border.Background = new SolidColorBrush(Color.FromArgb(32, 205, 133, 63));
             }
 
             PokazatRamuMashtabirovaniya(element);
@@ -884,7 +844,7 @@ namespace UseCaseApplication
 
             // Создаем маркеры изменения размера (8 штук: 4 угла + 4 стороны)
             markeriMashtaba = new List<Border>();
-            double markerSize = 14;
+            double markerSize = 8;
 
             // Угловые маркеры
             var positions = new[]
@@ -1460,6 +1420,11 @@ namespace UseCaseApplication
                         : shape.DesiredSize.Height;
 
                     // Убираем эффект трансформации
+                    if (shape.RenderTransform is ScaleTransform scaleTransform)
+                    {
+                        width = width / scaleTransform.ScaleX;
+                        height = height / scaleTransform.ScaleY;
+                    }
                 }
             }
             else if (element is Canvas canvas)
@@ -1543,10 +1508,6 @@ namespace UseCaseApplication
                 {
                     width = maxRight - minLeft;
                     height = maxBottom - minTop;
-                    
-                    // Корректируем позицию, так как PoluchitGranitsyElementa учитывает смещение minLeft/minTop
-                    left += minLeft;
-                    top += minTop;
                 }
                 else
                 {
@@ -1554,11 +1515,12 @@ namespace UseCaseApplication
                     height = 150;
                 }
 
-                // Если у Canvas есть явные размеры, используем их, как и в PoluchitGranitsyElementa
-                if (!double.IsNaN(canvas.Width) && canvas.Width > 0)
-                    width = canvas.Width;
-                if (!double.IsNaN(canvas.Height) && canvas.Height > 0)
-                    height = canvas.Height;
+                // Убираем эффект трансформации Canvas
+                if (canvas.RenderTransform is ScaleTransform scaleTransform)
+                {
+                    width = width / scaleTransform.ScaleX;
+                    height = height / scaleTransform.ScaleY;
+                }
             }
             else if (element is TextBlock textBlock)
             {
@@ -1575,6 +1537,12 @@ namespace UseCaseApplication
                 height = !double.IsNaN(fe.Height) && fe.Height > 0
                     ? fe.Height
                     : fe.DesiredSize.Height;
+
+                if (fe.RenderTransform is ScaleTransform scaleTransform)
+                {
+                    width = width / scaleTransform.ScaleX;
+                    height = height / scaleTransform.ScaleY;
+                }
             }
 
             return new Rect(left, top, width, height);
@@ -1653,70 +1621,10 @@ namespace UseCaseApplication
                         }
                     }
                 }
-                else if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
-                {
-                    border.BorderBrush = Brushes.Transparent;
-                    border.BorderThickness = new Thickness(0);
-                    border.Background = Brushes.Transparent;
-                }
             }
             vybranniyeElementy.Clear();
             originalnyeTolschiny.Clear();
             SkrytRamuMashtabirovaniya();
-        }
-
-        private void ObnovitSostoyanieUndoRedo()
-        {
-            if (UndoButton != null)
-            {
-                UndoButton.IsEnabled = EstElementDlyaUndo();
-            }
-
-            if (RedoButton != null)
-            {
-                RedoButton.IsEnabled = otmenaStack.Count > 0;
-            }
-        }
-
-        private bool EstElementDlyaUndo()
-        {
-            if (HolstSoderzhanie == null)
-            {
-                return false;
-            }
-
-            for (int i = HolstSoderzhanie.Children.Count - 1; i >= 0; i--)
-            {
-                var child = HolstSoderzhanie.Children[i] as UIElement;
-                if (child == null)
-                {
-                    continue;
-                }
-
-                if (ramkaVydeleniya != null && ReferenceEquals(child, ramkaVydeleniya))
-                {
-                    continue;
-                }
-
-                if (markeriMashtaba != null && child is Border marker && markeriMashtaba.Contains(marker))
-                {
-                    continue;
-                }
-
-                if (markeriIzgiba != null && child is Border markerIzgiba && markeriIzgiba.Contains(markerIzgiba))
-                {
-                    continue;
-                }
-
-                if (aktivnyTextovyEditor != null && ReferenceEquals(child, aktivnyTextovyEditor))
-                {
-                    continue;
-                }
-
-                return true;
-            }
-
-            return false;
         }
 
         private void Marker_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -1726,10 +1634,7 @@ namespace UseCaseApplication
             aktivniyMarker = sender as Border;
             if (aktivniyMarker == null) return;
 
-            peremeshayuElement = false;
-            proiskhodiloPeremeshenieElementa = false;
             mashtabiruyuElement = true;
-            nachatoRealnoeMashtabirovanie = false;
             elementDlyaMashtabirovaniya = vybranniyElement;
             tochkaNachalaMashtabirovaniya = e.GetPosition(HolstSoderzhanie);
 
@@ -1742,13 +1647,6 @@ namespace UseCaseApplication
             if (elementDlyaMashtabirovaniya is Line)
             {
                 // Для Line используем границы из PoluchitGranitsyElementa
-                realLeft = currentBounds.Left;
-                realTop = currentBounds.Top;
-            }
-            else if (elementDlyaMashtabirovaniya is Canvas)
-            {
-                // Для Canvas используем позицию из PoluchitGranitsyElementa,
-                // так как она учитывает смещение содержимого при масштабировании
                 realLeft = currentBounds.Left;
                 realTop = currentBounds.Top;
             }
@@ -1789,7 +1687,6 @@ namespace UseCaseApplication
             if (mashtabiruyuElement)
             {
                 mashtabiruyuElement = false;
-                nachatoRealnoeMashtabirovanie = false;
                 if (aktivniyMarker != null)
                 {
                     aktivniyMarker.ReleaseMouseCapture();
@@ -1859,13 +1756,6 @@ namespace UseCaseApplication
                 // Для других Canvas (актор и т.д.) используем обычное масштабирование
                 // Оригинальные размеры уже сохранены в начале функции, используем их
 
-                // Вычисляем визуальное смещение содержимого относительно Canvas через текущие границы
-                var currentBounds = PoluchitGranitsyElementa(canvas);
-                double currentCanvasLeft = Canvas.GetLeft(canvas);
-                if (double.IsNaN(currentCanvasLeft)) currentCanvasLeft = 0;
-                double currentCanvasTop = Canvas.GetTop(canvas);
-                if (double.IsNaN(currentCanvasTop)) currentCanvasTop = 0;
-
                 // Масштабируем Canvas через RenderTransform
                 var transform = canvas.RenderTransform as ScaleTransform;
                 if (transform == null)
@@ -1875,49 +1765,16 @@ namespace UseCaseApplication
                     canvas.RenderTransformOrigin = new Point(0, 0);
                 }
 
-                double currentScaleX = Math.Abs(transform.ScaleX) < 0.0001 ? 1.0 : transform.ScaleX;
-                double currentScaleY = Math.Abs(transform.ScaleY) < 0.0001 ? 1.0 : transform.ScaleY;
-
-                double minLeft = (currentBounds.Left - currentCanvasLeft) / currentScaleX;
-                double minTop = (currentBounds.Top - currentCanvasTop) / currentScaleY;
-
-                if (double.IsNaN(minLeft) || double.IsInfinity(minLeft)) minLeft = 0;
-                if (double.IsNaN(minTop) || double.IsInfinity(minTop)) minTop = 0;
-
                 transform.ScaleX = finalScaleX;
                 transform.ScaleY = finalScaleY;
 
-                // left и top - это визуальные координаты содержимого (с учетом смещения)
-                // Позиция Canvas = визуальная позиция - смещение содержимого с новым масштабом
-                double canvasLeft = left - minLeft * finalScaleX;
-                double canvasTop = top - minTop * finalScaleY;
-
                 // Устанавливаем новую позицию
-                Canvas.SetLeft(canvas, canvasLeft);
-                Canvas.SetTop(canvas, canvasTop);
+                Canvas.SetLeft(canvas, left);
+                Canvas.SetTop(canvas, top);
 
                 // Принудительно обновляем визуализацию
                 canvas.InvalidateVisual();
                 canvas.UpdateLayout();
-            }
-            // Текстовые контейнеры масштабируем как карточки
-            else if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
-            {
-                var clampedWidth = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, width));
-                var clampedHeight = Math.Max(MinTextModuleHeight, height);
-                border.Width = clampedWidth;
-                border.Height = clampedHeight;
-                Canvas.SetLeft(border, left);
-                Canvas.SetTop(border, top);
-
-                if (border.Child is TextBlock inner)
-                {
-                    var contentWidth = Math.Max(16, clampedWidth - (border.Padding.Left + border.Padding.Right));
-                    inner.Width = contentWidth;
-                    inner.TextWrapping = TextWrapping.Wrap;
-                    inner.TextAlignment = TextAlignment.Center;
-                }
-                return;
             }
             // Для Shape изменяем размеры напрямую или через трансформацию
             else if (element is Shape shape)
@@ -2042,21 +1899,23 @@ namespace UseCaseApplication
                     Canvas.SetTop(shape, top);
                 }
             }
-            // Для TextBlock изменяем размеры области, не меняя шрифт
+            // Для TextBlock изменяем FontSize пропорционально
             else if (element is TextBlock textBlock)
             {
+                // Сохраняем оригинальный размер шрифта
                 if (!originalnyeRazmery.ContainsKey(element))
                 {
                     textBlock.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
                     originalnyeRazmery[element] = new Rect(left, top, textBlock.DesiredSize.Width, textBlock.DesiredSize.Height);
                 }
 
-                var baseRect = originalnyeRazmery[element];
-                var newWidth = Math.Max(40, baseRect.Width * finalScaleX);
-                var newHeight = Math.Max(20, baseRect.Height * finalScaleY);
-                textBlock.Width = newWidth;
-                textBlock.Height = newHeight;
-                textBlock.TextWrapping = TextWrapping.Wrap;
+                var fontSizeScale = Math.Min(finalScaleX, finalScaleY);
+                if (!originalnyeTolschiny.ContainsKey(element))
+                {
+                    originalnyeTolschiny[element] = textBlock.FontSize > 0 ? textBlock.FontSize : 16;
+                }
+                var baseFontSize = originalnyeTolschiny[element];
+                textBlock.FontSize = baseFontSize * fontSizeScale;
                 Canvas.SetLeft(textBlock, left);
                 Canvas.SetTop(textBlock, top);
             }
@@ -2164,21 +2023,6 @@ namespace UseCaseApplication
                     var deltaX = tekushayaPoz.X - tochkaNachalaMashtabirovaniya.X;
                     var deltaY = tekushayaPoz.Y - tochkaNachalaMashtabirovaniya.Y;
 
-                    if (!nachatoRealnoeMashtabirovanie)
-                    {
-                        var maxDelta = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY));
-                        if (maxDelta < 3)
-                        {
-                            return;
-                        }
-                        nachatoRealnoeMashtabirovanie = true;
-                    }
-
-                    if (Math.Abs(deltaX) < 0.5 && Math.Abs(deltaY) < 0.5)
-                    {
-                        return;
-                    }
-
                     // Получаем индекс маркера из Tag
                     int markerIndex = -1;
                     if (aktivniyMarker.Tag is int index)
@@ -2198,52 +2042,27 @@ namespace UseCaseApplication
                         double newTop = originalnayaPozitsiya.Y;
 
                         // Вычисляем новые размеры и позицию в зависимости от маркера
-                        // Для угловых маркеров используем пропорциональное масштабирование
                         switch (markerIndex)
                         {
                             case 0: // Левый верхний
-                                {
-                                    // Используем максимальное изменение для сохранения пропорций
-                                    double scale = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY)) / Math.Max(originalniyRazmer.Width, originalniyRazmer.Height);
-                                    if (deltaX < 0 || deltaY < 0) scale = -scale;
-                                    
-                                    newWidth = Math.Max(20, originalniyRazmer.Width - scale * originalniyRazmer.Width);
-                                    newHeight = Math.Max(20, originalniyRazmer.Height - scale * originalniyRazmer.Height);
-                                    newLeft = originalnayaPozitsiya.X + (originalniyRazmer.Width - newWidth);
-                                    newTop = originalnayaPozitsiya.Y + (originalniyRazmer.Height - newHeight);
-                                }
+                                newWidth = Math.Max(20, originalniyRazmer.Width - deltaX);
+                                newHeight = Math.Max(20, originalniyRazmer.Height - deltaY);
+                                newLeft = originalnayaPozitsiya.X + (originalniyRazmer.Width - newWidth);
+                                newTop = originalnayaPozitsiya.Y + (originalniyRazmer.Height - newHeight);
                                 break;
                             case 1: // Правый верхний
-                                {
-                                    double scale = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY)) / Math.Max(originalniyRazmer.Width, originalniyRazmer.Height);
-                                    if (deltaX > 0 || deltaY < 0) scale = Math.Abs(scale);
-                                    else scale = -Math.Abs(scale);
-                                    
-                                    newWidth = Math.Max(20, originalniyRazmer.Width + scale * originalniyRazmer.Width);
-                                    newHeight = Math.Max(20, originalniyRazmer.Height + scale * originalniyRazmer.Height);
-                                    newTop = originalnayaPozitsiya.Y + (originalniyRazmer.Height - newHeight);
-                                }
+                                newWidth = Math.Max(20, originalniyRazmer.Width + deltaX);
+                                newHeight = Math.Max(20, originalniyRazmer.Height - deltaY);
+                                newTop = originalnayaPozitsiya.Y + (originalniyRazmer.Height - newHeight);
                                 break;
                             case 2: // Левый нижний
-                                {
-                                    double scale = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY)) / Math.Max(originalniyRazmer.Width, originalniyRazmer.Height);
-                                    if (deltaX < 0 || deltaY > 0) scale = Math.Abs(scale);
-                                    else scale = -Math.Abs(scale);
-                                    
-                                    newWidth = Math.Max(20, originalniyRazmer.Width - scale * originalniyRazmer.Width);
-                                    newHeight = Math.Max(20, originalniyRazmer.Height - scale * originalniyRazmer.Height);
-                                    newLeft = originalnayaPozitsiya.X + (originalniyRazmer.Width - newWidth);
-                                }
+                                newWidth = Math.Max(20, originalniyRazmer.Width - deltaX);
+                                newHeight = Math.Max(20, originalniyRazmer.Height + deltaY);
+                                newLeft = originalnayaPozitsiya.X + (originalniyRazmer.Width - newWidth);
                                 break;
                             case 3: // Правый нижний
-                                {
-                                    double scale = Math.Max(Math.Abs(deltaX), Math.Abs(deltaY)) / Math.Max(originalniyRazmer.Width, originalniyRazmer.Height);
-                                    if (deltaX > 0 || deltaY > 0) scale = Math.Abs(scale);
-                                    else scale = -Math.Abs(scale);
-                                    
-                                    newWidth = Math.Max(20, originalniyRazmer.Width + scale * originalniyRazmer.Width);
-                                    newHeight = Math.Max(20, originalniyRazmer.Height + scale * originalniyRazmer.Height);
-                                }
+                                newWidth = Math.Max(20, originalniyRazmer.Width + deltaX);
+                                newHeight = Math.Max(20, originalniyRazmer.Height + deltaY);
                                 break;
                             case 4: // Верхний центр
                                 newHeight = Math.Max(20, originalniyRazmer.Height - deltaY);
@@ -2266,7 +2085,6 @@ namespace UseCaseApplication
                         {
                             MashtabirovatElement(elementDlyaMashtabirovaniya, newLeft, newTop, newWidth, newHeight);
                             PokazatRamuMashtabirovaniya(elementDlyaMashtabirovaniya);
-                            RasshiritHolstEsliNeobhodimo(elementDlyaMashtabirovaniya);
                             proiskhodiloMashtabirovanieElementa = true;
                         }
                     }
@@ -2274,7 +2092,6 @@ namespace UseCaseApplication
                 else
                 {
                     mashtabiruyuElement = false;
-                    nachatoRealnoeMashtabirovanie = false;
                     aktivniyMarker = null;
                     Mouse.Capture(null);
                 }
@@ -2325,9 +2142,6 @@ namespace UseCaseApplication
 
                     // Обновляем рамку масштабирования при перемещении
                     PokazatRamuMashtabirovaniya(vybranniyElement);
-
-                    // Расширяем холст если объект приближается к краям
-                    RasshiritHolstEsliNeobhodimo(vybranniyElement);
 
                     // Если перемещаем объект - обновляем прикрепленные стрелки
                     if (!YavlyaetsyaStrelkoy(vybranniyElement))
@@ -2470,7 +2284,6 @@ namespace UseCaseApplication
                 // Пропускаем рамку и маркеры
                 if (ramkaVydeleniya != null && ReferenceEquals(child, ramkaVydeleniya)) continue;
                 if (markeriMashtaba != null && child is Border marker && markeriMashtaba.Contains(marker)) continue;
-                if (markeriIzgiba != null && child is Border markerIzgiba && markeriIzgiba.Contains(markerIzgiba)) continue;
                 if (aktivnyTextovyEditor != null && ReferenceEquals(child, aktivnyTextovyEditor)) continue;
 
                 element = child;
@@ -2478,37 +2291,6 @@ namespace UseCaseApplication
             }
 
             if (element == null) return;
-
-            UIElement originalElement = null;
-            if (informaciyaZamen.TryGetValue(element, out var original))
-            {
-                originalElement = original;
-            }
-
-            var elementZIndex = Panel.GetZIndex(element);
-
-            UdalitElementSHolsta(element);
-
-            if (originalElement != null)
-            {
-                if (!HolstSoderzhanie.Children.Contains(originalElement))
-                {
-                    HolstSoderzhanie.Children.Add(originalElement);
-                    Panel.SetZIndex(originalElement, elementZIndex);
-                }
-                vybranniyElement = originalElement;
-                PokazatRamuMashtabirovaniya(originalElement);
-            }
-        }
-
-        /// <summary>
-        /// Удаляет указанный элемент с холста с поддержкой Undo/Redo.
-        /// Используется как кнопкой «Отмена», так и контекстным меню элемента.
-        /// </summary>
-        /// <param name="element">Элемент верхнего уровня на HolstSoderzhanie.</param>
-        private void UdalitElementSHolsta(UIElement element, bool registrirovatUndo = true)
-        {
-            if (element == null || HolstSoderzhanie == null) return;
 
             // Если удаляем выбранный элемент, скрываем рамку и маркеры
             if (vybranniyElement == element || (vybranniyElement == null && vybranniyeElementy.Contains(element)))
@@ -2523,58 +2305,8 @@ namespace UseCaseApplication
             }
 
             HolstSoderzhanie.Children.Remove(element);
-
-            if (registrirovatUndo)
-            {
-                otmenaStack.Push(element);
-                vozvratStack.Clear();
-                MarkDocumentDirty();
-                ObnovitSostoyanieUndoRedo();
-            }
-        }
-
-        private void ZamenitElementInstrumentom(UIElement element, string instrument)
-        {
-            if (HolstSoderzhanie == null || string.IsNullOrWhiteSpace(instrument)) return;
-            var targetElement = element;
-            if (targetElement == null) return;
-
-            var holstElement = NaytiElementNaHolste(targetElement) ?? targetElement;
-            if (holstElement == null) return;
-
-            double left = Canvas.GetLeft(holstElement);
-            if (double.IsNaN(left)) left = 0;
-            double top = Canvas.GetTop(holstElement);
-            if (double.IsNaN(top)) top = 0;
-
-            double width = holstElement.RenderSize.Width;
-            double height = holstElement.RenderSize.Height;
-
-            if (holstElement is FrameworkElement fe)
-            {
-                if (fe.ActualWidth > 0) width = fe.ActualWidth;
-                if (fe.ActualHeight > 0) height = fe.ActualHeight;
-            }
-
-            if (width <= 0) width = 60;
-            if (height <= 0) height = 60;
-
-            var zIndex = Panel.GetZIndex(holstElement);
-            var centerPoint = new Point(left + width / 2, top + height / 2);
-            var newElement = SozdatElementPoInstrumentu(instrument, centerPoint);
-            if (newElement == null)
-            {
-                return;
-            }
-
-            Canvas.SetLeft(newElement, left);
-            Canvas.SetTop(newElement, top);
-            Panel.SetZIndex(newElement, zIndex);
-
-            UdalitElementSHolsta(holstElement, registrirovatUndo: false);
-            DobavitNaHolst(newElement);
-
-            informaciyaZamen[newElement] = holstElement;
+            otmenaStack.Push(element);
+            vozvratStack.Clear();
             MarkDocumentDirty();
         }
 
@@ -2582,15 +2314,6 @@ namespace UseCaseApplication
         {
             if (otmenaStack.Count == 0) return;
             var element = otmenaStack.Pop();
-
-             if (informaciyaZamen.TryGetValue(element, out var original) && original != null)
-             {
-                 if (HolstSoderzhanie.Children.Contains(original))
-                 {
-                     HolstSoderzhanie.Children.Remove(original);
-                 }
-             }
-
             HolstSoderzhanie.Children.Add(element);
             vozvratStack.Push(element);
 
@@ -2601,30 +2324,16 @@ namespace UseCaseApplication
                 PokazatRamuMashtabirovaniya(element);
             }
             MarkDocumentDirty();
-            ObnovitSostoyanieUndoRedo();
         }
 
         private void DobavitNaHolst(UIElement element, bool otslezhivatIzmeneniya = true, bool nachatRedaktirovanieTeksta = false)
         {
             if (HolstSoderzhanie == null || element == null) return;
 
-            if (element is TextBlock legacyText && EtoPolzovatelskogoTekstaLegacy(legacyText))
-            {
-                element = PreobrazovatLegacyTextElement(legacyText);
-            }
-
             HolstSoderzhanie.Children.Add(element);
             vozvratStack.Clear();
 
-            if (YavlyaetsyaTekstovymKontainerom(element))
-            {
-                var textBlock = PoluchitTextBlockIzElementa(element);
-                if (textBlock != null)
-                {
-                    NastroitTekstovyElement(textBlock, nachatRedaktirovanieTeksta);
-                }
-            }
-            else if (element is TextBlock textBlock)
+            if (element is TextBlock textBlock)
             {
                 NastroitTekstovyElement(textBlock, nachatRedaktirovanieTeksta);
             }
@@ -2655,39 +2364,6 @@ namespace UseCaseApplication
             {
                 MarkDocumentDirty();
             }
-
-            ObnovitSostoyanieUndoRedo();
-        }
-
-        private bool EtoPolzovatelskogoTekstaLegacy(TextBlock textBlock)
-        {
-            return textBlock != null &&
-                   textBlock.Tag as string == TagPolzovatelskogoTeksta &&
-                   PoluchitKontainerTeksta(textBlock) == null;
-        }
-
-        private UIElement PreobrazovatLegacyTextElement(TextBlock oldText)
-        {
-            if (oldText == null) return oldText;
-
-            oldText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            var desired = oldText.DesiredSize;
-
-            var width = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, desired.Width + 32));
-            var height = Math.Max(MinTextModuleHeight, desired.Height + 24);
-
-            var container = SozdatTekstovyyKontainer(oldText.Text ?? "Текст", width, height, oldText);
-
-            var left = Canvas.GetLeft(oldText);
-            var top = Canvas.GetTop(oldText);
-            if (double.IsNaN(left)) left = 0;
-            if (double.IsNaN(top)) top = 0;
-
-            Canvas.SetLeft(container, left);
-            Canvas.SetTop(container, top);
-            Panel.SetZIndex(container, Panel.GetZIndex(oldText));
-
-            return container;
         }
 
         private UIElement NaytiElementNaHolste(UIElement element)
@@ -2707,29 +2383,18 @@ namespace UseCaseApplication
 
         private UIElement SozdatChelovechka()
         {
-            var gruppa = new Canvas
-            {
-                Width = ShirinaAktoraPoUmolchaniyu,
-                Height = VysotaAktoraPoUmolchaniyu
-            };
+            var gruppa = new Canvas();
 
             // Голова актора - черная
-            var golova = new Ellipse
-            {
-                Width = 30,
-                Height = 30,
-                Stroke = Brushes.Black,
-                StrokeThickness = standartnayaTolschinaLinii,
-                Fill = Brushes.Black
-            };
-            Canvas.SetLeft(golova, 15);
-            Canvas.SetTop(golova, 0);
+            var golova = new Ellipse { Width = 30, Height = 30, Stroke = Brushes.Black, StrokeThickness = standartnayaTolschinaLinii, Fill = Brushes.Black };
+            Canvas.SetLeft(golova, 50);
+            Canvas.SetTop(golova, 30);
 
             // Тело, руки и ноги актора - черные
-            var telo = new Line { X1 = ShirinaAktoraPoUmolchaniyu / 2, Y1 = 30, X2 = ShirinaAktoraPoUmolchaniyu / 2, Y2 = 90, Stroke = Brushes.Black, StrokeThickness = standartnayaTolschinaLinii };
-            var rukaL = new Line { X1 = 0, Y1 = 50, X2 = ShirinaAktoraPoUmolchaniyu, Y2 = 50, Stroke = Brushes.Black, StrokeThickness = standartnayaTolschinaLinii };
-            var nogaL = new Line { X1 = ShirinaAktoraPoUmolchaniyu / 2, Y1 = 90, X2 = 10, Y2 = VysotaAktoraPoUmolchaniyu, Stroke = Brushes.Black, StrokeThickness = standartnayaTolschinaLinii };
-            var nogaR = new Line { X1 = ShirinaAktoraPoUmolchaniyu / 2, Y1 = 90, X2 = ShirinaAktoraPoUmolchaniyu - 10, Y2 = VysotaAktoraPoUmolchaniyu, Stroke = Brushes.Black, StrokeThickness = standartnayaTolschinaLinii };
+            var telo = new Line { X1 = 65, Y1 = 60, X2 = 65, Y2 = 120, Stroke = Brushes.Black, StrokeThickness = standartnayaTolschinaLinii };
+            var rukaL = new Line { X1 = 35, Y1 = 80, X2 = 95, Y2 = 80, Stroke = Brushes.Black, StrokeThickness = standartnayaTolschinaLinii };
+            var nogaL = new Line { X1 = 65, Y1 = 120, X2 = 45, Y2 = 150, Stroke = Brushes.Black, StrokeThickness = standartnayaTolschinaLinii };
+            var nogaR = new Line { X1 = 65, Y1 = 120, X2 = 85, Y2 = 150, Stroke = Brushes.Black, StrokeThickness = standartnayaTolschinaLinii };
 
             gruppa.Children.Add(golova);
             gruppa.Children.Add(telo);
@@ -2737,180 +2402,9 @@ namespace UseCaseApplication
             gruppa.Children.Add(nogaL);
             gruppa.Children.Add(nogaR);
 
-            // Создаем контекстное меню
-            gruppa.ContextMenu = SozdatKontekstnoyeMenyu();
-
             Canvas.SetLeft(gruppa, 0);
             Canvas.SetTop(gruppa, 0);
             return gruppa;
-        }
-
-        private ContextMenu SozdatKontekstnoyeMenyu()
-        {
-            var contextMenu = new ContextMenu();
-            var contextMenuStyle = TryFindResource("ElementContextMenuStyle") as Style;
-            if (contextMenuStyle != null)
-            {
-                contextMenu.Style = contextMenuStyle;
-            }
-
-            var menuItemStyle = TryFindResource("ElementMenuItemStyle") as Style;
-
-            // Пункт меню "Удалить"
-            var deleteMenuItem = new MenuItem
-            {
-                Header = "Удалить"
-            };
-            if (menuItemStyle != null)
-            {
-                deleteMenuItem.Style = menuItemStyle;
-            }
-            deleteMenuItem.Click += (s, e) =>
-            {
-                // Элемент, по которому кликнули правой кнопкой
-                if (contextMenu.PlacementTarget is UIElement target)
-                {
-                    // Находим реальный элемент верхнего уровня на холсте
-                    var elementNaHolste = NaytiElementNaHolste(target) ?? target;
-                    UdalitElementSHolsta(elementNaHolste);
-                }
-            };
-            contextMenu.Items.Add(deleteMenuItem);
-
-            // Пункт меню "Заменить на..." с подменю
-            var replaceMenuItem = new MenuItem
-            {
-                Header = "Заменить на..."
-            };
-            if (menuItemStyle != null)
-            {
-                replaceMenuItem.Style = menuItemStyle;
-            }
-
-            // Подменю для замены
-            var replaceWithActor = new MenuItem
-            {
-                Header = "Актер"
-            };
-            if (menuItemStyle != null)
-            {
-                replaceWithActor.Style = menuItemStyle;
-            }
-            replaceWithActor.Click += (s, e) =>
-            {
-                if (contextMenu.PlacementTarget is UIElement target)
-                {
-                    ZamenitElementInstrumentom(target, "aktor");
-                }
-            };
-
-            var replaceWithUseCase = new MenuItem
-            {
-                Header = "Прецедент"
-            };
-            if (menuItemStyle != null)
-            {
-                replaceWithUseCase.Style = menuItemStyle;
-            }
-            replaceWithUseCase.Click += (s, e) =>
-            {
-                if (contextMenu.PlacementTarget is UIElement target)
-                {
-                    ZamenitElementInstrumentom(target, "pretsedent");
-                }
-            };
-
-            var replaceWithSystem = new MenuItem
-            {
-                Header = "Система"
-            };
-            if (menuItemStyle != null)
-            {
-                replaceWithSystem.Style = menuItemStyle;
-            }
-            replaceWithSystem.Click += (s, e) =>
-            {
-                if (contextMenu.PlacementTarget is UIElement target)
-                {
-                    ZamenitElementInstrumentom(target, "sistema");
-                }
-            };
-
-            var replaceWithLine = new MenuItem
-            {
-                Header = "Линия"
-            };
-            if (menuItemStyle != null)
-            {
-                replaceWithLine.Style = menuItemStyle;
-            }
-            replaceWithLine.Click += (s, e) =>
-            {
-                if (contextMenu.PlacementTarget is UIElement target)
-                {
-                    ZamenitElementInstrumentom(target, "liniya");
-                }
-            };
-
-            var replaceWithInclude = new MenuItem
-            {
-                Header = "Include"
-            };
-            if (menuItemStyle != null)
-            {
-                replaceWithInclude.Style = menuItemStyle;
-            }
-            replaceWithInclude.Click += (s, e) =>
-            {
-                if (contextMenu.PlacementTarget is UIElement target)
-                {
-                    ZamenitElementInstrumentom(target, "vklyuchit");
-                }
-            };
-
-            var replaceWithExtend = new MenuItem
-            {
-                Header = "Extend"
-            };
-            if (menuItemStyle != null)
-            {
-                replaceWithExtend.Style = menuItemStyle;
-            }
-            replaceWithExtend.Click += (s, e) =>
-            {
-                if (contextMenu.PlacementTarget is UIElement target)
-                {
-                    ZamenitElementInstrumentom(target, "rasshirit");
-                }
-            };
-
-            var replaceWithGeneralization = new MenuItem
-            {
-                Header = "Обобщение"
-            };
-            if (menuItemStyle != null)
-            {
-                replaceWithGeneralization.Style = menuItemStyle;
-            }
-            replaceWithGeneralization.Click += (s, e) =>
-            {
-                if (contextMenu.PlacementTarget is UIElement target)
-                {
-                    ZamenitElementInstrumentom(target, "obobshenie");
-                }
-            };
-
-            replaceMenuItem.Items.Add(replaceWithActor);
-            replaceMenuItem.Items.Add(replaceWithUseCase);
-            replaceMenuItem.Items.Add(replaceWithSystem);
-            replaceMenuItem.Items.Add(replaceWithLine);
-            replaceMenuItem.Items.Add(replaceWithInclude);
-            replaceMenuItem.Items.Add(replaceWithExtend);
-            replaceMenuItem.Items.Add(replaceWithGeneralization);
-
-            contextMenu.Items.Add(replaceMenuItem);
-
-            return contextMenu;
         }
 
         private UIElement SozdatElementPoInstrumentu(string instrument, Point tochka)
@@ -2920,8 +2414,8 @@ namespace UseCaseApplication
                 case "aktor":
                     {
                         var akter = SozdatChelovechka();
-                        Canvas.SetLeft(akter, tochka.X - (ShirinaAktoraPoUmolchaniyu / 2));
-                        Canvas.SetTop(akter, tochka.Y - (VysotaAktoraPoUmolchaniyu / 2));
+                        Canvas.SetLeft(akter, tochka.X - 65);
+                        Canvas.SetTop(akter, tochka.Y - 90);
                         return akter;
                     }
                 case "pretsedent":
@@ -2937,7 +2431,6 @@ namespace UseCaseApplication
                         };
                         Canvas.SetLeft(ellips, tochka.X - 60);
                         Canvas.SetTop(ellips, tochka.Y - 30);
-                        ellips.ContextMenu = SozdatKontekstnoyeMenyu();
                         return ellips;
                     }
                 case "sistema":
@@ -2955,7 +2448,6 @@ namespace UseCaseApplication
                         };
                         Canvas.SetLeft(pryamougolnik, tochka.X - 120);
                         Canvas.SetTop(pryamougolnik, tochka.Y - 80);
-                        pryamougolnik.ContextMenu = SozdatKontekstnoyeMenyu();
                         return pryamougolnik;
                     }
                 case "liniya":
@@ -2967,7 +2459,6 @@ namespace UseCaseApplication
                             //StrokeThickness = tekushayaTolschinaLinii
                             StrokeThickness = standartnayaTolschinaLinii
                         };
-                        liniya.ContextMenu = SozdatKontekstnoyeMenyu();
                         return liniya;
                     }
                 case "vklyuchit":
@@ -2994,7 +2485,6 @@ namespace UseCaseApplication
                         gruppa.Children.Add(tekst);
                         Canvas.SetLeft(gruppa, tochka.X - 70);
                         Canvas.SetTop(gruppa, tochka.Y - 20);
-                        gruppa.ContextMenu = SozdatKontekstnoyeMenyu();
                         return gruppa;
                     }
                 case "rasshirit":
@@ -3021,7 +2511,6 @@ namespace UseCaseApplication
                         gruppa.Children.Add(tekst);
                         Canvas.SetLeft(gruppa, tochka.X - 70);
                         Canvas.SetTop(gruppa, tochka.Y - 20);
-                        gruppa.ContextMenu = SozdatKontekstnoyeMenyu();
                         return gruppa;
                     }
                 case "obobshenie":
@@ -3044,66 +2533,24 @@ namespace UseCaseApplication
                         gruppa.Children.Add(strelka);
                         Canvas.SetLeft(gruppa, tochka.X - 60);
                         Canvas.SetTop(gruppa, tochka.Y - 20);
-                        gruppa.ContextMenu = SozdatKontekstnoyeMenyu();
                         return gruppa;
                     }
                 case "tekst":
                     {
-                        return SozdatTekstovyyElement(tochka);
+                        var blokTeksta = new TextBlock
+                        {
+                            Text = "Текст",
+                            FontSize = 16,
+                            Foreground = Brushes.Black,
+                            Tag = TagPolzovatelskogoTeksta
+                        };
+                        Canvas.SetLeft(blokTeksta, tochka.X - 20);
+                        Canvas.SetTop(blokTeksta, tochka.Y - 10);
+                        return blokTeksta;
                     }
                 default:
                     return null;
             }
-        }
-
-        private UIElement SozdatTekstovyyElement(Point center)
-        {
-            var container = SozdatTekstovyyKontainer("Текст", DefaultTextModuleWidth, DefaultTextModuleHeight, null);
-            Canvas.SetLeft(container, center.X - container.Width / 2);
-            Canvas.SetTop(container, center.Y - container.Height / 2);
-            return container;
-        }
-
-        private Border SozdatTekstovyyKontainer(string text, double width, double height, TextBlock template)
-        {
-            var container = new Border
-            {
-                Tag = TagPolzovatelskogoTeksta,
-                Background = Brushes.Transparent,
-                BorderBrush = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
-                CornerRadius = new CornerRadius(10),
-                Padding = new Thickness(16, 12, 16, 12),
-                Width = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, width)),
-                Height = Math.Max(MinTextModuleHeight, height),
-                MinWidth = MinTextModuleWidth,
-                MinHeight = MinTextModuleHeight,
-                MaxWidth = MaxTextModuleWidth,
-                SnapsToDevicePixels = true,
-                Cursor = Cursors.IBeam,
-                ClipToBounds = true
-            };
-
-            var textBlock = new TextBlock
-            {
-                Text = string.IsNullOrWhiteSpace(text) ? "Текст" : text,
-                FontSize = template?.FontSize > 0 ? template.FontSize : 18,
-                FontFamily = template?.FontFamily ?? new FontFamily("Inter"),
-                FontWeight = template?.FontWeight ?? FontWeights.SemiBold,
-                Foreground = template?.Foreground ?? Brushes.Black,
-                TextAlignment = TextAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Top,
-                TextWrapping = TextWrapping.Wrap,
-                Tag = TagPolzovatelskogoTeksta,
-                Cursor = Cursors.IBeam,
-                MaxHeight = double.PositiveInfinity
-            };
-
-            container.Child = textBlock;
-            container.MouseLeftButtonDown += TekstovyyKontainer_MouseLeftButtonDown;
-            container.ContextMenu = SozdatKontekstnoyeMenyu();
-            return container;
         }
 
         private bool EtoPolzovatelskiyTekst(TextBlock textBlock)
@@ -3119,147 +2566,13 @@ namespace UseCaseApplication
                 return true;
             }
 
-            var container = PoluchitKontainerTeksta(textBlock);
-            return container != null;
-        }
-
-        private bool YavlyaetsyaTekstovymKontainerom(UIElement element)
-        {
-            if (element is Border border && border.Tag is string tag)
+            if (HolstSoderzhanie == null)
             {
-                return string.Equals(tag, TagPolzovatelskogoTeksta, StringComparison.Ordinal);
-            }
-            return false;
-        }
-
-        private Border PoluchitKontainerTeksta(TextBlock textBlock)
-        {
-            if (textBlock == null) return null;
-            var parent = VisualTreeHelper.GetParent(textBlock) as Border;
-            if (parent != null && YavlyaetsyaTekstovymKontainerom(parent))
-            {
-                return parent;
-            }
-            return null;
-        }
-
-        private TextBlock PoluchitTextBlockIzElementa(UIElement element)
-        {
-            if (element is TextBlock tb && EtoPolzovatelskiyTekst(tb))
-            {
-                return tb;
+                return false;
             }
 
-            if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
-            {
-                return border.Child as TextBlock;
-            }
-
-            return null;
-        }
-
-        private Size IzmeritTekstovoeSoderzhimoe(string text, FontFamily fontFamily, double fontSize, FontWeight fontWeight, double maxWidth)
-        {
-            if (fontFamily == null)
-            {
-                fontFamily = new FontFamily("Inter");
-            }
-            if (fontSize <= 0)
-            {
-                fontSize = 18;
-            }
-            if (fontWeight.Equals(default(FontWeight)))
-            {
-                fontWeight = FontWeights.SemiBold;
-            }
-
-            var probe = new TextBlock
-            {
-                Text = string.IsNullOrWhiteSpace(text) ? "Текст" : text,
-                FontFamily = fontFamily,
-                FontSize = fontSize,
-                FontWeight = fontWeight,
-                TextWrapping = TextWrapping.Wrap,
-                TextAlignment = TextAlignment.Center,
-                Width = maxWidth
-            };
-
-            probe.Measure(new Size(maxWidth, double.PositiveInfinity));
-            return probe.DesiredSize;
-        }
-
-        private void AktualizirovatRazmerEditora(TextBox editor)
-        {
-            if (editor == null)
-            {
-                return;
-            }
-
-            double baseWidth = editor.Width;
-            if (redaktiruemyTextovyElement != null)
-            {
-                var container = PoluchitKontainerTeksta(redaktiruemyTextovyElement);
-                if (container != null && !double.IsNaN(container.Width) && container.Width > 0)
-                {
-                    baseWidth = container.Width;
-                }
-            }
-
-            if (double.IsNaN(baseWidth) || baseWidth <= 0)
-            {
-                baseWidth = DefaultTextModuleWidth;
-            }
-
-            var clampedWidth = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, baseWidth));
-            editor.Width = clampedWidth;
-
-            var paddingWidth = editor.Padding.Left + editor.Padding.Right + editor.BorderThickness.Left + editor.BorderThickness.Right;
-            var paddingHeight = editor.Padding.Top + editor.Padding.Bottom + editor.BorderThickness.Top + editor.BorderThickness.Bottom;
-            var contentWidth = Math.Max(16, clampedWidth - paddingWidth);
-
-            var measured = IzmeritTekstovoeSoderzhimoe(editor.Text, editor.FontFamily, editor.FontSize, editor.FontWeight, contentWidth);
-            editor.Height = Math.Max(MinTextModuleHeight, measured.Height + paddingHeight);
-        }
-
-        private void ObnovitRazmerTekstovogoKontainera(TextBlock textBlock)
-        {
-            var container = PoluchitKontainerTeksta(textBlock);
-            if (container == null)
-            {
-                return;
-            }
-
-            var paddingWidth = container.Padding.Left + container.Padding.Right;
-            var paddingHeight = container.Padding.Top + container.Padding.Bottom;
-
-            var targetWidth = container.Width;
-            if (double.IsNaN(targetWidth) || targetWidth <= 0)
-            {
-                targetWidth = DefaultTextModuleWidth;
-            }
-            targetWidth = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, targetWidth));
-
-            var contentWidth = Math.Max(20, targetWidth - paddingWidth);
-            
-            // Настраиваем TextBlock для правильного отображения
-            textBlock.Width = contentWidth;
-            textBlock.Height = double.NaN; // Позволяем TextBlock автоматически подстраивать высоту
-            textBlock.TextWrapping = TextWrapping.Wrap;
-            textBlock.TextAlignment = TextAlignment.Center;
-            textBlock.VerticalAlignment = VerticalAlignment.Top;
-            textBlock.MaxHeight = double.PositiveInfinity;
-            
-            // Измеряем размер текста
-            var measured = IzmeritTekstovoeSoderzhimoe(textBlock.Text, textBlock.FontFamily, textBlock.FontSize, textBlock.FontWeight, contentWidth);
-
-            container.Width = targetWidth;
-            container.Height = Math.Max(MinTextModuleHeight, measured.Height + paddingHeight);
-            
-            // Принудительное обновление layout для корректного отображения
-            textBlock.InvalidateMeasure();
-            textBlock.UpdateLayout();
-            container.InvalidateMeasure();
-            container.UpdateLayout();
+            var parent = VisualTreeHelper.GetParent(textBlock);
+            return ReferenceEquals(parent, HolstSoderzhanie);
         }
 
         private void NastroitTekstovyElement(TextBlock textBlock, bool nachatRedaktirovanieSrazu = false)
@@ -3275,22 +2588,9 @@ namespace UseCaseApplication
             }
 
             textBlock.Cursor = Cursors.IBeam;
-            textBlock.TextAlignment = TextAlignment.Center;
-            textBlock.VerticalAlignment = VerticalAlignment.Center;
-            textBlock.HorizontalAlignment = HorizontalAlignment.Stretch;
-            textBlock.TextWrapping = TextWrapping.Wrap;
             textBlock.MouseLeftButtonDown -= TekstovyElement_MouseLeftButtonDown;
             textBlock.MouseLeftButtonDown += TekstovyElement_MouseLeftButtonDown;
-            PrimeniKompensiruyushchiyMashtabKTextu(textBlock);
-
-            var container = PoluchitKontainerTeksta(textBlock);
-            if (container != null)
-            {
-                container.Cursor = Cursors.IBeam;
-                container.MouseLeftButtonDown -= TekstovyyKontainer_MouseLeftButtonDown;
-                container.MouseLeftButtonDown += TekstovyyKontainer_MouseLeftButtonDown;
-                ObnovitRazmerTekstovogoKontainera(textBlock);
-            }
+            PrimeniKompensiruyushchiyMashtab(textBlock, PoluchitFaktorNezavisimostiOtMashtaba());
 
             if (nachatRedaktirovanieSrazu)
             {
@@ -3301,65 +2601,47 @@ namespace UseCaseApplication
             }
         }
 
-        private void PrimeniKompensiruyushchiyMashtabKTextu(TextBlock textBlock)
+        private double PoluchitFaktorNezavisimostiOtMashtaba()
         {
-            if (textBlock == null)
-            {
-                return;
-            }
-
-            var faktor = tekushiyMashtab <= 0 ? 1.0 : 1.0 / tekushiyMashtab;
-            if (textBlock.RenderTransform is ScaleTransform scale)
-            {
-                scale.ScaleX = faktor;
-                scale.ScaleY = faktor;
-            }
-            else
-            {
-                scale = new ScaleTransform(faktor, faktor);
-                textBlock.RenderTransform = scale;
-            }
-            textBlock.RenderTransformOrigin = new Point(0.5, 0.5);
+            return tekushiyMashtab <= 0 ? 1.0 : 1.0 / tekushiyMashtab;
         }
 
-        private void PrimeniKompensiruyushchiyMashtabKEditoru(TextBox editor)
+        private void PrimeniKompensiruyushchiyMashtab(FrameworkElement element, double faktor)
         {
-            if (editor == null)
+            if (element == null)
             {
                 return;
             }
 
-            var faktor = tekushiyMashtab <= 0 ? 1.0 : 1.0 / tekushiyMashtab;
-            if (editor.RenderTransform is ScaleTransform scale)
+            if (element.LayoutTransform is ScaleTransform scale)
             {
                 scale.ScaleX = faktor;
                 scale.ScaleY = faktor;
             }
             else
             {
-                scale = new ScaleTransform(faktor, faktor);
-                editor.RenderTransform = scale;
+                element.LayoutTransform = new ScaleTransform(faktor, faktor);
             }
-            editor.RenderTransformOrigin = new Point(0.5, 0.5);
         }
 
         private void ObnovitMashtabTeksta()
         {
+            var faktor = PoluchitFaktorNezavisimostiOtMashtaba();
+
             if (HolstSoderzhanie != null)
             {
-                foreach (UIElement child in HolstSoderzhanie.Children)
+                foreach (var textBlock in HolstSoderzhanie.Children.OfType<TextBlock>())
                 {
-                    var textBlock = PoluchitTextBlockIzElementa(child);
-                    if (textBlock != null)
+                    if (EtoPolzovatelskiyTekst(textBlock))
                     {
-                        PrimeniKompensiruyushchiyMashtabKTextu(textBlock);
+                        PrimeniKompensiruyushchiyMashtab(textBlock, faktor);
                     }
                 }
             }
 
             if (aktivnyTextovyEditor != null)
             {
-                PrimeniKompensiruyushchiyMashtabKEditoru(aktivnyTextovyEditor);
+                PrimeniKompensiruyushchiyMashtab(aktivnyTextovyEditor, faktor);
             }
         }
 
@@ -3370,16 +2652,9 @@ namespace UseCaseApplication
                 return;
             }
 
-            if (!MozhnoVstavitTekst(editor, Environment.NewLine))
-            {
-                return;
-            }
-
             var start = editor.SelectionStart;
             editor.SelectedText = Environment.NewLine;
             editor.CaretIndex = start + Environment.NewLine.Length;
-            posledniyKorrektnyyTekstRedaktora = editor.Text ?? string.Empty;
-            AktualizirovatRazmerEditora(editor);
         }
 
         private bool IstochnikVnutriAktivnogoRedaktora(DependencyObject source)
@@ -3402,55 +2677,6 @@ namespace UseCaseApplication
             return false;
         }
 
-        private bool TekstUdovletvoryaetOgranicheniya(string text)
-        {
-            if (text == null)
-            {
-                return true;
-            }
-
-            var bezVozvrataKaretki = text.Replace("\r", string.Empty);
-            if (bezVozvrataKaretki.Length > MaksimalnayaDlinaVsegoTeksta)
-            {
-                return false;
-            }
-
-            var stroki = bezVozvrataKaretki.Split('\n');
-            
-            // Проверяем максимальное количество строк
-            if (stroki.Length > MaksimalnoeKolichestvoStrok)
-            {
-                return false;
-            }
-            
-            return stroki.All(line => line.Length <= MaksimalnayaDlinaStrokiTeksta);
-        }
-
-        private bool MozhnoVstavitTekst(TextBox editor, string tekstDlyaVstavki)
-        {
-            if (editor == null)
-            {
-                return false;
-            }
-
-            var tekuschiy = editor.Text ?? string.Empty;
-            var selectionStart = editor.SelectionStart;
-            var selectionLength = editor.SelectionLength;
-
-            if (selectionStart < 0 || selectionStart > tekuschiy.Length)
-            {
-                selectionStart = tekuschiy.Length;
-            }
-
-            int dostupnayaDlina = Math.Max(0, Math.Min(selectionLength, tekuschiy.Length - selectionStart));
-            var bezVybrannogo = dostupnayaDlina > 0
-                ? tekuschiy.Remove(selectionStart, dostupnayaDlina)
-                : tekuschiy;
-
-            var prospected = bezVybrannogo.Insert(selectionStart, tekstDlyaVstavki ?? string.Empty);
-            return TekstUdovletvoryaetOgranicheniya(prospected);
-        }
-
         private void TekstovyElement_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount < 2)
@@ -3462,24 +2688,6 @@ namespace UseCaseApplication
             {
                 e.Handled = true;
                 NachatRedaktirovanieTeksta(textBlock, false);
-            }
-        }
-
-        private void TekstovyyKontainer_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ClickCount < 2)
-            {
-                return;
-            }
-
-            if (sender is Border border && YavlyaetsyaTekstovymKontainerom(border))
-            {
-                var textBlock = border.Child as TextBlock;
-                if (textBlock != null && EtoPolzovatelskiyTekst(textBlock))
-                {
-                    e.Handled = true;
-                    NachatRedaktirovanieTeksta(textBlock, false);
-                }
             }
         }
 
@@ -3506,17 +2714,16 @@ namespace UseCaseApplication
 
             redaktiruemyTextovyElement = textBlock;
 
-            var container = PoluchitKontainerTeksta(textBlock);
-
-            double left = container != null ? Canvas.GetLeft(container) : Canvas.GetLeft(textBlock);
-            double top = container != null ? Canvas.GetTop(container) : Canvas.GetTop(textBlock);
+            double left = Canvas.GetLeft(textBlock);
+            double top = Canvas.GetTop(textBlock);
             if (double.IsNaN(left)) left = 0;
             if (double.IsNaN(top)) top = 0;
 
-            var currentWidth = container?.Width ?? DefaultTextModuleWidth;
-            var currentHeight = container?.Height ?? DefaultTextModuleHeight;
-
             textBlock.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            var desired = textBlock.DesiredSize;
+            double minWidth = Math.Max(80, desired.Width + 12);
+            double minHeight = Math.Max(textBlock.FontSize + 8, desired.Height + 8);
+
             var editor = new TextBox
             {
                 Text = textBlock.Text ?? string.Empty,
@@ -3524,44 +2731,31 @@ namespace UseCaseApplication
                 FontFamily = textBlock.FontFamily,
                 FontWeight = textBlock.FontWeight,
                 Foreground = textBlock.Foreground ?? Brushes.Black,
-                Background = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255)),
+                Background = new SolidColorBrush(Color.FromArgb(235, 255, 255, 255)),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(205, 133, 63)),
-                BorderThickness = new Thickness(1.5),
-                Padding = new Thickness(16, 12, 16, 12),
-                MinWidth = MinTextModuleWidth,
-                MinHeight = MinTextModuleHeight,
-                Width = Math.Max(MinTextModuleWidth, currentWidth),
-                Height = Math.Max(MinTextModuleHeight, currentHeight),
-                AcceptsReturn = true,
-                TextAlignment = TextAlignment.Center,
-                HorizontalContentAlignment = HorizontalAlignment.Center,
-                VerticalContentAlignment = VerticalAlignment.Top,
-                TextWrapping = TextWrapping.Wrap,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+                BorderThickness = new Thickness(1),
+                Padding = new Thickness(8, 4, 8, 4),
+                MinWidth = minWidth,
+                MinHeight = minHeight,
+                AcceptsReturn = false,
+                TextWrapping = TextWrapping.Wrap
             };
+            editor.HorizontalContentAlignment = HorizontalAlignment.Left;
+            editor.VerticalContentAlignment = VerticalAlignment.Top;
 
             aktivnyTextovyEditor = editor;
-            posledniyKorrektnyyTekstRedaktora = editor.Text ?? string.Empty;
 
             Canvas.SetLeft(editor, left);
             Canvas.SetTop(editor, top);
-            Panel.SetZIndex(editor, Panel.GetZIndex(container ?? (UIElement)textBlock) + 1);
+            Panel.SetZIndex(editor, Panel.GetZIndex(textBlock) + 1);
 
-            if (container != null)
-            {
-                container.Visibility = Visibility.Collapsed;
-            }
             textBlock.Visibility = Visibility.Collapsed;
 
             HolstSoderzhanie.Children.Add(editor);
-            PrimeniKompensiruyushchiyMashtabKEditoru(editor);
-            AktualizirovatRazmerEditora(editor);
+            PrimeniKompensiruyushchiyMashtab(editor, PoluchitFaktorNezavisimostiOtMashtaba());
 
             editor.LostKeyboardFocus += TextEditor_LostKeyboardFocus;
             editor.KeyDown += TextEditor_KeyDown;
-            editor.TextChanged += TextEditor_TextChanged;
-            editor.PreviewTextInput += TextEditor_PreviewTextInput;
-            DataObject.AddPastingHandler(editor, TextEditor_OnPaste);
 
             RoutedEventHandler loadedHandler = null;
             loadedHandler = (s, _) =>
@@ -3584,28 +2778,16 @@ namespace UseCaseApplication
         {
             if (e.Key == Key.Enter)
             {
-                // Shift+Enter или Ctrl+Enter - новая строка
-                if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift ||
-                    (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+                if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
                 {
-                    // Проверяем, не превысим ли мы лимит строк
                     if (sender is TextBox textBox)
                     {
-                        var currentText = textBox.Text ?? string.Empty;
-                        var lineCount = currentText.Split('\n').Length;
-                        
-                        if (lineCount >= MaksimalnoeKolichestvoStrok)
-                        {
-                            // Достигнут лимит строк - не даем добавлять новую строку
-                            e.Handled = true;
-                            return;
-                        }
-                        // Позволяем AcceptsReturn=true обработать это автоматически
+                        VstavitPerehodNaNovuyuStroku(textBox);
                     }
+                    e.Handled = true;
                     return;
                 }
 
-                // Enter без модификаторов - завершаем редактирование
                 ZavershitRedaktirovanieTeksta(true);
                 e.Handled = true;
             }
@@ -3613,76 +2795,6 @@ namespace UseCaseApplication
             {
                 ZavershitRedaktirovanieTeksta(false);
                 e.Handled = true;
-            }
-        }
-
-        private void TextEditor_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (normalizuyuTekstRedaktora)
-            {
-                return;
-            }
-
-            if (sender is TextBox editor)
-            {
-                var text = editor.Text ?? string.Empty;
-                if (TekstUdovletvoryaetOgranicheniya(text))
-                {
-                    posledniyKorrektnyyTekstRedaktora = text;
-                }
-                else
-                {
-                    normalizuyuTekstRedaktora = true;
-                    var caret = editor.CaretIndex;
-                    editor.Text = posledniyKorrektnyyTekstRedaktora;
-                    editor.CaretIndex = Math.Max(0, Math.Min(caret - 1, editor.Text.Length));
-                    normalizuyuTekstRedaktora = false;
-                }
-                AktualizirovatRazmerEditora(editor);
-            }
-        }
-
-        private void TextEditor_PreviewTextInput(object sender, TextCompositionEventArgs e)
-        {
-            if (sender is TextBox editor)
-            {
-                if (!MozhnoVstavitTekst(editor, e.Text))
-                {
-                    e.Handled = true;
-                }
-            }
-        }
-
-        private void TextEditor_OnPaste(object sender, DataObjectPastingEventArgs e)
-        {
-            if (sender is TextBox editor)
-            {
-                if (e.DataObject.GetDataPresent(DataFormats.Text))
-                {
-                    var pasteText = e.DataObject.GetData(DataFormats.Text) as string ?? string.Empty;
-                    
-                    // Проверяем, можно ли вставить текст
-                    if (!MozhnoVstavitTekst(editor, pasteText))
-                    {
-                        // Попробуем ограничить вставляемый текст
-                        var currentText = editor.Text ?? string.Empty;
-                        var currentLines = currentText.Split('\n').Length;
-                        
-                        // Если уже достигнут лимит строк, отменяем вставку
-                        if (currentLines >= MaksimalnoeKolichestvoStrok)
-                        {
-                            e.CancelCommand();
-                            return;
-                        }
-                        
-                        // Иначе просто отменяем (слишком длинный текст)
-                        e.CancelCommand();
-                    }
-                }
-                else
-                {
-                    e.CancelCommand();
-                }
             }
         }
 
@@ -3704,23 +2816,16 @@ namespace UseCaseApplication
 
             editor.LostKeyboardFocus -= TextEditor_LostKeyboardFocus;
             editor.KeyDown -= TextEditor_KeyDown;
-            editor.TextChanged -= TextEditor_TextChanged;
-            editor.PreviewTextInput -= TextEditor_PreviewTextInput;
-            DataObject.RemovePastingHandler(editor, TextEditor_OnPaste);
 
             HolstSoderzhanie?.Children.Remove(editor);
 
             aktivnyTextovyEditor = null;
             redaktiruemyTextovyElement = null;
-            normalizuyuTekstRedaktora = false;
-            posledniyKorrektnyyTekstRedaktora = string.Empty;
 
             if (textBlock == null)
             {
                 return;
             }
-
-            var container = PoluchitKontainerTeksta(textBlock);
 
             if (sohranitIzmeneniya)
             {
@@ -3735,15 +2840,9 @@ namespace UseCaseApplication
                     textBlock.Text = novyyTekst;
                     MarkDocumentDirty();
                 }
-                ObnovitRazmerTekstovogoKontainera(textBlock);
             }
 
             textBlock.Visibility = Visibility.Visible;
-            if (container != null)
-            {
-                container.Visibility = Visibility.Visible;
-            }
-            PrimeniKompensiruyushchiyMashtabKTextu(textBlock);
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -4176,24 +3275,6 @@ namespace UseCaseApplication
             }
         }
 
-        private static bool YavlyaetsyaFailomFormataUca(string path)
-        {
-            return !string.IsNullOrWhiteSpace(path) &&
-                   string.Equals(System.IO.Path.GetExtension(path), PodderzhivaemoeRasshirenie, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static string PoluchitPathSPravilnymRasshireniem(string path)
-        {
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                return path;
-            }
-
-            return YavlyaetsyaFailomFormataUca(path)
-                ? path
-                : System.IO.Path.ChangeExtension(path, PodderzhivaemoeRasshirenie);
-        }
-
         private void NewFile_Click(object sender, RoutedEventArgs e)
         {
             if (!ProveritNuzhnoLiSohranitPeredDeystviem())
@@ -4213,22 +3294,15 @@ namespace UseCaseApplication
 
             var dialog = new OpenFileDialog
             {
-                Filter = "Use Case App (*.uca)|*.uca",
-                DefaultExt = PodderzhivaemoeRasshirenie.TrimStart('.'),
+                Filter = "Use Case App (*.uca)|*.uca|Все файлы (*.*)|*.*",
+                DefaultExt = "uca",
                 Multiselect = false,
                 Title = "Открыть диаграмму"
             };
 
             if (dialog.ShowDialog() == true)
             {
-                var filePath = dialog.FileName;
-                if (!YavlyaetsyaFailomFormataUca(filePath))
-                {
-                    MessageBox.Show("Поддерживается только формат файлов .uca.", "Недопустимый формат", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                ZagruzitDiagrammuIzFaila(filePath);
+                ZagruzitDiagrammuIzFaila(dialog.FileName);
             }
         }
 
@@ -4254,8 +3328,8 @@ namespace UseCaseApplication
             {
                 var dialog = new SaveFileDialog
                 {
-                    Filter = "Use Case App (*.uca)|*.uca",
-                    DefaultExt = PodderzhivaemoeRasshirenie.TrimStart('.'),
+                    Filter = "Use Case App (*.uca)|*.uca|Все файлы (*.*)|*.*",
+                    DefaultExt = "uca",
                     AddExtension = true,
                     Title = "Сохранить диаграмму",
                     FileName = string.IsNullOrWhiteSpace(tekushiyPutFayla) ? "Диаграмма" : System.IO.Path.GetFileName(tekushiyPutFayla)
@@ -4270,8 +3344,6 @@ namespace UseCaseApplication
                     return false;
                 }
             }
-
-            targetPath = PoluchitPathSPravilnymRasshireniem(targetPath);
 
             if (!EksportDiagrammy(targetPath))
             {
@@ -4376,7 +3448,6 @@ namespace UseCaseApplication
 
                 tekushiyPutFayla = filePath;
                 MarkDocumentClean();
-                ObnovitSostoyanieUndoRedo();
                 return true;
             }
             catch (Exception ex)
@@ -4466,8 +3537,6 @@ namespace UseCaseApplication
             {
                 FonSetki.Visibility = diagram.IsGridVisible ? Visibility.Visible : Visibility.Hidden;
             }
-
-            ObnovitSostoyanieUndoRedo();
         }
 
         private void OchistitHolstCore()
@@ -4485,7 +3554,6 @@ namespace UseCaseApplication
             vybranniyeElementy.Clear();
             proiskhodiloPeremeshenieElementa = false;
             proiskhodiloMashtabirovanieElementa = false;
-            ObnovitSostoyanieUndoRedo();
         }
 
         private void SozdatNovyyDokument()
@@ -4545,7 +3613,6 @@ namespace UseCaseApplication
 
             tekushiyPutFayla = null;
             MarkDocumentClean();
-            ObnovitSostoyanieUndoRedo();
         }
 
         private bool ProveritNuzhnoLiSohranitPeredDeystviem()
@@ -4586,83 +3653,6 @@ namespace UseCaseApplication
         {
             estNesokhrannyeIzmeneniya = false;
             ObnovitZagolovokOkna();
-        }
-
-        private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            if (Keyboard.Modifiers == ModifierKeys.Control)
-            {
-                if (e.Key == Key.Z)
-                {
-                    Otmena_Click(this, new RoutedEventArgs());
-                    e.Handled = true;
-                }
-                else if (e.Key == Key.U)
-                {
-                    Vozvrat_Click(this, new RoutedEventArgs());
-                    e.Handled = true;
-                }
-                else if (e.Key == Key.C)
-                {
-                    if (vybranniyElement != null)
-                    {
-                        var realElement = NaytiElementNaHolste(vybranniyElement) ?? vybranniyElement;
-                        ClipboardManager.Copy(realElement);
-                        e.Handled = true;
-                    }
-                }
-                else if (e.Key == Key.V)
-                {
-                    if (ClipboardManager.HasContent())
-                    {
-                        var mousePos = Mouse.GetPosition(HolstSoderzhanie);
-                        // Если мышь не над холстом, вставляем по центру видимой области или со смещением
-                        if (mousePos.X < 0 || mousePos.Y < 0 || mousePos.X > HolstSoderzhanie.ActualWidth || mousePos.Y > HolstSoderzhanie.ActualHeight)
-                        {
-                             // Если мышь за пределами, вставляем со смещением от выбранного элемента или в левый верхний угол
-                             mousePos = new Point(50, 50);
-                             if (vybranniyElement != null)
-                             {
-                                 var left = Canvas.GetLeft(vybranniyElement);
-                                 var top = Canvas.GetTop(vybranniyElement);
-                                 if (!double.IsNaN(left) && !double.IsNaN(top))
-                                 {
-                                     mousePos = new Point(left + 20, top + 20);
-                                 }
-                             }
-                        }
-                        
-                        var element = ClipboardManager.Paste(mousePos);
-                        if (element != null)
-                        {
-                            DobavitNaHolst(element);
-                            
-                            // Выделяем вставленный элемент
-                            SnytVydelenie();
-                            vybranniyElement = element;
-                            PokazatRamuMashtabirovaniya(element);
-                        }
-                        e.Handled = true;
-                    }
-                }
-                else if (e.Key == Key.X)
-                {
-                    if (vybranniyElement != null)
-                    {
-                        var realElement = NaytiElementNaHolste(vybranniyElement) ?? vybranniyElement;
-                        ClipboardManager.Copy(realElement);
-                        UdalitElementSHolsta(realElement);
-
-                        // Вырезание не должно добавлять запись в стек Redo
-                        if (otmenaStack.Count > 0 && ReferenceEquals(otmenaStack.Peek(), realElement))
-                        {
-                            otmenaStack.Pop();
-                            ObnovitSostoyanieUndoRedo();
-                        }
-                        e.Handled = true;
-                    }
-                }
-            }
         }
 
         private void ObnovitZagolovokOkna()
@@ -4884,7 +3874,7 @@ namespace UseCaseApplication
                 if (podsvetkiObektov != null && podsvetkiObektov.Contains(el)) continue;
                 if (aktivnyTextovyEditor != null && ReferenceEquals(el, aktivnyTextovyEditor)) continue;
 
-                var bounds = PoluchitGranitsyElementa(el);
+                var bounds = PoluchitGranitsyBezMashtaba(el);
                 if (bounds.Width <= 0 || bounds.Height <= 0) continue;
 
                 var expandedBounds = new Rect(bounds.Left - 10, bounds.Top - 10, bounds.Width + 20, bounds.Height + 20);
@@ -4934,7 +3924,7 @@ namespace UseCaseApplication
                 if (podsvetkiObektov != null && podsvetkiObektov.Contains(el)) continue;
                 if (aktivnyTextovyEditor != null && ReferenceEquals(el, aktivnyTextovyEditor)) continue;
 
-                var bounds = PoluchitGranitsyElementa(el);
+                var bounds = PoluchitGranitsyBezMashtaba(el);
                 if (bounds.Width <= 0 || bounds.Height <= 0) continue;
 
                 // Вычисляем динамический радиус на основе размера объекта
@@ -4987,30 +3977,12 @@ namespace UseCaseApplication
 
         private Point NaytiTochkuNaGranitse(Point p, UIElement obj)
         {
-            var bounds = PoluchitGranitsyElementa(obj);
+            var bounds = PoluchitGranitsyBezMashtaba(obj);
             var center = new Point(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
             
             // Вычисляем вектор от центра к точке
             var dx = p.X - center.X;
             var dy = p.Y - center.Y;
-            
-            // Для эллипсов используем точное пересечение
-            if (obj is Ellipse && bounds.Width > 0 && bounds.Height > 0)
-            {
-                var a = bounds.Width / 2;
-                var b = bounds.Height / 2;
-                if (Math.Abs(dx) < 0.001 && Math.Abs(dy) < 0.001)
-                {
-                    return new Point(center.X + a, center.Y);
-                }
-                var denominator = Math.Sqrt((dx * dx) / (a * a) + (dy * dy) / (b * b));
-                if (denominator < 0.0001)
-                {
-                    denominator = 0.0001;
-                }
-                var tEllipse = 1 / denominator;
-                return new Point(center.X + dx * tEllipse, center.Y + dy * tEllipse);
-            }
             
             // Если точка очень близко к центру, возвращаем правую сторону
             if (Math.Abs(dx) < 0.001 && Math.Abs(dy) < 0.001)
@@ -5065,27 +4037,10 @@ namespace UseCaseApplication
 
         private Point NaytiTochkuNaGranitseOtTsentra(Point p, UIElement obj)
         {
-            var bounds = PoluchitGranitsyElementa(obj);
+            var bounds = PoluchitGranitsyBezMashtaba(obj);
             var center = new Point(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
             var dx = p.X - center.X;
             var dy = p.Y - center.Y;
-            
-            if (obj is Ellipse && bounds.Width > 0 && bounds.Height > 0)
-            {
-                var a = bounds.Width / 2;
-                var b = bounds.Height / 2;
-                if (Math.Abs(dx) < 0.001 && Math.Abs(dy) < 0.001)
-                {
-                    return new Point(center.X + a, center.Y);
-                }
-                var denominator = Math.Sqrt((dx * dx) / (a * a) + (dy * dy) / (b * b));
-                if (denominator < 0.0001)
-                {
-                    denominator = 0.0001;
-                }
-                var tEllipse = 1 / denominator;
-                return new Point(center.X + dx * tEllipse, center.Y + dy * tEllipse);
-            }
             
             if (Math.Abs(dx) < 0.001 && Math.Abs(dy) < 0.001)
                 return new Point(bounds.Right, center.Y);
@@ -5243,60 +4198,6 @@ namespace UseCaseApplication
                 prikreplennyeStrelki.Remove(strelkaElement);
             else
                 prikreplennyeStrelki[strelkaElement] = current;
-        }
-
-        private void RasshiritHolstEsliNeobhodimo(UIElement element)
-        {
-            if (element == null || PoleDlyaRisovaniya == null || HolstSoderzhanie == null)
-                return;
-
-            // Получаем границы элемента
-            var bounds = PoluchitGranitsyElementa(element);
-            if (bounds.Width <= 0 || bounds.Height <= 0)
-                return;
-
-            // Получаем текущие размеры холста
-            double currentWidth = PoleDlyaRisovaniya.Width;
-            double currentHeight = PoleDlyaRisovaniya.Height;
-
-            if (double.IsNaN(currentWidth) || currentWidth < MinCanvasWidth)
-                currentWidth = MinCanvasWidth;
-            if (double.IsNaN(currentHeight) || currentHeight < MinCanvasHeight)
-                currentHeight = MinCanvasHeight;
-
-            // Вычисляем необходимые размеры с отступом
-            double requiredWidth = bounds.Right + CanvasExpandMargin;
-            double requiredHeight = bounds.Bottom + CanvasExpandMargin;
-
-            // Расширяем холст, если нужно
-            bool changed = false;
-            if (requiredWidth > currentWidth)
-            {
-                currentWidth = Math.Max(requiredWidth, currentWidth + CanvasExpandMargin);
-                changed = true;
-            }
-
-            if (requiredHeight > currentHeight)
-            {
-                currentHeight = Math.Max(requiredHeight, currentHeight + CanvasExpandMargin);
-                changed = true;
-            }
-
-            // Применяем новые размеры
-            if (changed)
-            {
-                PoleDlyaRisovaniya.Width = currentWidth;
-                PoleDlyaRisovaniya.Height = currentHeight;
-                HolstSoderzhanie.Width = currentWidth;
-                HolstSoderzhanie.Height = currentHeight;
-
-                // Обновляем сетку, если она есть
-                if (FonSetki != null)
-                {
-                    FonSetki.Width = currentWidth;
-                    FonSetki.Height = currentHeight;
-                }
-            }
         }
     }
 }
