@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="UCA" Height="600" Width="900" MinHeight="450" MinWidth="800"
         WindowStyle="None" AllowsTransparency="True" ResizeMode="CanResize" Background="Transparent"
-        FontFamily="Inter" MouseMove="MainWindow_MouseMove" MouseLeftButtonUp="MainWindow_MouseLeftButtonUp">
+        FontFamily="Inter">
     <Window.Resources>
         <Style x:Key="ToolButtonStyle" TargetType="Button">
             <Setter Property="Foreground" Value="White"/>
@@ -231,156 +231,6 @@
             </Setter>
         </Style>
 
-        <Style x:Key="ElementContextMenuStyle" TargetType="ContextMenu">
-            <Setter Property="Background" Value="#404040"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ContextMenu">
-                        <Border Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" 
-                                CornerRadius="4"
-                                Padding="2">
-                            <ItemsPresenter Margin="0"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="ElementMenuItemStyle" TargetType="MenuItem">
-            <Setter Property="Background" Value="#404040"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="MinHeight" Value="28"/>
-            <Setter Property="Padding" Value="12,6,12,6"/>
-            <Setter Property="StaysOpenOnClick" Value="False"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="MenuItem">
-                        <Grid>
-                            <Border x:Name="Border" 
-                                    Background="{TemplateBinding Background}" 
-                                    BorderBrush="Transparent" 
-                                    BorderThickness="0" 
-                                    MinHeight="28"
-                                    CornerRadius="2"
-                                    Margin="1">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{TemplateBinding Header}" 
-                                               Foreground="{TemplateBinding Foreground}" 
-                                               VerticalAlignment="Center" 
-                                               HorizontalAlignment="Left" 
-                                               Margin="12,0,12,0"
-                                               Grid.Column="0"/>
-                                    <Path x:Name="Arrow" 
-                                          Data="M 0 0 L 4 4 L 0 8 Z" 
-                                          Fill="White" 
-                                          HorizontalAlignment="Right" 
-                                          VerticalAlignment="Center" 
-                                          Margin="0,0,8,0" 
-                                          Visibility="Collapsed"
-                                          Grid.Column="1"/>
-                                </Grid>
-                            </Border>
-                            <!-- Popup для подменю -->
-                            <Popup x:Name="PART_Popup" 
-                                   AllowsTransparency="True" 
-                                   Placement="Right" 
-                                   HorizontalOffset="0"
-                                   IsOpen="{TemplateBinding IsSubmenuOpen}"
-                                   PopupAnimation="Fade">
-                                <Border Background="#404040" 
-                                        CornerRadius="4" 
-                                        Padding="2"
-                                        BorderThickness="0">
-                                    <ItemsPresenter x:Name="ItemsPresenter" 
-                                                    KeyboardNavigation.DirectionalNavigation="Cycle" 
-                                                    Grid.IsSharedSizeScope="True" 
-                                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" 
-                                                    KeyboardNavigation.TabNavigation="Cycle"/>
-                                </Border>
-                            </Popup>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsHighlighted" Value="True">
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <ColorAnimation Storyboard.TargetName="Border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#505050" Duration="0:0:0.15"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <ColorAnimation Storyboard.TargetName="Border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#404040" Duration="0:0:0.15"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
-                            </Trigger>
-                            <Trigger Property="HasItems" Value="True">
-                                <Setter TargetName="Arrow" Property="Visibility" Value="Visible"/>
-                            </Trigger>
-                            <Trigger Property="IsSubmenuOpen" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#505050"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Resources>
-                <Style TargetType="MenuItem">
-                    <Setter Property="Background" Value="#404040"/>
-                    <Setter Property="Foreground" Value="White"/>
-                    <Setter Property="MinHeight" Value="28"/>
-                    <Setter Property="Padding" Value="12,6,12,6"/>
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="MenuItem">
-                                <Border x:Name="SubMenuBorder" 
-                                        Background="{TemplateBinding Background}" 
-                                        BorderBrush="Transparent" 
-                                        BorderThickness="0" 
-                                        MinHeight="28"
-                                        CornerRadius="2"
-                                        Margin="1">
-                                    <TextBlock Text="{TemplateBinding Header}" 
-                                               Foreground="{TemplateBinding Foreground}" 
-                                               VerticalAlignment="Center" 
-                                               HorizontalAlignment="Left" 
-                                               Margin="12,0,12,0"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsHighlighted" Value="True">
-                                        <Trigger.EnterActions>
-                                            <BeginStoryboard>
-                                                <Storyboard>
-                                                    <ColorAnimation Storyboard.TargetName="SubMenuBorder" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#505050" Duration="0:0:0.15"/>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </Trigger.EnterActions>
-                                        <Trigger.ExitActions>
-                                            <BeginStoryboard>
-                                                <Storyboard>
-                                                    <ColorAnimation Storyboard.TargetName="SubMenuBorder" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#404040" Duration="0:0:0.15"/>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </Trigger.ExitActions>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </Style.Resources>
-        </Style>
-
         <Style x:Key="FileButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="White"/>
@@ -512,125 +362,6 @@
             </Setter>
         </Style>
 
-        <Style x:Key="CanvasScrollBarStyle" TargetType="ScrollBar">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Width" Value="10"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ScrollBar">
-                        <Grid x:Name="GridRoot" Background="Transparent">
-                            <Grid.RowDefinitions>
-                                <RowDefinition MaxHeight="0"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition MaxHeight="0"/>
-                            </Grid.RowDefinitions>
-                            <Border Grid.Row="1" Background="Transparent" Width="10">
-                                <Track x:Name="PART_Track" IsDirectionReversed="True" Focusable="False">
-                                    <Track.DecreaseRepeatButton>
-                                        <RepeatButton Command="ScrollBar.LineUpCommand">
-                                            <RepeatButton.Template>
-                                                <ControlTemplate>
-                                                    <Border Background="Transparent"/>
-                                                </ControlTemplate>
-                                            </RepeatButton.Template>
-                                        </RepeatButton>
-                                    </Track.DecreaseRepeatButton>
-                                    <Track.IncreaseRepeatButton>
-                                        <RepeatButton Command="ScrollBar.LineDownCommand">
-                                            <RepeatButton.Template>
-                                                <ControlTemplate>
-                                                    <Border Background="Transparent"/>
-                                                </ControlTemplate>
-                                            </RepeatButton.Template>
-                                        </RepeatButton>
-                                    </Track.IncreaseRepeatButton>
-                                    <Track.Thumb>
-                                        <Thumb Margin="1">
-                                            <Thumb.Template>
-                                                <ControlTemplate TargetType="Thumb">
-                                                    <Border x:Name="ThumbBorder" Background="#40000000" CornerRadius="5" Opacity="0.3">
-                                                        <Border.Style>
-                                                            <Style TargetType="Border">
-                                                                <Style.Triggers>
-                                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                                        <Setter Property="Background" Value="#60000000"/>
-                                                                        <Setter Property="Opacity" Value="0.6"/>
-                                                                    </Trigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Border.Style>
-                                                    </Border>
-                                                </ControlTemplate>
-                                            </Thumb.Template>
-                                        </Thumb>
-                                    </Track.Thumb>
-                                </Track>
-                            </Border>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="CanvasHorizontalScrollBarStyle" TargetType="ScrollBar" BasedOn="{StaticResource CanvasScrollBarStyle}">
-            <Setter Property="Height" Value="10"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ScrollBar">
-                        <Grid x:Name="GridRoot" Background="Transparent">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition MaxWidth="0"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition MaxWidth="0"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="1" Background="Transparent" Height="10">
-                                <Track x:Name="PART_Track" IsDirectionReversed="False" Focusable="False">
-                                    <Track.DecreaseRepeatButton>
-                                        <RepeatButton Command="ScrollBar.LineLeftCommand">
-                                            <RepeatButton.Template>
-                                                <ControlTemplate>
-                                                    <Border Background="Transparent"/>
-                                                </ControlTemplate>
-                                            </RepeatButton.Template>
-                                        </RepeatButton>
-                                    </Track.DecreaseRepeatButton>
-                                    <Track.IncreaseRepeatButton>
-                                        <RepeatButton Command="ScrollBar.LineRightCommand">
-                                            <RepeatButton.Template>
-                                                <ControlTemplate>
-                                                    <Border Background="Transparent"/>
-                                                </ControlTemplate>
-                                            </RepeatButton.Template>
-                                        </RepeatButton>
-                                    </Track.IncreaseRepeatButton>
-                                    <Track.Thumb>
-                                        <Thumb Margin="1">
-                                            <Thumb.Template>
-                                                <ControlTemplate TargetType="Thumb">
-                                                    <Border x:Name="ThumbBorder" Background="#40000000" CornerRadius="5" Opacity="0.3">
-                                                        <Border.Style>
-                                                            <Style TargetType="Border">
-                                                                <Style.Triggers>
-                                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                                        <Setter Property="Background" Value="#60000000"/>
-                                                                        <Setter Property="Opacity" Value="0.6"/>
-                                                                    </Trigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Border.Style>
-                                                    </Border>
-                                                </ControlTemplate>
-                                            </Thumb.Template>
-                                        </Thumb>
-                                    </Track.Thumb>
-                                </Track>
-                            </Border>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <Style x:Key="MainScrollViewerStyle" TargetType="ScrollViewer">
             <Setter Property="Template">
                 <Setter.Value>
@@ -692,18 +423,10 @@
             </Setter>
         </Style>
 
-        <!-- Стиль для подменю - применяется автоматически ко всем подменю -->
-        <Style TargetType="ContextMenu" BasedOn="{StaticResource ElementContextMenuStyle}">
-            <Style.Resources>
-                <Style TargetType="MenuItem" BasedOn="{StaticResource ElementMenuItemStyle}"/>
-            </Style.Resources>
-        </Style>
-
     </Window.Resources>
 
     <Border Background="#2b2b2b" CornerRadius="12" ClipToBounds="True" BorderBrush="#2b2b2b" BorderThickness="0">
-        <Grid>
-            <Grid x:Name="MainContentGrid">
+        <Grid x:Name="MainContentGrid">
         <Grid.RowDefinitions>
             <RowDefinition Height="32"/>
             <RowDefinition Height="*"/>
@@ -733,7 +456,7 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Style="{StaticResource WindowButtonStyle}" Content="—" Click="Svernyt_Click" FontSize="16"/>
-                    <Button Style="{StaticResource WindowButtonStyle}" Content="▢" Click="Razvernut_Click" FontSize="14"/>
+                    <Button Style="{StaticResource WindowButtonStyle}" Content="□" Click="Razvernut_Click" FontSize="14"/>
                     <Button Style="{StaticResource CloseButtonStyle}" Content="✕" Click="Zakryt_Click" FontSize="16"/>
                 </StackPanel>
             </Grid>
@@ -1130,24 +853,17 @@
                         <Grid ClipToBounds="True">
                             <Border Background="White" Margin="10,10,10,10" CornerRadius="4" ClipToBounds="True">
                                 <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="*"/>
-                                        <RowDefinition Height="10"/>
-                                    </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="79*"/>
+                                        <ColumnDefinition Width="261*"/>
                                     </Grid.ColumnDefinitions>
-                                    <Rectangle x:Name="FonSetki" Grid.Row="0" Grid.Column="0" Fill="{StaticResource GridBrush}"/>
+                                    <Rectangle x:Name="FonSetki" Fill="{StaticResource GridBrush}" Grid.ColumnSpan="2"/>
                                     <Canvas x:Name="PoleDlyaRisovaniya" Background="Transparent" AllowDrop="True" 
                                             MouseLeftButtonDown="PoleDlyaRisovaniya_MouseLeftButtonDown" 
                                             MouseMove="PoleDlyaRisovaniya_MouseMove" 
                                             MouseLeftButtonUp="PoleDlyaRisovaniya_MouseLeftButtonUp"
-                                            MouseWheel="PoleDlyaRisovaniya_MouseWheel"
-                                            PreviewMouseDown="PoleDlyaRisovaniya_PreviewMouseDown"
-                                            PreviewMouseUp="PoleDlyaRisovaniya_PreviewMouseUp"
                                             Drop="PoleDlyaRisovaniya_Drop"
-                                            DragOver="PoleDlyaRisovaniya_DragOver" Grid.Row="0" Grid.Column="0">
+                                            DragOver="PoleDlyaRisovaniya_DragOver" Grid.ColumnSpan="2">
                                         <Canvas x:Name="HolstSoderzhanie" Background="Transparent"
                                                 Width="{Binding ActualWidth, ElementName=PoleDlyaRisovaniya}"
                                                 Height="{Binding ActualHeight, ElementName=PoleDlyaRisovaniya}">
@@ -1159,33 +875,14 @@
                                             </Canvas.RenderTransform>
                                         </Canvas>
                                     </Canvas>
-                                    <ScrollBar x:Name="VerticalScrollBar" 
-                                               Style="{StaticResource CanvasScrollBarStyle}"
-                                               Orientation="Vertical"
-                                               Grid.Row="0" Grid.Column="1"
-                                               ValueChanged="VerticalScrollBar_ValueChanged"
-                                               Minimum="-10000" Maximum="10000" 
-                                               ViewportSize="100" 
-                                               SmallChange="20" LargeChange="100"/>
-                                    <ScrollBar x:Name="HorizontalScrollBar" 
-                                               Style="{StaticResource CanvasHorizontalScrollBarStyle}"
-                                               Orientation="Horizontal"
-                                               Grid.Row="1" Grid.Column="0"
-                                               Grid.ColumnSpan="1"
-                                               ValueChanged="HorizontalScrollBar_ValueChanged"
-                                               Minimum="-10000" Maximum="10000" 
-                                               ViewportSize="100" 
-                                               SmallChange="20" LargeChange="100"
-                                               VerticalAlignment="Bottom"
-                                               HorizontalAlignment="Stretch"/>
                                 </Grid>
                             </Border>
 
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20,20,0,0">
-                                <Button x:Name="UndoButton" Width="36" Height="36" Margin="0,0,6,0" Click="Otmena_Click" Background="#2b2b2b" BorderBrush="#555" BorderThickness="1" Padding="0" IsEnabled="False">
+                                <Button Width="36" Height="36" Margin="0,0,6,0" Click="Otmena_Click" Background="#2b2b2b" BorderBrush="#555" BorderThickness="1" Padding="0">
                                     <Path Data="M15,12 L8,12 L8,8 L2,14 L8,20 L8,16 L15,16 C17,16 18,15 18,13 C18,11 17,10 15,10 L15,12 Z" Fill="White" Stretch="Uniform" Width="20" Height="20"/>
                                 </Button>
-                                <Button x:Name="RedoButton" Width="36" Height="36" Click="Vozvrat_Click" Background="#2b2b2b" BorderBrush="#555" BorderThickness="1" Padding="0" IsEnabled="False">
+                                <Button Width="36" Height="36" Click="Vozvrat_Click" Background="#2b2b2b" BorderBrush="#555" BorderThickness="1" Padding="0">
                                     <Path Data="M9,12 L16,12 L16,8 L22,14 L16,20 L16,16 L9,16 C7,16 6,15 6,13 C6,11 7,10 9,10 L9,12 Z" Fill="White" Stretch="Uniform" Width="20" Height="20"/>
                                 </Button>
                             </StackPanel>
@@ -1209,41 +906,6 @@
                 </TabControl>
             </Grid>
         </DockPanel>
-        </Grid>
-        
-        <!-- Элемент для изменения размера окна в нижнем правом углу -->
-        <Border x:Name="ResizeGrip" 
-                HorizontalAlignment="Right" 
-                VerticalAlignment="Bottom"
-                Width="20" 
-                Height="20"
-                Background="Transparent"
-                Cursor="SizeNWSE"
-                Panel.ZIndex="100"
-                IsHitTestVisible="True"
-                MouseLeftButtonDown="ResizeGrip_MouseLeftButtonDown"
-                MouseMove="ResizeGrip_MouseMove"
-                MouseLeftButtonUp="ResizeGrip_MouseLeftButtonUp"
-                Margin="0,0,2,2">
-            <Ellipse Width="8" 
-                     Height="8" 
-                     Fill="White" 
-                     Opacity="0.7"
-                     HorizontalAlignment="Center"
-                     VerticalAlignment="Center">
-                <Ellipse.Style>
-                    <Style TargetType="Ellipse">
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Opacity" Value="1.0"/>
-                                <Setter Property="Width" Value="10"/>
-                                <Setter Property="Height" Value="10"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </Ellipse.Style>
-            </Ellipse>
-        </Border>
         </Grid>
     </Border>
 </Window>
