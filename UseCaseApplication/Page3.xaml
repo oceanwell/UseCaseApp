@@ -1,0 +1,68 @@
+﻿<Page x:Class="UseCaseApplication.Page3"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:UseCaseApplication"
+      mc:Ignorable="d" 
+      d:DesignHeight="600" d:DesignWidth="900"
+      Title="Page3"
+      Background="#2b2b2b">
+
+    <Grid>
+        <!-- Заголовок "Документация к UserApplicationCase" -->
+        <TextBlock Text="Документация к UserApplicationCase" 
+                   FontSize="36" 
+                   FontWeight="Bold" 
+                   Foreground="White" 
+                   HorizontalAlignment="Left" 
+                   VerticalAlignment="Top" 
+                   Margin="50,50,0,0"/>
+        
+        <!-- Подзаголовок "Глава 1" -->
+        <TextBlock Text="Глава 1. Введение в систему" 
+                   FontSize="24" 
+                   FontWeight="Bold" 
+                   Foreground="White" 
+                   HorizontalAlignment="Left" 
+                   VerticalAlignment="Top" 
+                   Margin="50,120,0,0"/>
+        
+        <!-- Основной текст -->
+        <TextBlock TextWrapping="Wrap" 
+                   FontSize="18" 
+                   FontWeight="Regular" 
+                   Foreground="White" 
+                   HorizontalAlignment="Left" 
+                   VerticalAlignment="Top" 
+                   Margin="50,170,50,0"
+                   Text="UserApplicationCase - это современная система управления пользователями, разработанная для обеспечения эффективного взаимодействия между различными компонентами приложения. Система предоставляет широкий набор инструментов для работы с пользовательскими данными, аутентификации и авторизации.
+
+Основные возможности системы включают в себя:
+• Управление пользовательскими профилями
+• Система ролей и разрешений
+• Безопасная аутентификация
+• Интеграция с внешними сервисами
+• Аналитика и отчетность
+
+Система построена на современной архитектуре, которая обеспечивает высокую производительность и масштабируемость. Все компоненты системы тесно интегрированы между собой, что позволяет создавать сложные бизнес-процессы с минимальными усилиями.
+
+Для начала работы с системой необходимо ознакомиться с основными концепциями и принципами работы. Данная документация содержит подробное описание всех функций и возможностей системы, а также примеры использования и рекомендации по настройке.
+
+Разработчики системы постоянно работают над улучшением функциональности и добавлением новых возможностей. Регулярные обновления обеспечивают совместимость с новейшими технологиями и стандартами безопасности."/>
+        
+        <!-- Желтая кнопка закрытия в правом верхнем углу -->
+        <Button Content="×" 
+                FontSize="16" 
+                FontWeight="Bold" 
+                Foreground="White" 
+                Background="#FFC107" 
+                BorderThickness="0" 
+                Width="30" 
+                Height="30" 
+                HorizontalAlignment="Right" 
+                VerticalAlignment="Top" 
+                Margin="0,10,40,0"
+                Click="CloseButton_Click"/>
+    </Grid>
+</Page>

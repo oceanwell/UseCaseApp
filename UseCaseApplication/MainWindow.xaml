@@ -1,0 +1,1250 @@
+﻿<Window x:Class="UseCaseApplication.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:UseCaseApplication"
+        mc:Ignorable="d"
+        Title="UCA" Height="600" Width="900" MinHeight="450" MinWidth="800"
+        WindowStyle="None" AllowsTransparency="True" ResizeMode="CanResize" Background="Transparent"
+        FontFamily="Inter" MouseMove="MainWindow_MouseMove" MouseLeftButtonUp="MainWindow_MouseLeftButtonUp">
+    <Window.Resources>
+        <Style x:Key="ToolButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#3b3b3b"/>
+            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="10">
+                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="10,0"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#4a4a4a" Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#3b3b3b" Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#2f2f2f" Duration="0:0:0.1"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ControlButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#3b3b3b"/>
+            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="12">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12,0"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#4a4a4a" Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#3b3b3b" Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#2f2f2f" Duration="0:0:0.1"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="WindowButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#3f3f3f" Duration="0:0:0.15"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="Transparent" Duration="0:0:0.15"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#e81123"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DrawingBrush x:Key="GridBrush" TileMode="Tile" Viewport="0,0,20,20" ViewportUnits="Absolute" Stretch="None">
+            <DrawingBrush.Drawing>
+                <GeometryDrawing Brush="Transparent">
+                    <GeometryDrawing.Pen>
+                        <Pen Thickness="0.6" Brush="#22000000"/>
+                    </GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <LineGeometry StartPoint="0,0" EndPoint="20,0"/>
+                            <LineGeometry StartPoint="0,0" EndPoint="0,20"/>
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+            </DrawingBrush.Drawing>
+        </DrawingBrush>
+
+        <Style x:Key="FileContextMenuStyle" TargetType="ContextMenu">
+            <Setter Property="Background" Value="#1e1e1e"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="12"
+                                Padding="4">
+                            <ItemsPresenter Margin="0"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="NoIconMenuItemStyle" TargetType="MenuItem">
+            <Setter Property="Background" Value="#1e1e1e"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="Padding" Value="12,8,12,8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="Border" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="Transparent" 
+                                BorderThickness="0" 
+                                MinHeight="32"
+                                CornerRadius="8"
+                                Margin="2">
+                            <TextBlock Text="{TemplateBinding Header}" 
+                                       Foreground="{TemplateBinding Foreground}" 
+                                       VerticalAlignment="Center" 
+                                       HorizontalAlignment="Left" 
+                                       Margin="12,0,12,0"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#4a4a4a" Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#1e1e1e" Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ElementContextMenuStyle" TargetType="ContextMenu">
+            <Setter Property="Background" Value="#404040"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="4"
+                                Padding="2">
+                            <ItemsPresenter Margin="0"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ElementMenuItemStyle" TargetType="MenuItem">
+            <Setter Property="Background" Value="#404040"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="MinHeight" Value="28"/>
+            <Setter Property="Padding" Value="12,6,12,6"/>
+            <Setter Property="StaysOpenOnClick" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Grid>
+                            <Border x:Name="Border" 
+                                    Background="{TemplateBinding Background}" 
+                                    BorderBrush="Transparent" 
+                                    BorderThickness="0" 
+                                    MinHeight="28"
+                                    CornerRadius="2"
+                                    Margin="1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{TemplateBinding Header}" 
+                                               Foreground="{TemplateBinding Foreground}" 
+                                               VerticalAlignment="Center" 
+                                               HorizontalAlignment="Left" 
+                                               Margin="12,0,12,0"
+                                               Grid.Column="0"/>
+                                    <Path x:Name="Arrow" 
+                                          Data="M 0 0 L 4 4 L 0 8 Z" 
+                                          Fill="White" 
+                                          HorizontalAlignment="Right" 
+                                          VerticalAlignment="Center" 
+                                          Margin="0,0,8,0" 
+                                          Visibility="Collapsed"
+                                          Grid.Column="1"/>
+                                </Grid>
+                            </Border>
+                            <!-- Popup для подменю -->
+                            <Popup x:Name="PART_Popup" 
+                                   AllowsTransparency="True" 
+                                   Placement="Right" 
+                                   HorizontalOffset="0"
+                                   IsOpen="{TemplateBinding IsSubmenuOpen}"
+                                   PopupAnimation="Fade">
+                                <Border Background="#404040" 
+                                        CornerRadius="4" 
+                                        Padding="2"
+                                        BorderThickness="0">
+                                    <ItemsPresenter x:Name="ItemsPresenter" 
+                                                    KeyboardNavigation.DirectionalNavigation="Cycle" 
+                                                    Grid.IsSharedSizeScope="True" 
+                                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" 
+                                                    KeyboardNavigation.TabNavigation="Cycle"/>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#505050" Duration="0:0:0.15"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#404040" Duration="0:0:0.15"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="HasItems" Value="True">
+                                <Setter TargetName="Arrow" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsSubmenuOpen" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#505050"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Resources>
+                <Style TargetType="MenuItem">
+                    <Setter Property="Background" Value="#404040"/>
+                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="MinHeight" Value="28"/>
+                    <Setter Property="Padding" Value="12,6,12,6"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="MenuItem">
+                                <Border x:Name="SubMenuBorder" 
+                                        Background="{TemplateBinding Background}" 
+                                        BorderBrush="Transparent" 
+                                        BorderThickness="0" 
+                                        MinHeight="28"
+                                        CornerRadius="2"
+                                        Margin="1">
+                                    <TextBlock Text="{TemplateBinding Header}" 
+                                               Foreground="{TemplateBinding Foreground}" 
+                                               VerticalAlignment="Center" 
+                                               HorizontalAlignment="Left" 
+                                               Margin="12,0,12,0"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsHighlighted" Value="True">
+                                        <Trigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <ColorAnimation Storyboard.TargetName="SubMenuBorder" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#505050" Duration="0:0:0.15"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </Trigger.EnterActions>
+                                        <Trigger.ExitActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <ColorAnimation Storyboard.TargetName="SubMenuBorder" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#404040" Duration="0:0:0.15"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </Trigger.ExitActions>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Style.Resources>
+        </Style>
+
+        <Style x:Key="FileButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#4a4a4a" Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="Transparent" Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#CD853F" Duration="0:0:0.1"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Setter Property="Foreground" Value="#2b2b2b"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TabItem">
+            <Setter Property="Header" Value=""/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Border" Background="#3c3c3c" Margin="0,0,2,0" CornerRadius="8,8,0,0" Padding="0" MinWidth="60">
+                            <Grid>
+                                <Button x:Name="CloseButton" Width="24" Height="24" Background="#CD853F" Foreground="White" BorderThickness="0" FontSize="16" FontWeight="Bold" Margin="0,20,8,4" Click="CloseTab_Click" Cursor="Hand" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="CloseBorder" Background="#CD853F" CornerRadius="4">
+                                                <TextBlock Text="✕" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="14" FontWeight="Bold"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="CloseBorder" Property="Background" Value="#DAA520"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#2b2b2b"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TabPanel">
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+        </Style>
+
+        <Style x:Key="HelpScrollBarStyle" TargetType="ScrollBar">
+            <Setter Property="Background" Value="#2b2b2b"/>
+            <Setter Property="Width" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid x:Name="GridRoot" Background="Transparent">
+                            <Grid.RowDefinitions>
+                                <RowDefinition MaxHeight="18"/>
+                                <RowDefinition Height="0.00001*"/>
+                                <RowDefinition MaxHeight="18"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="1" Background="#2b2b2b" Width="12" CornerRadius="6">
+                                <Track x:Name="PART_Track" IsDirectionReversed="True" Focusable="False">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.LineUpCommand">
+                                            <RepeatButton.Template>
+                                                <ControlTemplate>
+                                                    <Border Background="Transparent"/>
+                                                </ControlTemplate>
+                                            </RepeatButton.Template>
+                                        </RepeatButton>
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.LineDownCommand">
+                                            <RepeatButton.Template>
+                                                <ControlTemplate>
+                                                    <Border Background="Transparent"/>
+                                                </ControlTemplate>
+                                            </RepeatButton.Template>
+                                        </RepeatButton>
+                                    </Track.IncreaseRepeatButton>
+                                    <Track.Thumb>
+                                        <Thumb Margin="2">
+                                            <Thumb.Template>
+                                                <ControlTemplate TargetType="Thumb">
+                                                    <Border Background="#CD853F" CornerRadius="6"/>
+                                                </ControlTemplate>
+                                            </Thumb.Template>
+                                        </Thumb>
+                                    </Track.Thumb>
+                                </Track>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CanvasScrollBarStyle" TargetType="ScrollBar">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid x:Name="GridRoot" Background="Transparent">
+                            <Grid.RowDefinitions>
+                                <RowDefinition MaxHeight="0"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition MaxHeight="0"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="1" Background="Transparent" Width="10">
+                                <Track x:Name="PART_Track" IsDirectionReversed="True" Focusable="False">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.LineUpCommand">
+                                            <RepeatButton.Template>
+                                                <ControlTemplate>
+                                                    <Border Background="Transparent"/>
+                                                </ControlTemplate>
+                                            </RepeatButton.Template>
+                                        </RepeatButton>
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.LineDownCommand">
+                                            <RepeatButton.Template>
+                                                <ControlTemplate>
+                                                    <Border Background="Transparent"/>
+                                                </ControlTemplate>
+                                            </RepeatButton.Template>
+                                        </RepeatButton>
+                                    </Track.IncreaseRepeatButton>
+                                    <Track.Thumb>
+                                        <Thumb Margin="1">
+                                            <Thumb.Template>
+                                                <ControlTemplate TargetType="Thumb">
+                                                    <Border x:Name="ThumbBorder" Background="#40000000" CornerRadius="5" Opacity="0.3">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Style.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter Property="Background" Value="#60000000"/>
+                                                                        <Setter Property="Opacity" Value="0.6"/>
+                                                                    </Trigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Thumb.Template>
+                                        </Thumb>
+                                    </Track.Thumb>
+                                </Track>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CanvasHorizontalScrollBarStyle" TargetType="ScrollBar" BasedOn="{StaticResource CanvasScrollBarStyle}">
+            <Setter Property="Height" Value="10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid x:Name="GridRoot" Background="Transparent">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition MaxWidth="0"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition MaxWidth="0"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="1" Background="Transparent" Height="10">
+                                <Track x:Name="PART_Track" IsDirectionReversed="False" Focusable="False">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.LineLeftCommand">
+                                            <RepeatButton.Template>
+                                                <ControlTemplate>
+                                                    <Border Background="Transparent"/>
+                                                </ControlTemplate>
+                                            </RepeatButton.Template>
+                                        </RepeatButton>
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.LineRightCommand">
+                                            <RepeatButton.Template>
+                                                <ControlTemplate>
+                                                    <Border Background="Transparent"/>
+                                                </ControlTemplate>
+                                            </RepeatButton.Template>
+                                        </RepeatButton>
+                                    </Track.IncreaseRepeatButton>
+                                    <Track.Thumb>
+                                        <Thumb Margin="1">
+                                            <Thumb.Template>
+                                                <ControlTemplate TargetType="Thumb">
+                                                    <Border x:Name="ThumbBorder" Background="#40000000" CornerRadius="5" Opacity="0.3">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Style.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter Property="Background" Value="#60000000"/>
+                                                                        <Setter Property="Opacity" Value="0.6"/>
+                                                                    </Trigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Thumb.Template>
+                                        </Thumb>
+                                    </Track.Thumb>
+                                </Track>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="MainScrollViewerStyle" TargetType="ScrollViewer">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollViewer">
+                        <Grid x:Name="Grid" Background="{TemplateBinding Background}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" 
+                                                    CanContentScroll="{TemplateBinding CanContentScroll}"
+                                                    CanHorizontallyScroll="False"
+                                                    CanVerticallyScroll="False"
+                                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                    Content="{TemplateBinding Content}"
+                                                    Grid.Column="0"
+                                                    Margin="{TemplateBinding Padding}"/>
+                            
+                            <ScrollBar x:Name="PART_VerticalScrollBar"
+                                       Style="{StaticResource HelpScrollBarStyle}"
+                                       AutomationProperties.AutomationId="VerticalScrollBar"
+                                       Cursor="Arrow"
+                                       Grid.Column="1"
+                                       Maximum="{TemplateBinding ScrollableHeight}"
+                                       Minimum="0"
+                                       Orientation="Vertical"
+                                       ViewportSize="{TemplateBinding ViewportHeight}"
+                                       Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"/>
+                            
+                            <ScrollBar x:Name="PART_HorizontalScrollBar"
+                                       AutomationProperties.AutomationId="HorizontalScrollBar"
+                                       Cursor="Arrow"
+                                       Grid.Row="1"
+                                       Maximum="{TemplateBinding ScrollableWidth}"
+                                       Minimum="0"
+                                       Orientation="Horizontal"
+                                       ViewportSize="{TemplateBinding ViewportWidth}"
+                                       Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                       Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="RepeatButtonTransparent" TargetType="RepeatButton">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="Transparent"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Стиль для подменю - применяется автоматически ко всем подменю -->
+        <Style TargetType="ContextMenu" BasedOn="{StaticResource ElementContextMenuStyle}">
+            <Style.Resources>
+                <Style TargetType="MenuItem" BasedOn="{StaticResource ElementMenuItemStyle}"/>
+            </Style.Resources>
+        </Style>
+
+    </Window.Resources>
+
+    <Border Background="#2b2b2b" CornerRadius="12" ClipToBounds="True" BorderBrush="#2b2b2b" BorderThickness="0">
+        <Grid>
+            <Grid x:Name="MainContentGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="32"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#3c3c3c" BorderBrush="#555" BorderThickness="0,0,0,1" CornerRadius="12,12,0,0" MouseLeftButtonDown="ZagolovokOkna_MouseLeftButtonDown">
+            <Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0">
+                    <Border Background="Transparent" Padding="5,2" Margin="0,0,20,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="U" Foreground="White" FontSize="16" FontWeight="Bold" FontFamily="Inter" Margin="0,0,-4,0"/>
+                            <TextBlock Text="C" Foreground="White" FontSize="16" FontWeight="Bold" FontFamily="Inter" Margin="0,0,-4,0"/>
+                            <TextBlock Text="A" Foreground="White" FontSize="16" FontWeight="Bold" FontFamily="Inter"/>
+                        </StackPanel>
+                    </Border>
+                    <Button x:Name="FileButton" Content="Файл" Style="{StaticResource FileButtonStyle}" Click="FileButton_Click">
+                        <Button.ContextMenu>
+                            <ContextMenu x:Name="FileContextMenu" Style="{StaticResource FileContextMenuStyle}" Opened="FileContextMenu_Opened" Closed="FileContextMenu_Closed">
+                                <MenuItem Header="Новый файл" Click="NewFile_Click" Style="{StaticResource NoIconMenuItemStyle}"/>
+                                <MenuItem Header="Открыть..." Click="OpenFile_Click" Style="{StaticResource NoIconMenuItemStyle}"/>
+                                <MenuItem Header="Сохранить" Click="SaveFile_Click" Style="{StaticResource NoIconMenuItemStyle}"/>
+                                <MenuItem Header="Сохранить как..." Click="SaveAsFile_Click" Style="{StaticResource NoIconMenuItemStyle}"/>
+                                <MenuItem Header="Сохранить как PNG..." Click="SaveAsPng_Click" Style="{StaticResource NoIconMenuItemStyle}"/>
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
+                    <Button x:Name="HelpButton" Content="Помощь" Style="{StaticResource FileButtonStyle}" Click="Button_Click"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Style="{StaticResource WindowButtonStyle}" Content="—" Click="Svernyt_Click" FontSize="16"/>
+                    <Button Style="{StaticResource WindowButtonStyle}" Content="▢" Click="Razvernut_Click" FontSize="14"/>
+                    <Button Style="{StaticResource CloseButtonStyle}" Content="✕" Click="Zakryt_Click" FontSize="16"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <DockPanel Grid.Row="1">
+            <Border x:Name="LeftPanel" DockPanel.Dock="Left" Background="#1e1e1e" Width="220" CornerRadius="0,0,0,12" ClipToBounds="True">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Style="{StaticResource MainScrollViewerStyle}">
+                    <StackPanel Margin="12" >
+                        <TextBlock Text="Инструменты" Foreground="White" FontWeight="Bold" Margin="0,0,0,15" FontSize="14"/>
+
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="aktor" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                            <Grid>
+                                <TextBlock Text="Актор" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
+                                <Canvas Width="25" Height="25" HorizontalAlignment="Right">
+                                    <Ellipse Width="7" Height="7" Fill="White" Canvas.Left="9" Canvas.Top="2"/>
+                                    <Line X1="12.5" Y1="9" X2="12.5" Y2="17" Stroke="White" StrokeThickness="1.2"/>
+                                    <Line X1="8" Y1="12" X2="17" Y2="12" Stroke="White" StrokeThickness="1.2"/>
+                                    <Line X1="12.5" Y1="17" X2="9" Y2="23" Stroke="White" StrokeThickness="1.2"/>
+                                    <Line X1="12.5" Y1="17" X2="16" Y2="23" Stroke="White" StrokeThickness="1.2"/>
+                                </Canvas>
+                            </Grid>
+                        </Button>
+
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="pretsedent" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                            <Grid>
+                                <TextBlock Text="Прецедент" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
+                                <Ellipse Width="26" Height="15" Stroke="White" StrokeThickness="1.2" Fill="Transparent" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </Button>
+
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="sistema" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                            <Grid>
+                                <TextBlock Text="Система" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
+                                <Rectangle Width="26" Height="18" Stroke="White" StrokeThickness="1.2" Fill="Transparent" RadiusX="2" RadiusY="2" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </Button>
+
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="liniya" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                            <Grid>
+                                <TextBlock Text="Линия" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
+                                <Line X1="0" Y1="8" X2="26" Y2="8" Stroke="White" StrokeThickness="1.2" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </Button>
+
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="vklyuchit" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                            <Grid>
+                                <TextBlock Text="Include" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
+                                <Canvas Width="30" Height="16" HorizontalAlignment="Right">
+                                    <Line X1="0" Y1="8" X2="26" Y2="8" Stroke="White" StrokeThickness="1.2" StrokeDashArray="2,2"/>
+                                    <Polygon Points="26,8 20,5 20,11" Fill="White"/>
+                                </Canvas>
+                            </Grid>
+                        </Button>
+
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="rasshirit" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                            <Grid>
+                                <TextBlock Text="Extend" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
+                                <Canvas Width="30" Height="16" HorizontalAlignment="Right">
+                                    <Line X1="0" Y1="8" X2="26" Y2="8" Stroke="White" StrokeThickness="1.2" StrokeDashArray="2,2"/>
+                                    <Polygon Points="26,8 20,5 20,11" Fill="White"/>
+                                </Canvas>
+                            </Grid>
+                        </Button>
+
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="obobshenie" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                            <Grid>
+                                <TextBlock Text="Обобщение" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
+                                <Canvas Width="26" Height="16" HorizontalAlignment="Right">
+                                    <Line X1="0" Y1="8" X2="18" Y2="8" Stroke="White" StrokeThickness="1.2"/>
+                                    <Polygon Points="18,8 22,6 26,8 22,10" Fill="White" Stroke="White"/>
+                                </Canvas>
+                            </Grid>
+                        </Button>
+
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="tekst" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                            <Grid>
+                                <TextBlock Text="Текст" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
+                                <TextBlock Text="Аа" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="14" FontWeight="Bold"/>
+                            </Grid>
+                        </Button>
+
+                        <Border Margin="0,35,0,8" Background="#3b3b3b" BorderBrush="#444" BorderThickness="1" CornerRadius="10" Padding="12,10">
+                            <Grid Height="30">
+                                <TextBlock Text="Сетка" Foreground="White" FontSize="12" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                <ToggleButton x:Name="PerekyuchatelSetki" IsChecked="True" Checked="PerekyuchatelSetki_Changed" Unchecked="PerekyuchatelSetki_Changed" HorizontalAlignment="Right" Background="#555" BorderBrush="#444" Cursor="Hand">
+                                    <ToggleButton.Style>
+                                        <Style TargetType="ToggleButton">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ToggleButton">
+                                                        <Grid>
+                                                            <Border x:Name="border" Background="#28A745" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="18" Width="64" Height="32" RenderTransformOrigin="0.5,0.5">
+                                                                <Border.RenderTransform>
+                                                                    <ScaleTransform x:Name="borderScale"/>
+                                                                </Border.RenderTransform>
+                                                                <Border.Effect>
+                                                                    <DropShadowEffect x:Name="borderEffect" Color="#00AA00" BlurRadius="8" Opacity="0.6" ShadowDepth="0"/>
+                                                                </Border.Effect>
+                                                                <Ellipse x:Name="thumb" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,6,0" RenderTransformOrigin="0.5,0.5">
+                                                                    <Ellipse.Fill>
+                                                                        <RadialGradientBrush>
+                                                                            <GradientStop Color="#FFFFFF" Offset="0"/>
+                                                                            <GradientStop Color="#F5F5F5" Offset="1"/>
+                                                                        </RadialGradientBrush>
+                                                                    </Ellipse.Fill>
+                                                                    <Ellipse.RenderTransform>
+                                                                        <ScaleTransform x:Name="thumbScale"/>
+                                                                    </Ellipse.RenderTransform>
+                                                                    <Ellipse.Effect>
+                                                                        <DropShadowEffect Color="#000000" BlurRadius="5" Opacity="0.25" ShadowDepth="2" Direction="270"/>
+                                                                    </Ellipse.Effect>
+                                                                    <Ellipse.Stroke>
+                                                                        <SolidColorBrush Color="#E0E0E0" Opacity="0.5"/>
+                                                                    </Ellipse.Stroke>
+                                                                    <Ellipse.StrokeThickness>0.5</Ellipse.StrokeThickness>
+                                                                </Ellipse>
+                                                            </Border>
+                                                        </Grid>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsChecked" Value="True">
+                                                                <Trigger.EnterActions>
+                                                                    <BeginStoryboard>
+                                                                        <Storyboard>
+                                                                            <ColorAnimation Storyboard.TargetName="border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#28A745" Duration="0:0:0.9">
+                                                                                <ColorAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </ColorAnimation.EasingFunction>
+                                                                            </ColorAnimation>
+                                                                            <ColorAnimation Storyboard.TargetName="borderEffect" Storyboard.TargetProperty="Color" To="#00AA00" Duration="0:0:0.9">
+                                                                                <ColorAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </ColorAnimation.EasingFunction>
+                                                                            </ColorAnimation>
+                                                                            <ThicknessAnimation Storyboard.TargetName="thumb" Storyboard.TargetProperty="Margin" To="0,0,6,0" Duration="0:0:0.75">
+                                                                                <ThicknessAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2.5"/>
+                                                                                </ThicknessAnimation.EasingFunction>
+                                                                            </ThicknessAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleX" To="1.12" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleY" To="1.12" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleX" To="1.0" BeginTime="0:0:0.35" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleY" To="1.0" BeginTime="0:0:0.35" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                        </Storyboard>
+                                                                    </BeginStoryboard>
+                                                                </Trigger.EnterActions>
+                                                                <Trigger.ExitActions>
+                                                                    <BeginStoryboard>
+                                                                        <Storyboard>
+                                                                            <ColorAnimation Storyboard.TargetName="border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#DC3545" Duration="0:0:0.9">
+                                                                                <ColorAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </ColorAnimation.EasingFunction>
+                                                                            </ColorAnimation>
+                                                                            <ColorAnimation Storyboard.TargetName="borderEffect" Storyboard.TargetProperty="Color" To="#AA0000" Duration="0:0:0.9">
+                                                                                <ColorAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </ColorAnimation.EasingFunction>
+                                                                            </ColorAnimation>
+                                                                            <ThicknessAnimation Storyboard.TargetName="thumb" Storyboard.TargetProperty="Margin" To="6,0,0,0" Duration="0:0:0.75">
+                                                                                <ThicknessAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2.5"/>
+                                                                                </ThicknessAnimation.EasingFunction>
+                                                                            </ThicknessAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleX" To="0.88" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleY" To="0.88" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleX" To="1.0" BeginTime="0:0:0.35" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleY" To="1.0" BeginTime="0:0:0.35" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                        </Storyboard>
+                                                                    </BeginStoryboard>
+                                                                </Trigger.ExitActions>
+                                                                <Setter TargetName="thumb" Property="HorizontalAlignment" Value="Right"/>
+                                                                <Setter TargetName="border" Property="Background" Value="#28A745"/>
+                                                            </Trigger>
+                                                            <Trigger Property="IsChecked" Value="False">
+                                                                <Trigger.EnterActions>
+                                                                    <BeginStoryboard>
+                                                                        <Storyboard>
+                                                                            <ColorAnimation Storyboard.TargetName="border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#DC3545" Duration="0:0:0.9">
+                                                                                <ColorAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </ColorAnimation.EasingFunction>
+                                                                            </ColorAnimation>
+                                                                            <ColorAnimation Storyboard.TargetName="borderEffect" Storyboard.TargetProperty="Color" To="#AA0000" Duration="0:0:0.9">
+                                                                                <ColorAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </ColorAnimation.EasingFunction>
+                                                                            </ColorAnimation>
+                                                                            <ThicknessAnimation Storyboard.TargetName="thumb" Storyboard.TargetProperty="Margin" To="6,0,0,0" Duration="0:0:0.75">
+                                                                                <ThicknessAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2.5"/>
+                                                                                </ThicknessAnimation.EasingFunction>
+                                                                            </ThicknessAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleX" To="0.88" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleY" To="0.88" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleX" To="1.0" BeginTime="0:0:0.35" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleY" To="1.0" BeginTime="0:0:0.35" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                        </Storyboard>
+                                                                    </BeginStoryboard>
+                                                                </Trigger.EnterActions>
+                                                                <Trigger.ExitActions>
+                                                                    <BeginStoryboard>
+                                                                        <Storyboard>
+                                                                            <ColorAnimation Storyboard.TargetName="border" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#28A745" Duration="0:0:0.9">
+                                                                                <ColorAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </ColorAnimation.EasingFunction>
+                                                                            </ColorAnimation>
+                                                                            <ColorAnimation Storyboard.TargetName="borderEffect" Storyboard.TargetProperty="Color" To="#00AA00" Duration="0:0:0.9">
+                                                                                <ColorAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </ColorAnimation.EasingFunction>
+                                                                            </ColorAnimation>
+                                                                            <ThicknessAnimation Storyboard.TargetName="thumb" Storyboard.TargetProperty="Margin" To="0,0,6,0" Duration="0:0:0.75">
+                                                                                <ThicknessAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2.5"/>
+                                                                                </ThicknessAnimation.EasingFunction>
+                                                                            </ThicknessAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleX" To="1.12" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleY" To="1.12" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleX" To="1.0" BeginTime="0:0:0.35" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleY" To="1.0" BeginTime="0:0:0.35" Duration="0:0:0.35">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <ExponentialEase EasingMode="EaseInOut" Exponent="2"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                        </Storyboard>
+                                                                    </BeginStoryboard>
+                                                                </Trigger.ExitActions>
+                                                                <Setter TargetName="thumb" Property="HorizontalAlignment" Value="Left"/>
+                                                                <Setter TargetName="border" Property="Background" Value="#DC3545"/>
+                                                            </Trigger>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Trigger.EnterActions>
+                                                                    <BeginStoryboard>
+                                                                        <Storyboard>
+                                                                            <DoubleAnimation Storyboard.TargetName="borderScale" Storyboard.TargetProperty="ScaleX" To="1.05" Duration="0:0:0.15">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <QuadraticEase EasingMode="EaseOut"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="borderScale" Storyboard.TargetProperty="ScaleY" To="1.05" Duration="0:0:0.15">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <QuadraticEase EasingMode="EaseOut"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                        </Storyboard>
+                                                                    </BeginStoryboard>
+                                                                </Trigger.EnterActions>
+                                                                <Trigger.ExitActions>
+                                                                    <BeginStoryboard>
+                                                                        <Storyboard>
+                                                                            <DoubleAnimation Storyboard.TargetName="borderScale" Storyboard.TargetProperty="ScaleX" To="1.0" Duration="0:0:0.15">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <QuadraticEase EasingMode="EaseOut"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="borderScale" Storyboard.TargetProperty="ScaleY" To="1.0" Duration="0:0:0.15">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <QuadraticEase EasingMode="EaseOut"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                        </Storyboard>
+                                                                    </BeginStoryboard>
+                                                                </Trigger.ExitActions>
+                                                            </Trigger>
+                                                            <Trigger Property="IsPressed" Value="True">
+                                                                <Trigger.EnterActions>
+                                                                    <BeginStoryboard>
+                                                                        <Storyboard>
+                                                                            <DoubleAnimation Storyboard.TargetName="borderScale" Storyboard.TargetProperty="ScaleX" To="0.95" Duration="0:0:0.1">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <QuadraticEase EasingMode="EaseOut"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="borderScale" Storyboard.TargetProperty="ScaleY" To="0.95" Duration="0:0:0.1">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <QuadraticEase EasingMode="EaseOut"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                        </Storyboard>
+                                                                    </BeginStoryboard>
+                                                                </Trigger.EnterActions>
+                                                                <Trigger.ExitActions>
+                                                                    <BeginStoryboard>
+                                                                        <Storyboard>
+                                                                            <DoubleAnimation Storyboard.TargetName="borderScale" Storyboard.TargetProperty="ScaleX" To="1.0" Duration="0:0:0.15">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <QuadraticEase EasingMode="EaseOut"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                            <DoubleAnimation Storyboard.TargetName="borderScale" Storyboard.TargetProperty="ScaleY" To="1.0" Duration="0:0:0.15">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <QuadraticEase EasingMode="EaseOut"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                        </Storyboard>
+                                                                    </BeginStoryboard>
+                                                                </Trigger.ExitActions>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ToggleButton.Style>
+                                </ToggleButton>
+                            </Grid>
+                        </Border>
+
+                        <Border Background="#3b3b3b" BorderBrush="#444" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,8">
+                            <StackPanel>
+                                <TextBlock Text="Толщина линии" Foreground="White" FontSize="12" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <Button Content="-" Width="35" Height="35" Background="#2b2b2b" Foreground="White" BorderBrush="#444" Click="UmenshitTolshinu_Click" FontSize="16" FontWeight="Bold"/>
+                                    <Border Background="#1e1e1e" BorderBrush="#444" BorderThickness="1" CornerRadius="8" Width="80" Height="35" Margin="5,0">
+                                        <TextBlock x:Name="TekstTolschiny" Text="2" Foreground="White" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
+                                    </Border>
+                                    <Button Content="+" Width="35" Height="35" Background="#2b2b2b" Foreground="White" BorderBrush="#444" Click="UvelichitTolshinu_Click" FontSize="16" FontWeight="Bold"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="#2b2b2b" BorderBrush="#555" BorderThickness="1" CornerRadius="8" Padding="10">
+                            <TextBlock Text="Зажмите и перетащите нужную фигуру на панель редактирования" Foreground="#888" FontSize="10" TextWrapping="Wrap" TextAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Grid x:Name="TabsContainer" ClipToBounds="True">
+                <Grid x:Name="CanvasContent" Visibility="Visible">
+                    <Border Background="#2b2b2b" CornerRadius="0,0,12,0" ClipToBounds="True" BorderThickness="0">
+                        <Grid ClipToBounds="True">
+                            <Border Background="White" Margin="10,10,10,10" CornerRadius="4" ClipToBounds="True">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="10"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="10"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Rectangle x:Name="FonSetki" Grid.Row="0" Grid.Column="0" Fill="{StaticResource GridBrush}"/>
+                                    <Canvas x:Name="PoleDlyaRisovaniya" Background="Transparent" AllowDrop="True" 
+                                            MouseLeftButtonDown="PoleDlyaRisovaniya_MouseLeftButtonDown" 
+                                            MouseMove="PoleDlyaRisovaniya_MouseMove" 
+                                            MouseLeftButtonUp="PoleDlyaRisovaniya_MouseLeftButtonUp"
+                                            MouseWheel="PoleDlyaRisovaniya_MouseWheel"
+                                            PreviewMouseDown="PoleDlyaRisovaniya_PreviewMouseDown"
+                                            PreviewMouseUp="PoleDlyaRisovaniya_PreviewMouseUp"
+                                            Drop="PoleDlyaRisovaniya_Drop"
+                                            DragOver="PoleDlyaRisovaniya_DragOver" Grid.Row="0" Grid.Column="0">
+                                        <Canvas x:Name="HolstSoderzhanie" Background="Transparent"
+                                                Width="{Binding ActualWidth, ElementName=PoleDlyaRisovaniya}"
+                                                Height="{Binding ActualHeight, ElementName=PoleDlyaRisovaniya}">
+                                            <Canvas.RenderTransform>
+                                                <TransformGroup>
+                                                    <ScaleTransform x:Name="TransformMashtaba" ScaleX="1" ScaleY="1"/>
+                                                    <TranslateTransform x:Name="TransformSdviga"/>
+                                                </TransformGroup>
+                                            </Canvas.RenderTransform>
+                                        </Canvas>
+                                    </Canvas>
+                                    <ScrollBar x:Name="VerticalScrollBar" 
+                                               Style="{StaticResource CanvasScrollBarStyle}"
+                                               Orientation="Vertical"
+                                               Grid.Row="0" Grid.Column="1"
+                                               ValueChanged="VerticalScrollBar_ValueChanged"
+                                               Minimum="-10000" Maximum="10000" 
+                                               ViewportSize="100" 
+                                               SmallChange="20" LargeChange="100"/>
+                                    <ScrollBar x:Name="HorizontalScrollBar" 
+                                               Style="{StaticResource CanvasHorizontalScrollBarStyle}"
+                                               Orientation="Horizontal"
+                                               Grid.Row="1" Grid.Column="0"
+                                               Grid.ColumnSpan="1"
+                                               ValueChanged="HorizontalScrollBar_ValueChanged"
+                                               Minimum="-10000" Maximum="10000" 
+                                               ViewportSize="100" 
+                                               SmallChange="20" LargeChange="100"
+                                               VerticalAlignment="Bottom"
+                                               HorizontalAlignment="Stretch"/>
+                                </Grid>
+                            </Border>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20,20,0,0">
+                                <Button x:Name="UndoButton" Width="36" Height="36" Margin="0,0,6,0" Click="Otmena_Click" Background="#2b2b2b" BorderBrush="#555" BorderThickness="1" Padding="0" IsEnabled="False">
+                                    <Path Data="M15,12 L8,12 L8,8 L2,14 L8,20 L8,16 L15,16 C17,16 18,15 18,13 C18,11 17,10 15,10 L15,12 Z" Fill="White" Stretch="Uniform" Width="20" Height="20"/>
+                                </Button>
+                                <Button x:Name="RedoButton" Width="36" Height="36" Click="Vozvrat_Click" Background="#2b2b2b" BorderBrush="#555" BorderThickness="1" Padding="0" IsEnabled="False">
+                                    <Path Data="M9,12 L16,12 L16,8 L22,14 L16,20 L16,16 L9,16 C7,16 6,15 6,13 C6,11 7,10 9,10 L9,12 Z" Fill="White" Stretch="Uniform" Width="20" Height="20"/>
+                                </Button>
+                            </StackPanel>
+
+                            <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="150,0,10,15" Background="#2b2b2b" BorderBrush="#444" BorderThickness="1" CornerRadius="6" Padding="8,6">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="−" Foreground="White" Margin="0,0,6,0" FontSize="13" VerticalAlignment="Center" Cursor="Hand" MouseLeftButtonDown="DecreaseZoom_Click"/>
+                                    <Slider x:Name="PolzunokMashtaba" Minimum="10" Maximum="200" Value="100" Width="140" SmallChange="1" LargeChange="10" ValueChanged="PolzunokMashtaba_ValueChanged"/>
+                                    <TextBlock Text="+" Foreground="White" Margin="6,0,6,0" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" Cursor="Hand" MouseLeftButtonDown="IncreaseZoom_Click"/>
+                                    <Border Background="#1e1e1e" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="4,2" MinWidth="35">
+                                        <TextBlock x:Name="MetkaMashtaba" Text="100%" Foreground="White" TextAlignment="Center" FontSize="10"/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                        </Grid>
+                    </Border>
+                </Grid>
+                
+                <TabControl x:Name="MainTabControl" Background="#2b2b2b" BorderThickness="0" TabStripPlacement="Top" SelectionChanged="MainTabControl_SelectionChanged" Visibility="Collapsed" Panel.ZIndex="1000" Margin="-220,0,0,0">
+                </TabControl>
+            </Grid>
+        </DockPanel>
+        </Grid>
+        
+        <!-- Элемент для изменения размера окна в нижнем правом углу -->
+        <Border x:Name="ResizeGrip" 
+                HorizontalAlignment="Right" 
+                VerticalAlignment="Bottom"
+                Width="20" 
+                Height="20"
+                Background="Transparent"
+                Cursor="SizeNWSE"
+                Panel.ZIndex="100"
+                IsHitTestVisible="True"
+                MouseLeftButtonDown="ResizeGrip_MouseLeftButtonDown"
+                MouseMove="ResizeGrip_MouseMove"
+                MouseLeftButtonUp="ResizeGrip_MouseLeftButtonUp"
+                Margin="0,0,2,2">
+            <Ellipse Width="8" 
+                     Height="8" 
+                     Fill="White" 
+                     Opacity="0.7"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center">
+                <Ellipse.Style>
+                    <Style TargetType="Ellipse">
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="1.0"/>
+                                <Setter Property="Width" Value="10"/>
+                                <Setter Property="Height" Value="10"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Ellipse.Style>
+            </Ellipse>
+        </Border>
+        </Grid>
+    </Border>
+</Window>
