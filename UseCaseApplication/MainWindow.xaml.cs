@@ -3816,13 +3816,6 @@ namespace UseCaseApplication
 
             if (obj1 != null)
             {
-<<<<<<< Updated upstream
-                // Всегда используем направление от центра объекта к другой точке линии
-                // Направляемся на вторую точку линии (absP2), чтобы конец линии был направлен на неё
-                Point target = absP2;
-                // Используем NaytiTochkuNaGranitseOtTsentra для правильного направления на другую точку
-                var t = NaytiTochkuNaGranitseOtTsentra(target, obj1);
-=======
                 // Используем сохраненную относительную позицию на контуре объекта
                 var key1 = new Tuple<UIElement, int>(strelka, 0);
                 Point t;
@@ -3852,7 +3845,6 @@ namespace UseCaseApplication
                     }
                     t = NaytiTochkuNaGranitseOtTsentra(target, obj1);
                 }
->>>>>>> Stashed changes
                 if (canvas != null)
                     polyline.Points[0] = new Point(t.X - canvasLeft, t.Y - canvasTop);
                 else
@@ -3862,14 +3854,6 @@ namespace UseCaseApplication
 
             if (obj2 != null)
             {
-<<<<<<< Updated upstream
-                // Всегда используем направление от центра объекта к другой точке линии
-                // Направляемся на первую точку линии (absP1), чтобы конец линии был направлен на неё
-                Point target = absP1;
-                // Используем NaytiTochkuNaGranitseOtTsentra для правильного направления на другую точку
-                var t = NaytiTochkuNaGranitseOtTsentra(target, obj2);
-                var idx = polyline.Points.Count - 1;
-=======
                 // Используем сохраненную относительную позицию на контуре объекта
                 var idx = polyline.Points.Count - 1;
                 var key2 = new Tuple<UIElement, int>(strelka, idx);
@@ -3900,7 +3884,6 @@ namespace UseCaseApplication
                     }
                     t = NaytiTochkuNaGranitseOtTsentra(target, obj2);
                 }
->>>>>>> Stashed changes
                 if (canvas != null)
                     polyline.Points[idx] = new Point(t.X - canvasLeft, t.Y - canvasTop);
                 else
@@ -4298,9 +4281,6 @@ namespace UseCaseApplication
                 absTochka = polyline.Points[indexTochki];
             }
 
-<<<<<<< Updated upstream
-            var tochkaPrikrepleniya = NaytiTochkuNaGranitse(absTochka, obj);
-=======
             // Используем позицию мыши, если она предоставлена, иначе используем текущую позицию точки
             Point tochkaDlyaPrikrepleniya = mousePos ?? absTochka;
             
@@ -4321,7 +4301,6 @@ namespace UseCaseApplication
             {
                 tochkaPrikrepleniya = VosstanovitTochkuNaKonture(otnositelnayaPozitsiya, obj);
             }
->>>>>>> Stashed changes
 
             if (parent != null && parent != HolstSoderzhanie)
             {
