@@ -1,0 +1,36 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Users\\DefUsr7\\Desktop\\UseCaseApp\\UseCaseApplication\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{910F4718-ED1E-4C51-B9FA-C6C989EA6507}|UseCaseApplication.csproj|d:\\users\\defusr7\\desktop\\usecaseapp\\usecaseapplication\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{910F4718-ED1E-4C51-B9FA-C6C989EA6507}|UseCaseApplication.csproj|solutionrelative:mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "MainWindow.xaml",
+              "DocumentMoniker": "D:\\Users\\DefUsr7\\Desktop\\UseCaseApp\\UseCaseApplication\\MainWindow.xaml",
+              "RelativeDocumentMoniker": "MainWindow.xaml",
+              "ToolTip": "D:\\Users\\DefUsr7\\Desktop\\UseCaseApp\\UseCaseApplication\\MainWindow.xaml",
+              "RelativeToolTip": "MainWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-12-09T15:19:33.089Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
