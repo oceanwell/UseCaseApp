@@ -201,7 +201,7 @@
                     <StackPanel Margin="12" >
                         <TextBlock Text="Инструменты" Foreground="White" FontWeight="Bold" Margin="0,0,0,15" FontSize="14"/>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="aktor" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="actor" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Актор" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <Canvas Width="25" Height="25" HorizontalAlignment="Right">
@@ -214,28 +214,28 @@
                             </Grid>
                         </Button>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="pretsedent" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="useCase" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Прецедент" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <Ellipse Width="26" Height="15" Stroke="White" StrokeThickness="1.2" Fill="Transparent" HorizontalAlignment="Right"/>
                             </Grid>
                         </Button>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="sistema" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="system" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Система" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <Rectangle Width="26" Height="18" Stroke="White" StrokeThickness="1.2" Fill="Transparent" RadiusX="2" RadiusY="2" HorizontalAlignment="Right"/>
                             </Grid>
                         </Button>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="liniya" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="line" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Линия" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <Line X1="0" Y1="8" X2="26" Y2="8" Stroke="White" StrokeThickness="1.2" HorizontalAlignment="Right"/>
                             </Grid>
                         </Button>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="vklyuchit" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="include" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Include" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <Canvas Width="30" Height="16" HorizontalAlignment="Right">
@@ -245,7 +245,7 @@
                             </Grid>
                         </Button>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="rasshirit" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="extend" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Extend" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <Canvas Width="30" Height="16" HorizontalAlignment="Right">
@@ -255,7 +255,7 @@
                             </Grid>
                         </Button>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="obobshenie" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="generalization" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Обобщение" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <Canvas Width="26" Height="16" HorizontalAlignment="Right">
@@ -265,7 +265,7 @@
                             </Grid>
                         </Button>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="tekst" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="text" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Текст" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <TextBlock Text="Аа" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="14" FontWeight="Bold"/>

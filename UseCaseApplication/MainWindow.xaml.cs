@@ -424,14 +424,14 @@ namespace UseCaseApplication
         {
             switch (instrument)
             {
-                case "aktor":
+                case "actor":
                 {
                     var actor = CreateActor();
                     Canvas.SetLeft(actor, point.X - 65);
                     Canvas.SetTop(actor, point.Y - 90);
                     return actor;
                 }
-                case "pretsedent":
+                case "useCase":
                 {
                     var ellipse = new Ellipse
                     {
@@ -445,7 +445,7 @@ namespace UseCaseApplication
                     Canvas.SetTop(ellipse, point.Y - 30);
                     return ellipse;
                 }
-                case "sistema":
+                case "system":
                 {
                     var rectangle = new Rectangle
                     {
@@ -461,7 +461,7 @@ namespace UseCaseApplication
                     Canvas.SetTop(rectangle, point.Y - 80);
                     return rectangle;
                 }
-                case "liniya":
+                case "line":
                 {
                     var line = new Line
                     {
@@ -474,7 +474,7 @@ namespace UseCaseApplication
                     };
                     return line;
                 }
-                case "vklyuchit":
+                case "include":
                 {
                     var group = new Canvas();
                     var line = new Line
@@ -502,7 +502,7 @@ namespace UseCaseApplication
                     Canvas.SetTop(group, point.Y - 20);
                     return group;
                 }
-                case "rasshirit":
+                case "extend":
                 {
                     var group = new Canvas();
                     var line = new Line
@@ -530,7 +530,7 @@ namespace UseCaseApplication
                     Canvas.SetTop(group, point.Y - 20);
                     return group;
                 }
-                case "obobshenie":
+                case "generalization":
                 {
                     var path = new Path
                     {
@@ -543,7 +543,7 @@ namespace UseCaseApplication
                     Canvas.SetTop(path, point.Y - 20);
                     return path;
                 }
-                case "tekst":
+                case "text":
                 {
                     var textBlock = new TextBlock { Text = "Текст", FontSize = 16, Foreground = Brushes.Black };
                     Canvas.SetLeft(textBlock, point.X - 20);
