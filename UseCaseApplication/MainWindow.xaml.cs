@@ -30,6 +30,7 @@ namespace UseCaseApplication
     {
         private const double standartnayaTolschinaLinii = 1.0;
         private const string TagPolzovatelskogoTeksta = "uca-user-text";
+        private const string TagAktora = "uca-actor";
         private const double ShirinaAktoraPoUmolchaniyu = 60.0;
         private const double VysotaAktoraPoUmolchaniyu = 120.0;
         private const string PodderzhivaemoeRasshirenie = ".uca";
@@ -94,6 +95,8 @@ namespace UseCaseApplication
         // Храним прикрепленные стрелки: стрелка -> (начало, конец)
         private Dictionary<UIElement, Tuple<UIElement, UIElement>> prikreplennyeStrelki = new Dictionary<UIElement, Tuple<UIElement, UIElement>>();
         private const double RadiusPrikrepleniya = 200; // Увеличенный радиус для полного охвата объектов
+        private Dictionary<UIElement, ActorAnchorInfo> aktorskieTochkiPrivyazki = new Dictionary<UIElement, ActorAnchorInfo>();
+        private Ellipse zonaPrivyazkiMarker;
 
         // Подсветка объектов при приближении стрелки
         private List<Border> podsvetkiObektov = new List<Border>();
@@ -2386,6 +2389,8 @@ namespace UseCaseApplication
                         if (newWidth > 0 && newHeight > 0 && originalniyRazmer.Width > 0 && originalniyRazmer.Height > 0)
                         {
                             MashtabirovatElement(elementDlyaMashtabirovaniya, newLeft, newTop, newWidth, newHeight);
+                            if (!YavlyaetsyaStrelkoy(elementDlyaMashtabirovaniya))
+                                ObnovitStrelkiDlyaObekta(elementDlyaMashtabirovaniya);
                             PokazatRamuMashtabirovaniya(elementDlyaMashtabirovaniya);
                             proiskhodiloMashtabirovanieElementa = true;
                         }
@@ -2535,6 +2540,8 @@ namespace UseCaseApplication
                 if (elementDlyaMashtabirovaniya != null)
                 {
                     PokazatRamuMashtabirovaniya(elementDlyaMashtabirovaniya);
+                    if (!YavlyaetsyaStrelkoy(elementDlyaMashtabirovaniya))
+                        ObnovitStrelkiDlyaObekta(elementDlyaMashtabirovaniya);
                 }
                 if (proiskhodiloMashtabirovanieElementa)
                 {
@@ -3049,7 +3056,8 @@ namespace UseCaseApplication
             var gruppa = new Canvas
             {
                 Width = ShirinaAktoraPoUmolchaniyu,
-                Height = VysotaAktoraPoUmolchaniyu
+                Height = VysotaAktoraPoUmolchaniyu,
+                Tag = TagAktora
             };
 
             // Голова актора - черная
@@ -5137,6 +5145,140 @@ namespace UseCaseApplication
             public double Y2 { get; }
         }
 
+        private class ActorAnchorInfo
+        {
+            public Point? StartLocal { get; set; }
+            public Point? EndLocal { get; set; }
+        }
+
+
+        private bool YavlyaetsyaAktorom(UIElement element)
+        {
+            if (element is Canvas canvas)
+            {
+                if (canvas.Tag is string tag && tag == TagAktora)
+                    return true;
+
+                var ellipsesCount = canvas.Children.OfType<Ellipse>().Count();
+                var linesCount = canvas.Children.OfType<Line>().Count();
+
+                if (ellipsesCount == 1 && linesCount >= 3 && linesCount <= 4)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private Point ProjectPointToSegment(Point p, Point a, Point b)
+        {
+            var ab = new Vector(b.X - a.X, b.Y - a.Y);
+            var ap = new Vector(p.X - a.X, p.Y - a.Y);
+            var abLen2 = ab.X * ab.X + ab.Y * ab.Y;
+            if (abLen2 < 0.0001)
+                return a;
+
+            var t = (ap.X * ab.X + ap.Y * ab.Y) / abLen2;
+            t = Math.Max(0, Math.Min(1, t));
+            return new Point(a.X + ab.X * t, a.Y + ab.Y * t);
+        }
+
+        private (Point anchorAbs, Point anchorLocal) RaschitatTochkuPrivyazkiKAktoru(Point absPoint, UIElement actor)
+        {
+            double left = Canvas.GetLeft(actor);
+            double top = Canvas.GetTop(actor);
+            if (double.IsNaN(left)) left = 0;
+            if (double.IsNaN(top)) top = 0;
+
+            double scaleX = 1.0, scaleY = 1.0;
+            if (actor.RenderTransform is ScaleTransform st)
+            {
+                scaleX = Math.Abs(st.ScaleX) < 0.0001 ? 1.0 : st.ScaleX;
+                scaleY = Math.Abs(st.ScaleY) < 0.0001 ? 1.0 : st.ScaleY;
+            }
+
+            var localPoint = new Point(
+                (absPoint.X - left) / scaleX,
+                (absPoint.Y - top) / scaleY
+            );
+
+            var headCenter = new Point(30, 15);
+            const double headRadius = 15;
+
+            var bodyStart = new Point(30, 30);
+            var bodyEnd = new Point(30, 90);
+
+            var armsStart = new Point(0, 50);
+            var armsEnd = new Point(60, 50);
+
+            var legLeftStart = new Point(30, 90);
+            var legLeftEnd = new Point(10, 120);
+
+            var legRightStart = new Point(30, 90);
+            var legRightEnd = new Point(50, 120);
+
+            Point headAnchor;
+            var dx = localPoint.X - headCenter.X;
+            var dy = localPoint.Y - headCenter.Y;
+            var len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 0.0001)
+                headAnchor = new Point(headCenter.X + headRadius, headCenter.Y);
+            else
+                headAnchor = new Point(headCenter.X + headRadius * dx / len, headCenter.Y + headRadius * dy / len);
+
+            var bodyAnchor = ProjectPointToSegment(localPoint, bodyStart, bodyEnd);
+            var armsAnchor = ProjectPointToSegment(localPoint, armsStart, armsEnd);
+            var legLeftAnchor = ProjectPointToSegment(localPoint, legLeftStart, legLeftEnd);
+            var legRightAnchor = ProjectPointToSegment(localPoint, legRightStart, legRightEnd);
+
+            var candidates = new[]
+            {
+                headAnchor,
+                bodyAnchor,
+                armsAnchor,
+                legLeftAnchor,
+                legRightAnchor
+            };
+
+            var distances = candidates
+                .Select(pt => new
+                {
+                    Pt = pt,
+                    Dist = Math.Sqrt(Math.Pow(localPoint.X - pt.X, 2) + Math.Pow(localPoint.Y - pt.Y, 2))
+                })
+                .OrderBy(x => x.Dist)
+                .First();
+
+            var chosenLocal = distances.Pt;
+            var anchorAbs = new Point(left + chosenLocal.X * scaleX, top + chosenLocal.Y * scaleY);
+            return (anchorAbs, chosenLocal);
+        }
+
+        private Point PreobrazovatAktorskuyuTochkuIzLocal(UIElement actor, Point localPoint)
+        {
+            double left = Canvas.GetLeft(actor);
+            double top = Canvas.GetTop(actor);
+            if (double.IsNaN(left)) left = 0;
+            if (double.IsNaN(top)) top = 0;
+
+            double scaleX = 1.0, scaleY = 1.0;
+            if (actor.RenderTransform is ScaleTransform st)
+            {
+                scaleX = Math.Abs(st.ScaleX) < 0.0001 ? 1.0 : st.ScaleX;
+                scaleY = Math.Abs(st.ScaleY) < 0.0001 ? 1.0 : st.ScaleY;
+            }
+
+            return new Point(left + localPoint.X * scaleX, top + localPoint.Y * scaleY);
+        }
+
+        private void PokazatZonuPrivyazki(Point center)
+        {
+            // Подсветка отключена по требованию
+        }
+
+        private void SkrytZonuPrivyazki()
+        {
+            // Подсветка отключена по требованию
+        }
 
         private bool YavlyaetsyaStrelkoy(UIElement element)
         {
@@ -5184,6 +5326,9 @@ namespace UseCaseApplication
             if (obj1 == null && obj2 == null) return;
 
             bool updated = false;
+            Point? anchornyyMarker = null;
+            ActorAnchorInfo anchorInfo = null;
+            aktorskieTochkiPrivyazki.TryGetValue(strelka, out anchorInfo);
             Point absP1 = polyline.Points[0];
             Point absP2 = polyline.Points[polyline.Points.Count - 1];
             if (canvas != null)
@@ -5197,8 +5342,28 @@ namespace UseCaseApplication
                 // Всегда используем направление от центра объекта к другой точке линии
                 // Направляемся на вторую точку линии (absP2), чтобы конец линии был направлен на неё
                 Point target = absP2;
-                // Используем NaytiTochkuNaGranitseOtTsentra для правильного направления на другую точку
-                var t = NaytiTochkuNaGranitseOtTsentra(target, obj1);
+                Point t;
+                if (YavlyaetsyaAktorom(obj1))
+                {
+                    if (anchorInfo != null && anchorInfo.StartLocal.HasValue)
+                    {
+                        t = PreobrazovatAktorskuyuTochkuIzLocal(obj1, anchorInfo.StartLocal.Value);
+                    }
+                    else
+                    {
+                        var res = RaschitatTochkuPrivyazkiKAktoru(target, obj1);
+                        t = res.anchorAbs;
+                        if (anchorInfo == null) anchorInfo = new ActorAnchorInfo();
+                        anchorInfo.StartLocal = res.anchorLocal;
+                    }
+                    anchornyyMarker = t;
+                }
+                else
+                {
+                    t = NaytiTochkuNaGranitseOtTsentra(target, obj1);
+                    if (anchorInfo != null)
+                        anchorInfo.StartLocal = null;
+                }
                 if (canvas != null)
                     polyline.Points[0] = new Point(t.X - canvasLeft, t.Y - canvasTop);
                 else
@@ -5211,8 +5376,28 @@ namespace UseCaseApplication
                 // Всегда используем направление от центра объекта к другой точке линии
                 // Направляемся на первую точку линии (absP1), чтобы конец линии был направлен на неё
                 Point target = absP1;
-                // Используем NaytiTochkuNaGranitseOtTsentra для правильного направления на другую точку
-                var t = NaytiTochkuNaGranitseOtTsentra(target, obj2);
+                Point t;
+                if (YavlyaetsyaAktorom(obj2))
+                {
+                    if (anchorInfo != null && anchorInfo.EndLocal.HasValue)
+                    {
+                        t = PreobrazovatAktorskuyuTochkuIzLocal(obj2, anchorInfo.EndLocal.Value);
+                    }
+                    else
+                    {
+                        var res = RaschitatTochkuPrivyazkiKAktoru(target, obj2);
+                        t = res.anchorAbs;
+                        if (anchorInfo == null) anchorInfo = new ActorAnchorInfo();
+                        anchorInfo.EndLocal = res.anchorLocal;
+                    }
+                    anchornyyMarker = t;
+                }
+                else
+                {
+                    t = NaytiTochkuNaGranitseOtTsentra(target, obj2);
+                    if (anchorInfo != null)
+                        anchorInfo.EndLocal = null;
+                }
                 var idx = polyline.Points.Count - 1;
                 if (canvas != null)
                     polyline.Points[idx] = new Point(t.X - canvasLeft, t.Y - canvasTop);
@@ -5220,6 +5405,16 @@ namespace UseCaseApplication
                     polyline.Points[idx] = t;
                 updated = true;
             }
+
+            if (anchorInfo != null && (anchorInfo.StartLocal.HasValue || anchorInfo.EndLocal.HasValue))
+                aktorskieTochkiPrivyazki[strelka] = anchorInfo;
+            else
+                aktorskieTochkiPrivyazki.Remove(strelka);
+
+            if (anchornyyMarker.HasValue)
+                PokazatZonuPrivyazki(anchornyyMarker.Value);
+            else
+                SkrytZonuPrivyazki();
 
             if (updated && canvas != null)
                 ObnovitStrelku(canvas, polyline);
@@ -5313,9 +5508,17 @@ namespace UseCaseApplication
                 if (bounds.Width <= 0 || bounds.Height <= 0) continue;
 
                 // Вычисляем динамический радиус на основе размера объекта
-                // Радиус должен быть достаточным, чтобы полностью охватить объект
+                // Радиус должен быть достаточным, чтобы полностью охватить объект, но для акторов уменьшаем зону прилипания
                 var objectDiagonal = Math.Sqrt(bounds.Width * bounds.Width + bounds.Height * bounds.Height);
-                var dynamicRadius = Math.Max(radius, objectDiagonal / 2 + 50); // Минимум базовый радиус, но не меньше диагонали/2 + запас
+                var baseRadius = Math.Max(radius, objectDiagonal / 2 + 50);
+                var dynamicRadius = baseRadius;
+
+                if (YavlyaetsyaAktorom(el))
+                {
+                    var actorPadding = Math.Min(bounds.Width, bounds.Height) * 0.25;
+                    var actorRadius = Math.Max(24, (objectDiagonal * 0.35 + actorPadding) * 0.5);
+                    dynamicRadius = Math.Min(baseRadius, actorRadius);
+                }
 
                 // Расширяем границы объекта на динамический радиус
                 var expanded = new Rect(
@@ -5360,8 +5563,19 @@ namespace UseCaseApplication
             return nearest;
         }
 
-        private Point NaytiTochkuNaGranitse(Point p, UIElement obj)
+        private Point NaytiTochkuNaGranitse(Point p, UIElement obj, out Point? aktorskayaTochka)
         {
+            aktorskayaTochka = null;
+            if (YavlyaetsyaAktorom(obj))
+            {
+                var result = RaschitatTochkuPrivyazkiKAktoru(p, obj);
+                aktorskayaTochka = result.anchorLocal;
+                PokazatZonuPrivyazki(result.anchorAbs);
+                return result.anchorAbs;
+            }
+
+            SkrytZonuPrivyazki();
+
             var bounds = PoluchitGranitsyElementa(obj);
             var center = new Point(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
             
@@ -5553,7 +5767,8 @@ namespace UseCaseApplication
                 absTochka = polyline.Points[indexTochki];
             }
 
-            var tochkaPrikrepleniya = NaytiTochkuNaGranitse(absTochka, obj);
+            Point? aktorLocalPoint;
+            var tochkaPrikrepleniya = NaytiTochkuNaGranitse(absTochka, obj, out aktorLocalPoint);
 
             if (parent != null && parent != HolstSoderzhanie)
             {
@@ -5579,6 +5794,32 @@ namespace UseCaseApplication
 
             var isPervayaTochka = indexTochki == 0;
             var isPoslednyayaTochka = indexTochki == polyline.Points.Count - 1;
+            if (isPervayaTochka || isPoslednyayaTochka)
+            {
+                ActorAnchorInfo anchorInfo;
+                if (!aktorskieTochkiPrivyazki.TryGetValue(strelkaElement, out anchorInfo))
+                    anchorInfo = new ActorAnchorInfo();
+
+                if (YavlyaetsyaAktorom(obj) && aktorLocalPoint.HasValue)
+                {
+                    if (isPervayaTochka)
+                        anchorInfo.StartLocal = aktorLocalPoint;
+                    if (isPoslednyayaTochka)
+                        anchorInfo.EndLocal = aktorLocalPoint;
+                }
+                else
+                {
+                    if (isPervayaTochka)
+                        anchorInfo.StartLocal = null;
+                    if (isPoslednyayaTochka)
+                        anchorInfo.EndLocal = null;
+                }
+
+                if (anchorInfo.StartLocal.HasValue || anchorInfo.EndLocal.HasValue)
+                    aktorskieTochkiPrivyazki[strelkaElement] = anchorInfo;
+                else
+                    aktorskieTochkiPrivyazki.Remove(strelkaElement);
+            }
             
             if (prikreplennyeStrelki.ContainsKey(strelkaElement))
             {
@@ -5595,6 +5836,8 @@ namespace UseCaseApplication
                 else if (isPoslednyayaTochka)
                     prikreplennyeStrelki[strelkaElement] = new Tuple<UIElement, UIElement>(null, obj);
             }
+
+            SkrytZonuPrivyazki();
         }
 
         private void OtdelitTochkuOtObekta(Polyline polyline, int indexTochki)
@@ -5614,10 +5857,25 @@ namespace UseCaseApplication
             else if (isPoslednyayaTochka)
                 current = new Tuple<UIElement, UIElement>(current.Item1, null);
 
+            if (aktorskieTochkiPrivyazki.TryGetValue(strelkaElement, out var anchorInfo))
+            {
+                if (isPervayaTochka)
+                    anchorInfo.StartLocal = null;
+                else if (isPoslednyayaTochka)
+                    anchorInfo.EndLocal = null;
+
+                if (anchorInfo.StartLocal.HasValue || anchorInfo.EndLocal.HasValue)
+                    aktorskieTochkiPrivyazki[strelkaElement] = anchorInfo;
+                else
+                    aktorskieTochkiPrivyazki.Remove(strelkaElement);
+            }
+
             if (current.Item1 == null && current.Item2 == null)
                 prikreplennyeStrelki.Remove(strelkaElement);
             else
                 prikreplennyeStrelki[strelkaElement] = current;
+
+            SkrytZonuPrivyazki();
         }
     }
 }

@@ -22,3 +22,27 @@ D:\Users\DefUsr7\Desktop\UseCaseApp\UseCaseApplication\obj\Release\UseCaseApplic
 D:\Users\DefUsr7\Desktop\UseCaseApp\UseCaseApplication\obj\Release\UseCaseApplication.csproj.CoreCompileInputs.cache
 D:\Users\DefUsr7\Desktop\UseCaseApp\UseCaseApplication\obj\Release\UseCaseApplication.exe
 D:\Users\DefUsr7\Desktop\UseCaseApp\UseCaseApplication\obj\Release\UseCaseApplication.pdb
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\bin\Release\UseCaseApplication.exe.config
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\bin\Release\UseCaseApplication.exe
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\bin\Release\UseCaseApplication.pdb
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\UseCaseApplication.csproj.AssemblyReference.cache
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\MainWindow.g.cs
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\Page1.g.cs
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\Page2.g.cs
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\Page3.g.cs
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\Window1.g.cs
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\App.g.cs
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\UseCaseApplication_MarkupCompile.cache
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\UseCaseApplication_MarkupCompile.lref
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\MainWindow.baml
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\Page1.baml
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\Page2.baml
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\Page3.baml
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\Window1.baml
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\UseCaseApplication.g.resources
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\UseCaseApplication.Form1.resources
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\UseCaseApplication.Properties.Resources.resources
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\UseCaseApplication.csproj.GenerateResource.cache
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\UseCaseApplication.csproj.CoreCompileInputs.cache
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\UseCaseApplication.exe
+\\Mac\Home\Downloads\UseCaseApp-main 3\UseCaseApplication\obj\Release\UseCaseApplication.pdb
