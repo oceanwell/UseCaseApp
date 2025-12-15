@@ -3642,7 +3642,8 @@ namespace UseCaseApplication
                 return;
             }
 
-            var faktor = tekushiyMashtab <= 0 ? 1.0 : 1.0 / tekushiyMashtab;
+            // Текст масштабируется вместе с холстом, без обратной компенсации
+            var faktor = 1.0;
             if (textBlock.RenderTransform is ScaleTransform scale)
             {
                 scale.ScaleX = faktor;
@@ -3663,7 +3664,8 @@ namespace UseCaseApplication
                 return;
             }
 
-            var faktor = tekushiyMashtab <= 0 ? 1.0 : 1.0 / tekushiyMashtab;
+            // Редактор текста тоже масштабируется вместе с холстом
+            var faktor = 1.0;
             if (editor.RenderTransform is ScaleTransform scale)
             {
                 scale.ScaleX = faktor;
@@ -4690,6 +4692,7 @@ namespace UseCaseApplication
             };
 
             if (HolstSoderzhanie == null) return diagram;
+            var indexByElement = new Dictionary<UIElement, int>();
             foreach (UIElement child in HolstSoderzhanie.Children)
             {
                 if (child == null) continue;
@@ -4707,11 +4710,79 @@ namespace UseCaseApplication
                         Top = double.IsNaN(Canvas.GetTop(child)) ? (double?)null : Canvas.GetTop(child),
                         ZIndex = Panel.GetZIndex(child)
                     };
+
+                    ScaleTransform elementScale = null;
+                    if (child.RenderTransform is ScaleTransform st)
+                    {
+                        elementScale = st;
+                    }
+                    else if (child.RenderTransform is TransformGroup tg)
+                    {
+                        elementScale = tg.Children.OfType<ScaleTransform>().FirstOrDefault();
+                    }
+
+                    if (elementScale != null)
+                    {
+                        elementData.ScaleX = elementScale.ScaleX;
+                        elementData.ScaleY = elementScale.ScaleY;
+
+                        var origin = child.RenderTransformOrigin;
+                        elementData.RenderTransformOriginX = origin.X;
+                        elementData.RenderTransformOriginY = origin.Y;
+                    }
+
                     diagram.Elements.Add(elementData);
+                    indexByElement[child] = diagram.Elements.Count - 1;
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Не удалось сериализовать элемент.\n{ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+
+            if (prikreplennyeStrelki != null && prikreplennyeStrelki.Count > 0)
+            {
+                foreach (var kvp in prikreplennyeStrelki)
+                {
+                    var strelka = kvp.Key;
+                    if (strelka == null || !indexByElement.TryGetValue(strelka, out var strelkaIndex))
+                    {
+                        continue;
+                    }
+
+                    int? obj1Index = null;
+                    int? obj2Index = null;
+                    if (kvp.Value?.Item1 != null && indexByElement.TryGetValue(kvp.Value.Item1, out var idx1))
+                    {
+                        obj1Index = idx1;
+                    }
+                    if (kvp.Value?.Item2 != null && indexByElement.TryGetValue(kvp.Value.Item2, out var idx2))
+                    {
+                        obj2Index = idx2;
+                    }
+
+                    var attachment = new AttachmentInfo
+                    {
+                        StrelkaIndex = strelkaIndex,
+                        Obj1Index = obj1Index,
+                        Obj2Index = obj2Index
+                    };
+
+                    if (aktorskieTochkiPrivyazki != null && aktorskieTochkiPrivyazki.TryGetValue(strelka, out var anchorInfo))
+                    {
+                        if (anchorInfo.StartLocal.HasValue)
+                        {
+                            attachment.StartLocalX = anchorInfo.StartLocal.Value.X;
+                            attachment.StartLocalY = anchorInfo.StartLocal.Value.Y;
+                        }
+                        if (anchorInfo.EndLocal.HasValue)
+                        {
+                            attachment.EndLocalX = anchorInfo.EndLocal.Value.X;
+                            attachment.EndLocalY = anchorInfo.EndLocal.Value.Y;
+                        }
+                    }
+
+                    diagram.Attachments.Add(attachment);
                 }
             }
 
@@ -4770,8 +4841,12 @@ namespace UseCaseApplication
                 return;
             }
 
+            prikreplennyeStrelki.Clear();
+            aktorskieTochkiPrivyazki.Clear();
+
             if (diagram.Elements != null)
             {
+                var createdElements = new List<UIElement>();
                 foreach (var elementData in diagram.Elements)
                 {
                     if (elementData == null || string.IsNullOrWhiteSpace(elementData.Xaml))
@@ -4815,6 +4890,98 @@ namespace UseCaseApplication
                     }
 
                     Panel.SetZIndex(element, elementData.ZIndex);
+
+                    if ((elementData.ScaleX.HasValue || elementData.ScaleY.HasValue) ||
+                        (elementData.RenderTransformOriginX.HasValue || elementData.RenderTransformOriginY.HasValue))
+                    {
+                        double targetScaleX = elementData.ScaleX ?? 1.0;
+                        double targetScaleY = elementData.ScaleY ?? 1.0;
+
+                        ScaleTransform scaleTransform = null;
+                        if (element.RenderTransform is ScaleTransform st)
+                        {
+                            scaleTransform = st;
+                        }
+                        else if (element.RenderTransform is TransformGroup tg)
+                        {
+                            scaleTransform = tg.Children.OfType<ScaleTransform>().FirstOrDefault();
+                            if (scaleTransform == null)
+                            {
+                                scaleTransform = new ScaleTransform(targetScaleX, targetScaleY);
+                                tg.Children.Add(scaleTransform);
+                            }
+                        }
+                        else if (elementData.ScaleX.HasValue || elementData.ScaleY.HasValue)
+                        {
+                            scaleTransform = new ScaleTransform(targetScaleX, targetScaleY);
+                            element.RenderTransform = scaleTransform;
+                        }
+
+                        if (scaleTransform != null)
+                        {
+                            scaleTransform.ScaleX = targetScaleX;
+                            scaleTransform.ScaleY = targetScaleY;
+                        }
+
+                        if (elementData.RenderTransformOriginX.HasValue || elementData.RenderTransformOriginY.HasValue)
+                        {
+                            element.RenderTransformOrigin = new Point(
+                                elementData.RenderTransformOriginX ?? element.RenderTransformOrigin.X,
+                                elementData.RenderTransformOriginY ?? element.RenderTransformOrigin.Y);
+                        }
+                    }
+
+                    createdElements.Add(element);
+                }
+
+                if (diagram.Attachments != null && diagram.Attachments.Count > 0)
+                {
+                    foreach (var attachment in diagram.Attachments)
+                    {
+                        if (attachment == null) continue;
+                        if (attachment.StrelkaIndex < 0 || attachment.StrelkaIndex >= createdElements.Count) continue;
+
+                        var strelka = createdElements[attachment.StrelkaIndex];
+
+                        UIElement obj1 = null;
+                        UIElement obj2 = null;
+
+                        if (attachment.Obj1Index.HasValue &&
+                            attachment.Obj1Index.Value >= 0 &&
+                            attachment.Obj1Index.Value < createdElements.Count)
+                        {
+                            obj1 = createdElements[attachment.Obj1Index.Value];
+                        }
+
+                        if (attachment.Obj2Index.HasValue &&
+                            attachment.Obj2Index.Value >= 0 &&
+                            attachment.Obj2Index.Value < createdElements.Count)
+                        {
+                            obj2 = createdElements[attachment.Obj2Index.Value];
+                        }
+
+                        prikreplennyeStrelki[strelka] = new Tuple<UIElement, UIElement>(obj1, obj2);
+
+                        bool hasAnchorData = false;
+                        var anchorInfo = new ActorAnchorInfo();
+                        if (attachment.StartLocalX.HasValue && attachment.StartLocalY.HasValue)
+                        {
+                            anchorInfo.StartLocal = new Point(attachment.StartLocalX.Value, attachment.StartLocalY.Value);
+                            hasAnchorData = true;
+                        }
+                        if (attachment.EndLocalX.HasValue && attachment.EndLocalY.HasValue)
+                        {
+                            anchorInfo.EndLocal = new Point(attachment.EndLocalX.Value, attachment.EndLocalY.Value);
+                            hasAnchorData = true;
+                        }
+
+                        if (hasAnchorData)
+                        {
+                            aktorskieTochkiPrivyazki[strelka] = anchorInfo;
+                        }
+
+                        PrivyazatStrelku(strelka);
+                    }
                 }
             }
 
@@ -5118,6 +5285,7 @@ namespace UseCaseApplication
             [DataMember] public double OffsetX { get; set; }
             [DataMember] public double OffsetY { get; set; }
             [DataMember] public bool IsGridVisible { get; set; } = true;
+            [DataMember(EmitDefaultValue = false)] public List<AttachmentInfo> Attachments { get; set; } = new List<AttachmentInfo>();
         }
 
         [DataContract]
@@ -5127,6 +5295,22 @@ namespace UseCaseApplication
             [DataMember] public double? Left { get; set; }
             [DataMember] public double? Top { get; set; }
             [DataMember] public int ZIndex { get; set; }
+            [DataMember(EmitDefaultValue = false)] public double? ScaleX { get; set; }
+            [DataMember(EmitDefaultValue = false)] public double? ScaleY { get; set; }
+            [DataMember(EmitDefaultValue = false)] public double? RenderTransformOriginX { get; set; }
+            [DataMember(EmitDefaultValue = false)] public double? RenderTransformOriginY { get; set; }
+        }
+
+        [DataContract]
+        private class AttachmentInfo
+        {
+            [DataMember] public int StrelkaIndex { get; set; }
+            [DataMember(EmitDefaultValue = false)] public int? Obj1Index { get; set; }
+            [DataMember(EmitDefaultValue = false)] public int? Obj2Index { get; set; }
+            [DataMember(EmitDefaultValue = false)] public double? StartLocalX { get; set; }
+            [DataMember(EmitDefaultValue = false)] public double? StartLocalY { get; set; }
+            [DataMember(EmitDefaultValue = false)] public double? EndLocalX { get; set; }
+            [DataMember(EmitDefaultValue = false)] public double? EndLocalY { get; set; }
         }
 
         private class LineCoordinates
