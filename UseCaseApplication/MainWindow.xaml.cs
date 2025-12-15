@@ -31,6 +31,7 @@ namespace UseCaseApplication
         private readonly Stack<UIElement> vozvratStack = new Stack<UIElement>();
         private const double standartnayaTolschinaLinii = 1.0;
         private const string TagPolzovatelskogoTeksta = "uca-user-text";
+        private const string TagAktora = "aktor";
         private const double ShirinaAktoraPoUmolchaniyu = 60.0;
         private const double VysotaAktoraPoUmolchaniyu = 120.0;
         private const string PodderzhivaemoeRasshirenie = ".uca";
@@ -89,7 +90,9 @@ namespace UseCaseApplication
 
         // Храним прикрепленные стрелки: стрелка -> (начало, конец)
         private Dictionary<UIElement, Tuple<UIElement, UIElement>> prikreplennyeStrelki = new Dictionary<UIElement, Tuple<UIElement, UIElement>>();
-        private const double RadiusPrikrepleniya = 200; // Увеличенный радиус для полного охвата объектов
+        private const double RadiusPrikrepleniya = 15; // Минимальный базовый радиус привязки
+        private const double DopolnitelnyyZapasPrikrepleniya = 4; // Малый допуск от края элемента
+        private const double MaksimalnyyRadiusPrikrepleniyaAktora = 22; // Верхняя граница радиуса прилипания к актору
 
         // Подсветка объектов при приближении стрелки
         private List<Border> podsvetkiObektov = new List<Border>();
@@ -1779,6 +1782,11 @@ namespace UseCaseApplication
 
                 if (elementDlyaMashtabirovaniya != null && proiskhodiloMashtabirovanieElementa)
                 {
+                    if (!YavlyaetsyaStrelkoy(elementDlyaMashtabirovaniya))
+                    {
+                        // Финально обновляем все привязанные стрелки под новые габариты
+                        ObnovitStrelkiDlyaObekta(elementDlyaMashtabirovaniya);
+                    }
                     PokazatRamuMashtabirovaniya(elementDlyaMashtabirovaniya);
                     MarkDocumentDirty();
                     proiskhodiloMashtabirovanieElementa = false;
@@ -2199,6 +2207,10 @@ namespace UseCaseApplication
                         if (newWidth > 0 && newHeight > 0 && originalniyRazmer.Width > 0 && originalniyRazmer.Height > 0)
                         {
                             MashtabirovatElement(elementDlyaMashtabirovaniya, newLeft, newTop, newWidth, newHeight);
+                            if (!YavlyaetsyaStrelkoy(elementDlyaMashtabirovaniya))
+                            {
+                                ObnovitStrelkiDlyaObekta(elementDlyaMashtabirovaniya);
+                            }
                             PokazatRamuMashtabirovaniya(elementDlyaMashtabirovaniya);
                             proiskhodiloMashtabirovanieElementa = true;
                         }
@@ -2550,7 +2562,8 @@ namespace UseCaseApplication
             var gruppa = new Canvas
             {
                 Width = ShirinaAktoraPoUmolchaniyu,
-                Height = VysotaAktoraPoUmolchaniyu
+                Height = VysotaAktoraPoUmolchaniyu,
+                Tag = TagAktora
             };
 
             // Голова актора - черная
@@ -2580,6 +2593,28 @@ namespace UseCaseApplication
             Canvas.SetLeft(gruppa, 0);
             Canvas.SetTop(gruppa, 0);
             return gruppa;
+        }
+
+        private bool EtoAktor(UIElement element)
+        {
+            if (element is Canvas canvas)
+            {
+                if (canvas.Tag is string tag && string.Equals(tag, TagAktora, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+
+                var shapes = canvas.Children.OfType<Shape>().ToList();
+                if (Math.Abs(canvas.Width - ShirinaAktoraPoUmolchaniyu) < 0.1 &&
+                    Math.Abs(canvas.Height - VysotaAktoraPoUmolchaniyu) < 0.1 &&
+                    shapes.Count(s => s is Ellipse) == 1 &&
+                    shapes.Count(s => s is Line) >= 4)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private UIElement SozdatElementPoInstrumentu(string instrument, Point tochka)
@@ -4495,7 +4530,14 @@ namespace UseCaseApplication
                 // Вычисляем динамический радиус на основе размера объекта
                 // Радиус должен быть достаточным, чтобы полностью охватить объект
                 var objectDiagonal = Math.Sqrt(bounds.Width * bounds.Width + bounds.Height * bounds.Height);
-                var dynamicRadius = Math.Max(radius, objectDiagonal / 2 + 50); // Минимум базовый радиус, но не меньше диагонали/2 + запас
+                var baseRadius = Math.Max(radius, objectDiagonal / 2 + DopolnitelnyyZapasPrikrepleniya);
+                var dynamicRadius = baseRadius; // Радиус около объекта с небольшим запасом
+
+                if (EtoAktor(el))
+                {
+                    // Для актора сильно ограничиваем радиус прилипания, чтобы линия цеплялась только рядом с фигурой
+                    dynamicRadius = Math.Max(radius, Math.Min(baseRadius, MaksimalnyyRadiusPrikrepleniyaAktora));
+                }
 
                 // Расширяем границы объекта на динамический радиус
                 var expanded = new Rect(
