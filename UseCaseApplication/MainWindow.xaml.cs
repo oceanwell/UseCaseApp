@@ -39,10 +39,13 @@ namespace UseCaseApplication
         private const double MinTextModuleWidth = 120.0;
         private const double MinTextModuleHeight = 42.0;
         private const double MaxTextModuleWidth = 480.0;
+        // Запас по высоте, чтобы глифы не срезались на дробных пикселях при зуме
+        private const double RezervNaOkruglenieTeksta = 6.0;
         private double tekushayaTolschinaLinii = 2.0;
         private double tekushiyMashtab = 1.0;
-        private const int MaksimalnayaDlinaStrokiTeksta = 20;
-        private const int MaksimalnayaDlinaVsegoTeksta = 255;
+        // Используем максимально возможное значение, чтобы не ограничивать ввод
+        private const int MaksimalnayaDlinaStrokiTeksta = int.MaxValue;
+        private const int MaksimalnayaDlinaVsegoTeksta = int.MaxValue;
 
         private Point tochkaNachalaPeretaskivaniya;
         private Button istochnikKnopki;
@@ -2007,6 +2010,20 @@ namespace UseCaseApplication
             {
                 var clampedWidth = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, width));
                 var clampedHeight = Math.Max(MinTextModuleHeight, height);
+
+                double paddingWidth = border.Padding.Left + border.Padding.Right;
+                double paddingHeight = border.Padding.Top + border.Padding.Bottom;
+
+                // Ограничиваемся вычисленной шириной, но требуем высоту не меньше, чем нужно под текст
+                var innerText = border.Child as TextBlock;
+                if (innerText != null)
+                {
+                    var contentWidth = Math.Max(16, clampedWidth - paddingWidth);
+                    var measured = IzmeritTekstovoeSoderzhimoe(innerText.Text, innerText.FontFamily, innerText.FontSize, innerText.FontWeight, contentWidth);
+                    var requiredHeight = measured.Height + paddingHeight + RezervNaOkruglenieTeksta;
+                    clampedHeight = Math.Max(clampedHeight, Math.Max(MinTextModuleHeight, requiredHeight));
+                }
+
                 border.Width = clampedWidth;
                 border.Height = clampedHeight;
                 Canvas.SetLeft(border, left);
@@ -3426,9 +3443,9 @@ namespace UseCaseApplication
                 MinWidth = MinTextModuleWidth,
                 MinHeight = MinTextModuleHeight,
                 MaxWidth = MaxTextModuleWidth,
-                SnapsToDevicePixels = true,
+                SnapsToDevicePixels = false,
                 Cursor = Cursors.IBeam,
-                ClipToBounds = true
+                ClipToBounds = false
             };
 
             var textBlock = new TextBlock
@@ -3445,6 +3462,9 @@ namespace UseCaseApplication
                 Tag = TagPolzovatelskogoTeksta,
                 Cursor = Cursors.IBeam
             };
+
+            TextOptions.SetTextFormattingMode(textBlock, TextFormattingMode.Display);
+            TextOptions.SetTextRenderingMode(textBlock, TextRenderingMode.ClearType);
 
             container.Child = textBlock;
             container.MouseLeftButtonDown += TekstovyyKontainer_MouseLeftButtonDown;
@@ -3564,7 +3584,7 @@ namespace UseCaseApplication
             var contentWidth = Math.Max(16, clampedWidth - paddingWidth);
 
             var measured = IzmeritTekstovoeSoderzhimoe(editor.Text, editor.FontFamily, editor.FontSize, editor.FontWeight, contentWidth);
-            editor.Height = Math.Max(MinTextModuleHeight, measured.Height + paddingHeight);
+            editor.Height = Math.Max(MinTextModuleHeight, measured.Height + paddingHeight + RezervNaOkruglenieTeksta);
         }
 
         private void ObnovitRazmerTekstovogoKontainera(TextBlock textBlock)
@@ -3589,7 +3609,7 @@ namespace UseCaseApplication
             var measured = IzmeritTekstovoeSoderzhimoe(textBlock.Text, textBlock.FontFamily, textBlock.FontSize, textBlock.FontWeight, contentWidth);
 
             container.Width = targetWidth;
-            container.Height = Math.Max(MinTextModuleHeight, measured.Height + paddingHeight);
+            container.Height = Math.Max(MinTextModuleHeight, measured.Height + paddingHeight + RezervNaOkruglenieTeksta);
 
             textBlock.Width = contentWidth;
             textBlock.TextWrapping = TextWrapping.Wrap;
@@ -3620,9 +3640,20 @@ namespace UseCaseApplication
             var container = PoluchitKontainerTeksta(textBlock);
             if (container != null)
             {
+                // Насильно убираем клип и снапшоты даже для ранее сохранённых элементов
+                container.ClipToBounds = false;
+                container.SnapsToDevicePixels = false;
                 container.Cursor = Cursors.IBeam;
                 container.MouseLeftButtonDown -= TekstovyyKontainer_MouseLeftButtonDown;
                 container.MouseLeftButtonDown += TekstovyyKontainer_MouseLeftButtonDown;
+                ObnovitRazmerTekstovogoKontainera(textBlock);
+            }
+
+            TextOptions.SetTextFormattingMode(textBlock, TextFormattingMode.Display);
+            TextOptions.SetTextRenderingMode(textBlock, TextRenderingMode.ClearType);
+
+            if (container != null)
+            {
                 ObnovitRazmerTekstovogoKontainera(textBlock);
             }
 
@@ -3689,6 +3720,7 @@ namespace UseCaseApplication
                     if (textBlock != null)
                     {
                         PrimeniKompensiruyushchiyMashtabKTextu(textBlock);
+                        ObnovitRazmerTekstovogoKontainera(textBlock);
                     }
                 }
             }
