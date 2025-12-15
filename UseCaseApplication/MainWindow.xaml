@@ -709,7 +709,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="#3c3c3c" BorderBrush="#555" BorderThickness="0,0,0,1" CornerRadius="12,12,0,0" MouseLeftButtonDown="ZagolovokOkna_MouseLeftButtonDown">
+        <Border Grid.Row="0" Background="#3c3c3c" BorderBrush="#555" BorderThickness="0,0,0,1" CornerRadius="12,12,0,0" MouseLeftButtonDown="WindowTitle_MouseLeftButtonDown">
             <Grid>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0">
                     <Border Background="Transparent" Padding="5,2" Margin="0,0,20,0">
@@ -733,9 +733,9 @@
                     <Button x:Name="HelpButton" Content="Помощь" Style="{StaticResource FileButtonStyle}" Click="Button_Click"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Style="{StaticResource WindowButtonStyle}" Content="—" Click="Svernyt_Click" FontSize="16"/>
-                    <Button Style="{StaticResource WindowButtonStyle}" Content="▢" Click="Razvernut_Click" FontSize="14"/>
-                    <Button Style="{StaticResource CloseButtonStyle}" Content="✕" Click="Zakryt_Click" FontSize="16"/>
+                    <Button Style="{StaticResource WindowButtonStyle}" Content="—" Click="Minimize_Click" FontSize="16"/>
+                    <Button Style="{StaticResource WindowButtonStyle}" Content="▢" Click="Maximize_Click" FontSize="14"/>
+                    <Button Style="{StaticResource CloseButtonStyle}" Content="✕" Click="Close_Click" FontSize="16"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -746,7 +746,7 @@
                     <StackPanel Margin="12" >
                         <TextBlock Text="Инструменты" Foreground="White" FontWeight="Bold" Margin="0,0,0,15" FontSize="14"/>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="aktor" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="aktor" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Актор" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <Canvas Width="25" Height="25" HorizontalAlignment="Right">
@@ -759,28 +759,28 @@
                             </Grid>
                         </Button>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="pretsedent" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="pretsedent" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Прецедент" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <Ellipse Width="26" Height="15" Stroke="White" StrokeThickness="1.2" Fill="Transparent" HorizontalAlignment="Right"/>
                             </Grid>
                         </Button>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="sistema" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="sistema" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Система" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <Rectangle Width="26" Height="18" Stroke="White" StrokeThickness="1.2" Fill="Transparent" RadiusX="2" RadiusY="2" HorizontalAlignment="Right"/>
                             </Grid>
                         </Button>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="liniya" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="liniya" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Линия" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <Line X1="0" Y1="8" X2="26" Y2="8" Stroke="White" StrokeThickness="1.2" HorizontalAlignment="Right"/>
                             </Grid>
                         </Button>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="vklyuchit" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="vklyuchit" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Include" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <Canvas Width="30" Height="16" HorizontalAlignment="Right">
@@ -790,7 +790,7 @@
                             </Grid>
                         </Button>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="rasshirit" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="rasshirit" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Extend" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <Canvas Width="30" Height="16" HorizontalAlignment="Right">
@@ -800,7 +800,7 @@
                             </Grid>
                         </Button>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="obobshenie" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="obobshenie" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Обобщение" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <Canvas Width="26" Height="16" HorizontalAlignment="Right">
@@ -810,7 +810,7 @@
                             </Grid>
                         </Button>
 
-                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="tekst" PreviewMouseLeftButtonDown="KnopkaInstrumenta_MouseDown" PreviewMouseMove="KnopkaInstrumenta_MouseMove">
+                        <Button Style="{StaticResource ToolButtonStyle}" Margin="0,0,0,5" Tag="tekst" PreviewMouseLeftButtonDown="ToolButton_MouseDown" PreviewMouseMove="ToolButton_MouseMove">
                             <Grid>
                                 <TextBlock Text="Текст" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12"/>
                                 <TextBlock Text="Аа" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="14" FontWeight="Bold"/>
@@ -820,7 +820,7 @@
                         <Border Margin="0,35,0,8" Background="#3b3b3b" BorderBrush="#444" BorderThickness="1" CornerRadius="10" Padding="12,10">
                             <Grid Height="30">
                                 <TextBlock Text="Сетка" Foreground="White" FontSize="12" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                <ToggleButton x:Name="PerekyuchatelSetki" IsChecked="True" Checked="PerekyuchatelSetki_Changed" Unchecked="PerekyuchatelSetki_Changed" HorizontalAlignment="Right" Background="#555" BorderBrush="#444" Cursor="Hand">
+                                <ToggleButton x:Name="GridToggle" IsChecked="True" Checked="GridToggle_Changed" Unchecked="GridToggle_Changed" HorizontalAlignment="Right" Background="#555" BorderBrush="#444" Cursor="Hand">
                                     <ToggleButton.Style>
                                         <Style TargetType="ToggleButton">
                                             <Setter Property="Template">
@@ -1109,11 +1109,11 @@
                             <StackPanel>
                                 <TextBlock Text="Толщина линии" Foreground="White" FontSize="12" Margin="0,0,0,8"/>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <Button Content="-" Width="35" Height="35" Background="#2b2b2b" Foreground="White" BorderBrush="#444" Click="UmenshitTolshinu_Click" FontSize="16" FontWeight="Bold"/>
+                                    <Button Content="-" Width="35" Height="35" Background="#2b2b2b" Foreground="White" BorderBrush="#444" Click="DecreaseThickness_Click" FontSize="16" FontWeight="Bold"/>
                                     <Border Background="#1e1e1e" BorderBrush="#444" BorderThickness="1" CornerRadius="8" Width="80" Height="35" Margin="5,0">
-                                        <TextBlock x:Name="TekstTolschiny" Text="2" Foreground="White" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
+                                        <TextBlock x:Name="ThicknessText" Text="2" Foreground="White" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
                                     </Border>
-                                    <Button Content="+" Width="35" Height="35" Background="#2b2b2b" Foreground="White" BorderBrush="#444" Click="UvelichitTolshinu_Click" FontSize="16" FontWeight="Bold"/>
+                                    <Button Content="+" Width="35" Height="35" Background="#2b2b2b" Foreground="White" BorderBrush="#444" Click="IncreaseThickness_Click" FontSize="16" FontWeight="Bold"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -1139,23 +1139,23 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="10"/>
                                     </Grid.ColumnDefinitions>
-                                    <Rectangle x:Name="FonSetki" Grid.Row="0" Grid.Column="0" Fill="{StaticResource GridBrush}"/>
-                                    <Canvas x:Name="PoleDlyaRisovaniya" Background="Transparent" AllowDrop="True" 
-                                            MouseLeftButtonDown="PoleDlyaRisovaniya_MouseLeftButtonDown" 
-                                            MouseMove="PoleDlyaRisovaniya_MouseMove" 
-                                            MouseLeftButtonUp="PoleDlyaRisovaniya_MouseLeftButtonUp"
-                                            MouseWheel="PoleDlyaRisovaniya_MouseWheel"
-                                            PreviewMouseDown="PoleDlyaRisovaniya_PreviewMouseDown"
-                                            PreviewMouseUp="PoleDlyaRisovaniya_PreviewMouseUp"
-                                            Drop="PoleDlyaRisovaniya_Drop"
-                                            DragOver="PoleDlyaRisovaniya_DragOver" Grid.Row="0" Grid.Column="0">
-                                        <Canvas x:Name="HolstSoderzhanie" Background="Transparent"
-                                                Width="{Binding ActualWidth, ElementName=PoleDlyaRisovaniya}"
-                                                Height="{Binding ActualHeight, ElementName=PoleDlyaRisovaniya}">
+                                    <Rectangle x:Name="GridBackground" Grid.Row="0" Grid.Column="0" Fill="{StaticResource GridBrush}"/>
+                                    <Canvas x:Name="DrawingCanvas" Background="Transparent" AllowDrop="True" 
+                                            MouseLeftButtonDown="DrawingCanvas_MouseLeftButtonDown" 
+                                            MouseMove="DrawingCanvas_MouseMove" 
+                                            MouseLeftButtonUp="DrawingCanvas_MouseLeftButtonUp"
+                                            MouseWheel="DrawingCanvas_MouseWheel"
+                                            PreviewMouseDown="DrawingCanvas_PreviewMouseDown"
+                                            PreviewMouseUp="DrawingCanvas_PreviewMouseUp"
+                                            Drop="DrawingCanvas_Drop"
+                                            DragOver="DrawingCanvas_DragOver" Grid.Row="0" Grid.Column="0">
+                                        <Canvas x:Name="CanvasContent" Background="Transparent"
+                                                Width="{Binding ActualWidth, ElementName=DrawingCanvas}"
+                                                Height="{Binding ActualHeight, ElementName=DrawingCanvas}">
                                             <Canvas.RenderTransform>
                                                 <TransformGroup>
-                                                    <ScaleTransform x:Name="TransformMashtaba" ScaleX="1" ScaleY="1"/>
-                                                    <TranslateTransform x:Name="TransformSdviga"/>
+                                                    <ScaleTransform x:Name="ScaleTransform" ScaleX="1" ScaleY="1"/>
+                                                    <TranslateTransform x:Name="OffsetTransform"/>
                                                 </TransformGroup>
                                             </Canvas.RenderTransform>
                                         </Canvas>
@@ -1230,7 +1230,7 @@
                                                 </Image>
                                                 
                                                 <!-- Slider с кастомным шаблоном -->
-                                                <Slider x:Name="PolzunokMashtaba" Minimum="10" Maximum="200" Value="100" SmallChange="1" LargeChange="10" ValueChanged="PolzunokMashtaba_ValueChanged" Grid.Row="0" VerticalAlignment="Center" MinWidth="100" Height="24">
+                                                <Slider x:Name="ScaleSlider" Minimum="10" Maximum="200" Value="100" SmallChange="1" LargeChange="10" ValueChanged="ScaleSlider_ValueChanged" Grid.Row="0" VerticalAlignment="Center" MinWidth="100" Height="24">
                                                     <Slider.RenderTransform>
                                                         <TranslateTransform Y="8"/>
                                                     </Slider.RenderTransform>
@@ -1264,7 +1264,7 @@
                                                 </Slider>
                                                 
                                                 <!-- Метка процента по центру под слайдером -->
-                                                <TextBlock x:Name="MetkaMashtaba" Text="100%" Foreground="White" TextAlignment="Center" FontSize="10" Grid.Row="1" HorizontalAlignment="Left" Margin="-25,4,0,0"/>
+                                                <TextBlock x:Name="ScaleLabel" Text="100%" Foreground="White" TextAlignment="Center" FontSize="10" Grid.Row="1" HorizontalAlignment="Left" Margin="-25,4,0,0"/>
                                             </Grid>
                                             
                                             <!-- Group 9 - кнопка плюс -->
