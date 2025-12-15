@@ -2934,6 +2934,8 @@ namespace UseCaseApplication
         {
             if (HolstSoderzhanie == null || element == null) return;
 
+            UstanovitAktualnoeKontekstnoyeMenyu(element);
+
             if (element is TextBlock legacyText && EtoPolzovatelskogoTekstaLegacy(legacyText))
             {
                 element = PreobrazovatLegacyTextElement(legacyText);
@@ -2982,6 +2984,18 @@ namespace UseCaseApplication
             }
 
             ObnovitSostoyanieUndoRedo();
+        }
+
+        /// <summary>
+        /// Пересоздает контекстное меню для элемента, чтобы вернуть обработчики после загрузки или вставки.
+        /// </summary>
+        /// <param name="element">Элемент, которому нужно назначить меню.</param>
+        private void UstanovitAktualnoeKontekstnoyeMenyu(UIElement element)
+        {
+            if (element is FrameworkElement fe)
+            {
+                fe.ContextMenu = SozdatKontekstnoyeMenyu();
+            }
         }
 
         private bool EtoPolzovatelskogoTekstaLegacy(TextBlock textBlock)
