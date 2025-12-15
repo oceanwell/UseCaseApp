@@ -1,0 +1,245 @@
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## Visual Studio cache/options directory
+.vs/
+.vscode/
+*.vsidx
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## User-specific files
+*.rsuser
+
+## Rider / JetBrains IDEs
+.idea/
+*.sln.iml
+
+## Build artifacts
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp_proj
+*_wpftmp.csproj
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+## Visual C++ cache files
+ipch/
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
+*.VC.db
+*.VC.VC.opendb
+
+## Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+## Visual Studio Trace Files
+*.e2e
+
+## Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+## TFS 2012 Local Workspace
+$tf/
+
+## Guidance Automation Toolkit
+*.gpState
+
+## ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+## TeamCity
+_TeamCity*
+
+## DotCover
+*.dotCover
+
+## AxoCover
+.axoCover/*
+!.axoCover/settings.json
+
+## Visual Studio code coverage results
+*.coverage
+*.coveragexml
+
+## NCrunch
+_NCrunch_*
+.*crunch*.local.xml
+nCrunchTemp_*
+
+## MightyMoose
+*.mm.*
+AutoTest.Net/
+
+## Web workbench (sass)
+.sass-cache/
+
+## Installshield output folder
+[Ee]xpress/
+
+## DocProject
+DocProject/buildhelp/
+DocProject/Help/*.HxT
+DocProject/Help/*.HxC
+DocProject/Help/*.hhc
+DocProject/Help/*.hhk
+DocProject/Help/*.hhp
+DocProject/Help/Html2
+DocProject/Help/html
+
+## Click-Once directory
+publish/
+
+## Publish Web Output
+*.[Pp]ublish.xml
+*.azurePubxml
+*.pubxml
+*.publishproj
+
+## Microsoft Azure Web App publish settings
+PublishScripts/
+
+## NuGet Packages
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Microsoft Azure Build Output
+csx/
+*.build.csdef
+
+## Microsoft Azure Emulator
+ecf/
+rcf/
+
+## Windows Store app package directories and files
+AppPackages/
+BundleArtifacts/
+Package.StoreAssociation.xml
+_pkginfo.txt
+*.appx
+*.appxbundle
+*.appxupload
+
+## CodeRush personal settings
+.cr/personal
+
+## Python Tools for Visual Studio (PTVS)
+__pycache__/
+*.pyc
+
+## Tabs Studio
+*.tss
+
+## Telerik's JustMock configuration file
+*.jmconfig
+
+## BizTalk build output
+*.btp.cs
+*.btm.cs
+*.odx.cs
+*.xsd.cs
+
+## OpenCover UI analysis results
+OpenCover/
+
+## Azure Stream Analytics local run output
+ASALocalRun/
+
+## MSBuild Binary and Structured Log
+*.binlog
+
+## NVidia Nsight GPU debugger configuration file
+*.nvuser
+
+## MFractors (Xamarin productivity tool)
+.mfractor/
+
+## Local History for Visual Studio
+.localhistory/
+
+## BeatPulse healthcheck temp db
+healthchecksdb
+
+## Backup folder for Package Reference Convert tool in Visual Studio 2017
+MigrationBackup/
+
+## Ionide (cross platform F# VS Code tools) working folder
+.ionide/
+
+## WPF generated files
+*.g.cs
+*.g.i.cs
+*.baml
+*.g.resources
+
+## Temporary files
+*.tmp
+*.temp
+*.cache
+*.bak
+*.swp
+*.log
+*~
+
+## OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
