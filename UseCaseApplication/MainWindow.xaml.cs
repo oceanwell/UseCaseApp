@@ -57,6 +57,8 @@ namespace UseCaseApplication
         private bool peremeshayuElement;
         private double originalLeft;
         private double originalTop;
+        private LineCoordinates lineCoordsPriPeremeshenii;
+        private List<Point> polylinePointsPriPeremeshenii;
 
         private bool peremeshayuHolst;
         private Point nachaloPeremesheniyaHolsta;
@@ -564,16 +566,22 @@ namespace UseCaseApplication
                 roditelskiyElement = blizhayshayaLiniya;
             }
 
-            // Если кликнули на линию или полилинию, проверяем, нужно ли добавить новую точку изгиба
+            // Если кликнули на линию или полилинию, новую точку изгиба добавляем только по двойному клику или при зажатом Ctrl
             if ((roditelskiyElement is Line || roditelskiyElement is Polyline) &&
                 tekushayaLiniyaDlyaIzgiba != null &&
                 vybranniyElement == roditelskiyElement)
             {
-                // Добавляем новую точку изгиба при клике на линию
-                var clickPos = e.GetPosition(HolstSoderzhanie);
-                DobavitTochkuIzgiba(clickPos);
-                e.Handled = true;
-                return;
+                bool mozhnoDobavitTochku = e.ClickCount >= 2 ||
+                                           Keyboard.IsKeyDown(Key.LeftCtrl) ||
+                                           Keyboard.IsKeyDown(Key.RightCtrl);
+                if (mozhnoDobavitTochku)
+                {
+                    // Добавляем новую точку изгиба при double-click/Ctrl
+                    var clickPos = e.GetPosition(HolstSoderzhanie);
+                    DobavitTochkuIzgiba(clickPos);
+                    e.Handled = true;
+                    return;
+                }
             }
 
             // Если кликнули на Canvas с extend/include или обобщением, проверяем, нужно ли добавить новую точку изгиба
@@ -586,11 +594,17 @@ namespace UseCaseApplication
 
                 if (polylineInCanvas == tekushayaLiniyaDlyaIzgiba)
                 {
-                    // Добавляем новую точку изгиба при клике на Canvas
-                    var clickPos = e.GetPosition(HolstSoderzhanie);
-                    DobavitTochkuIzgiba(clickPos);
-                    e.Handled = true;
-                    return;
+                    bool mozhnoDobavitTochku = e.ClickCount >= 2 ||
+                                               Keyboard.IsKeyDown(Key.LeftCtrl) ||
+                                               Keyboard.IsKeyDown(Key.RightCtrl);
+                    if (mozhnoDobavitTochku)
+                    {
+                        // Добавляем новую точку изгиба при double-click/Ctrl
+                        var clickPos = e.GetPosition(HolstSoderzhanie);
+                        DobavitTochkuIzgiba(clickPos);
+                        e.Handled = true;
+                        return;
+                    }
                 }
             }
 
@@ -613,6 +627,21 @@ namespace UseCaseApplication
                 var tekushiyTop = Canvas.GetTop(vybranniyElement);
                 originalLeft = double.IsNaN(tekushiyLeft) ? 0 : tekushiyLeft;
                 originalTop = double.IsNaN(tekushiyTop) ? 0 : tekushiyTop;
+                if (vybranniyElement is Line linePriStart)
+                {
+                    lineCoordsPriPeremeshenii = new LineCoordinates(linePriStart.X1, linePriStart.Y1, linePriStart.X2, linePriStart.Y2);
+                    polylinePointsPriPeremeshenii = null;
+                }
+                else if (vybranniyElement is Polyline polylinePriStart && VisualTreeHelper.GetParent(polylinePriStart) == HolstSoderzhanie)
+                {
+                    lineCoordsPriPeremeshenii = null;
+                    polylinePointsPriPeremeshenii = polylinePriStart.Points?.Select(p => new Point(p.X, p.Y)).ToList();
+                }
+                else
+                {
+                    lineCoordsPriPeremeshenii = null;
+                    polylinePointsPriPeremeshenii = null;
+                }
 
                 Mouse.Capture(PoleDlyaRisovaniya);
 
@@ -2644,8 +2673,29 @@ namespace UseCaseApplication
                     var smeshenieX = tekushayaPoz.X - nachaloPeremesheniya.X;
                     var smeshenieY = tekushayaPoz.Y - nachaloPeremesheniya.Y;
 
-                    Canvas.SetLeft(vybranniyElement, originalLeft + smeshenieX);
-                    Canvas.SetTop(vybranniyElement, originalTop + smeshenieY);
+                    if (vybranniyElement is Line linePeremeschenie && lineCoordsPriPeremeshenii != null)
+                    {
+                        linePeremeschenie.X1 = lineCoordsPriPeremeshenii.X1 + smeshenieX;
+                        linePeremeschenie.Y1 = lineCoordsPriPeremeshenii.Y1 + smeshenieY;
+                        linePeremeschenie.X2 = lineCoordsPriPeremeshenii.X2 + smeshenieX;
+                        linePeremeschenie.Y2 = lineCoordsPriPeremeshenii.Y2 + smeshenieY;
+                    }
+                    else if (vybranniyElement is Polyline polylinePeremeschenie &&
+                             polylinePointsPriPeremeshenii != null &&
+                             VisualTreeHelper.GetParent(polylinePeremeschenie) == HolstSoderzhanie)
+                    {
+                        var pts = polylinePeremeschenie.Points;
+                        pts.Clear();
+                        foreach (var p in polylinePointsPriPeremeshenii)
+                        {
+                            pts.Add(new Point(p.X + smeshenieX, p.Y + smeshenieY));
+                        }
+                    }
+                    else
+                    {
+                        Canvas.SetLeft(vybranniyElement, originalLeft + smeshenieX);
+                        Canvas.SetTop(vybranniyElement, originalTop + smeshenieY);
+                    }
 
                     // Обновляем рамку масштабирования при перемещении
                     PokazatRamuMashtabirovaniya(vybranniyElement);
