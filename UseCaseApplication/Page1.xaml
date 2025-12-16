@@ -124,7 +124,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="#3c3c3c" BorderBrush="#555" BorderThickness="0,0,0,1" MouseLeftButtonDown="WindowTitle_MouseLeftButtonDown">
+        <Border Grid.Row="0" Background="#3c3c3c" BorderBrush="#555" BorderThickness="0,0,0,1" MouseLeftButtonDown="ZagolovokOkna_MouseLeftButtonDown">
             <Grid>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0">
                     <Border Background="Transparent" Padding="5,2" Margin="0,0,20,0">
@@ -138,9 +138,9 @@
                     <Button x:Name="helpBut" Content="Помощь" Foreground="White" Background="Transparent" BorderThickness="0" Padding="10,0" FontSize="12" Click="Button_Click_1"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Style="{StaticResource WindowButtonStyle}" Content="—" Click="Minimize_Click" FontSize="16"/>
-                    <Button Style="{StaticResource WindowButtonStyle}" Content="□" Click="Maximize_Click" FontSize="14"/>
-                    <Button Style="{StaticResource CloseButtonStyle}" Content="✕" Click="Close_Click" FontSize="16"/>
+                    <Button Style="{StaticResource WindowButtonStyle}" Content="—" Click="Svernyt_Click" FontSize="16"/>
+                    <Button Style="{StaticResource WindowButtonStyle}" Content="□" Click="Razvernut_Click" FontSize="14"/>
+                    <Button Style="{StaticResource CloseButtonStyle}" Content="✕" Click="Zakryt_Click" FontSize="16"/>
                 </StackPanel>
             </Grid>
         </Border>
