@@ -137,7 +137,24 @@ namespace UseCaseApplication
             LoadImagesForSlider();
         }
 
-        private void LoadImagesForSlider()
+        private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // Обновляем Canvas при изменении размера окна для сохранения адаптивности
+            if (HolstSoderzhanie != null && PoleDlyaRisovaniya != null)
+            {
+                // Принудительно обновляем layout всех элементов для правильной адаптации
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    PoleDlyaRisovaniya.UpdateLayout();
+                    HolstSoderzhanie.UpdateLayout();
+                    
+                    // Обновляем скроллбары после изменения размера
+                    ObnovitScrollBary();
+                }), System.Windows.Threading.DispatcherPriority.Loaded);
+            }
+        }
+
+        private void ZagruzitIzobrazheniyaDlyaSlaydera()
         {
             try
             {
@@ -303,39 +320,86 @@ namespace UseCaseApplication
 
         private void ScaleSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (ScaleTransform == null || ScaleLabel == null) return;
-            var scale = e.NewValue / 100.0;
-            if (scale <= 0)
+            if (TransformMashtaba == null || MetkaMashtaba == null || TransformSdviga == null) return;
+            if (PoleDlyaRisovaniya == null || HolstSoderzhanie == null) return;
+
+            var noviyMashtab = e.NewValue / 100.0;
+            if (noviyMashtab <= 0)
             {
-                scale = 0.01;
+                noviyMashtab = 0.01;
             }
-            currentScale = scale;
-
-            var animationX = new System.Windows.Media.Animation.DoubleAnimation
+            
+            // Останавливаем все анимации для получения актуальных значений
+            TransformMashtaba.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+            TransformMashtaba.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+            TransformSdviga.BeginAnimation(TranslateTransform.XProperty, null);
+            TransformSdviga.BeginAnimation(TranslateTransform.YProperty, null);
+            
+            if (setkaScaleTransform != null)
             {
-                To = scale,
-                Duration = TimeSpan.FromMilliseconds(50),
-                EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
-            };
-
-            var animationY = new System.Windows.Media.Animation.DoubleAnimation
-            {
-                To = scale,
-                Duration = TimeSpan.FromMilliseconds(50),
-                EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
-            };
-
-            ScaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, animationX);
-            ScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, animationY);
-            if (gridScaleTransform != null)
-            {
-                var animXForGrid = animationX.Clone();
-                var animYForGrid = animationY.Clone();
-                gridScaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, animXForGrid);
-                gridScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, animYForGrid);
+                setkaScaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+                setkaScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, null);
             }
-            ScaleLabel.Text = $"{(int)e.NewValue}%";
-            UpdateTextScale();
+            if (setkaTranslateTransform != null)
+            {
+                setkaTranslateTransform.BeginAnimation(TranslateTransform.XProperty, null);
+                setkaTranslateTransform.BeginAnimation(TranslateTransform.YProperty, null);
+            }
+            
+            // Получаем текущий масштаб (используем сохраненное значение для стабильности)
+            var stariyMashtab = tekushiyMashtab > 0 ? tekushiyMashtab : TransformMashtaba.ScaleX;
+            if (Math.Abs(stariyMashtab) < 0.0001 || double.IsNaN(stariyMashtab)) stariyMashtab = 1.0;
+
+            // Вычисляем центр видимой области Canvas (центр PoleDlyaRisovaniya)
+            var tsentrX = PoleDlyaRisovaniya.ActualWidth;
+            var tsentrY = PoleDlyaRisovaniya.ActualHeight;
+            
+            // Проверяем на валидность размеров
+            if (double.IsNaN(tsentrX) || tsentrX <= 0) tsentrX = 450; // Значение по умолчанию
+            if (double.IsNaN(tsentrY) || tsentrY <= 0) tsentrY = 300; // Значение по умолчанию
+            
+            tsentrX = tsentrX / 2.0;
+            tsentrY = tsentrY / 2.0;
+
+            // Получаем текущий сдвиг после остановки анимации
+            var tekushiySdvigaX = TransformSdviga.X;
+            var tekushiySdvigaY = TransformSdviga.Y;
+            if (double.IsNaN(tekushiySdvigaX)) tekushiySdvigaX = 0;
+            if (double.IsNaN(tekushiySdvigaY)) tekushiySdvigaY = 0;
+
+            // Преобразуем центр в координаты HolstSoderzhanie (с учетом текущего сдвига и масштаба)
+            // Координаты точки в HolstSoderzhanie = (tsentrX - tekushiySdvigaX) / stariyMashtab
+            var tochkaVHolsteX = (tsentrX - tekushiySdvigaX) / stariyMashtab;
+            var tochkaVHolsteY = (tsentrY - tekushiySdvigaY) / stariyMashtab;
+
+            // Вычисляем новый сдвиг так, чтобы эта точка осталась на том же месте на экране
+            // Новая позиция на экране = tochkaVHolsteX * noviyMashtab + noviyTransformSdviga.X = tsentrX
+            // Отсюда: noviyTransformSdviga.X = tsentrX - tochkaVHolsteX * noviyMashtab
+            var noviySdvigaX = tsentrX - tochkaVHolsteX * noviyMashtab;
+            var noviySdvigaY = tsentrY - tochkaVHolsteY * noviyMashtab;
+
+            tekushiyMashtab = noviyMashtab;
+
+            // Применяем изменения напрямую без анимации для плавности при движении слайдера
+            // Анимация вызывает дергание при быстром изменении значения
+            TransformMashtaba.ScaleX = noviyMashtab;
+            TransformMashtaba.ScaleY = noviyMashtab;
+            TransformSdviga.X = noviySdvigaX;
+            TransformSdviga.Y = noviySdvigaY;
+            
+            if (setkaScaleTransform != null && setkaTranslateTransform != null)
+            {
+                setkaScaleTransform.ScaleX = noviyMashtab;
+                setkaScaleTransform.ScaleY = noviyMashtab;
+                setkaTranslateTransform.X = noviySdvigaX;
+                setkaTranslateTransform.Y = noviySdvigaY;
+            }
+
+            MetkaMashtaba.Text = $"{(int)e.NewValue}%";
+            ObnovitMashtabTeksta();
+            
+            // Обновляем скроллбары после изменения масштаба
+            ObnovitScrollBary();
         }
 
         private void GridToggle_Changed(object sender, RoutedEventArgs e)
@@ -468,11 +532,24 @@ namespace UseCaseApplication
 
             if (element == DrawingCanvas || element == GridBackground || element == selectionFrame || element == CanvasContent)
             {
-                ClearSelection();
-                movingCanvas = true;
-                canvasMoveStartPoint = e.GetPosition(this);
-                Mouse.Capture(DrawingCanvas);
-                DrawingCanvas.Cursor = Cursors.Hand;
+                SnytVydelenie();
+                
+                // Останавливаем анимацию TranslateTransform, чтобы можно было перемещать холст вручную
+                if (TransformSdviga != null)
+                {
+                    TransformSdviga.BeginAnimation(TranslateTransform.XProperty, null);
+                    TransformSdviga.BeginAnimation(TranslateTransform.YProperty, null);
+                }
+                if (setkaTranslateTransform != null)
+                {
+                    setkaTranslateTransform.BeginAnimation(TranslateTransform.XProperty, null);
+                    setkaTranslateTransform.BeginAnimation(TranslateTransform.YProperty, null);
+                }
+                
+                peremeshayuHolst = true;
+                nachaloPeremesheniyaHolsta = e.GetPosition(this);
+                Mouse.Capture(PoleDlyaRisovaniya);
+                PoleDlyaRisovaniya.Cursor = Cursors.Hand;
                 return;
             }
 
@@ -2796,6 +2873,19 @@ namespace UseCaseApplication
             if (e.ChangedButton == MouseButton.Middle)
             {
                 SnytVydelenie();
+                
+                // Останавливаем анимацию TranslateTransform, чтобы можно было перемещать холст вручную
+                if (TransformSdviga != null)
+                {
+                    TransformSdviga.BeginAnimation(TranslateTransform.XProperty, null);
+                    TransformSdviga.BeginAnimation(TranslateTransform.YProperty, null);
+                }
+                if (setkaTranslateTransform != null)
+                {
+                    setkaTranslateTransform.BeginAnimation(TranslateTransform.XProperty, null);
+                    setkaTranslateTransform.BeginAnimation(TranslateTransform.YProperty, null);
+                }
+                
                 peremeshayuHolstSredneyKnopkoy = true;
                 canvasMoveStartPoint = e.GetPosition(this);
                 Mouse.Capture(DrawingCanvas);
@@ -2813,6 +2903,23 @@ namespace UseCaseApplication
                 Mouse.Capture(null);
                 DrawingCanvas.Cursor = Cursors.Arrow;
                 e.Handled = true;
+            }
+        }
+
+        private void PoleDlyaRisovaniya_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // Обновляем размер HolstSoderzhanie при изменении размера PoleDlyaRisovaniya
+            if (HolstSoderzhanie != null && PoleDlyaRisovaniya != null)
+            {
+                // Используем Dispatcher для обновления после завершения изменения размера
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    // Биндинг автоматически обновит размер, но принудительно обновляем layout
+                    HolstSoderzhanie.UpdateLayout();
+                    
+                    // Обновляем скроллбары после изменения размера Canvas
+                    ObnovitScrollBary();
+                }), System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
 
