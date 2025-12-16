@@ -5,6 +5,8 @@ VisualStudioVersion = 17.12.35506.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UseCaseApplication", "UseCaseApplication.csproj", "{910F4718-ED1E-4C51-B9FA-C6C989EA6507}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestProject", "..\..\..\..\Users\admin\source\UseCaseApp-test\UseCaseApp-Yaroslav\TestProject\TestProject.csproj", "{C585C3FA-70EA-46C9-9E85-9EEC44D17BB6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{910F4718-ED1E-4C51-B9FA-C6C989EA6507}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{910F4718-ED1E-4C51-B9FA-C6C989EA6507}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{910F4718-ED1E-4C51-B9FA-C6C989EA6507}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C585C3FA-70EA-46C9-9E85-9EEC44D17BB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C585C3FA-70EA-46C9-9E85-9EEC44D17BB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C585C3FA-70EA-46C9-9E85-9EEC44D17BB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C585C3FA-70EA-46C9-9E85-9EEC44D17BB6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

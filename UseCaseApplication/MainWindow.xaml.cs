@@ -96,6 +96,7 @@ namespace UseCaseApplication
         // Храним прикрепленные стрелки: стрелка -> (начало, конец)
         private Dictionary<UIElement, Tuple<UIElement, UIElement>> prikreplennyeStrelki = new Dictionary<UIElement, Tuple<UIElement, UIElement>>();
         private const double RadiusPrikrepleniya = 200; // Увеличенный радиус для полного охвата объектов
+        private const double RadiusVyboraLinii = 14.0;   // Расширенный радиус попадания по линии при клике
         private Dictionary<UIElement, ActorAnchorInfo> aktorskieTochkiPrivyazki = new Dictionary<UIElement, ActorAnchorInfo>();
         private Ellipse zonaPrivyazkiMarker;
 
@@ -527,8 +528,14 @@ namespace UseCaseApplication
             }
 
             var element = e.OriginalSource as UIElement;
+            Point? clickPosition = HolstSoderzhanie != null ? e.GetPosition(HolstSoderzhanie) : (Point?)null;
+            UIElement blizhayshayaLiniya = null;
+            if (clickPosition.HasValue)
+            {
+                blizhayshayaLiniya = NaytiLiniyuRiadom(clickPosition.Value, RadiusVyboraLinii);
+            }
 
-            if (element == PoleDlyaRisovaniya || element == FonSetki || element == ramkaVydeleniya || element == HolstSoderzhanie)
+            if ((element == PoleDlyaRisovaniya || element == FonSetki || element == ramkaVydeleniya || element == HolstSoderzhanie) && blizhayshayaLiniya == null)
             {
                 SnytVydelenie();
                 
@@ -552,6 +559,10 @@ namespace UseCaseApplication
             }
 
             var roditelskiyElement = NaytiElementNaHolste(element);
+            if (roditelskiyElement == null && blizhayshayaLiniya != null)
+            {
+                roditelskiyElement = blizhayshayaLiniya;
+            }
 
             // Если кликнули на линию или полилинию, проверяем, нужно ли добавить новую точку изгиба
             if ((roditelskiyElement is Line || roditelskiyElement is Polyline) &&
@@ -854,6 +865,93 @@ namespace UseCaseApplication
             var projY = p1.Y + t * dy;
 
             return Math.Sqrt((p.X - projX) * (p.X - projX) + (p.Y - projY) * (p.Y - projY));
+        }
+
+        private UIElement NaytiLiniyuRiadom(Point p, double radius)
+        {
+            if (HolstSoderzhanie == null) return null;
+
+            UIElement closest = null;
+            double minDist = radius;
+
+            foreach (UIElement el in HolstSoderzhanie.Children)
+            {
+                if (el == null) continue;
+                if (el == ramkaVydeleniya) continue;
+                if (markeriMashtaba != null && markeriMashtaba.Contains(el)) continue;
+                if (markeriIzgiba != null && markeriIzgiba.Contains(el)) continue;
+                if (podsvetkiObektov != null && podsvetkiObektov.Contains(el)) continue;
+
+                if (el is Line line)
+                {
+                    var left = Canvas.GetLeft(line); if (double.IsNaN(left)) left = 0;
+                    var top = Canvas.GetTop(line); if (double.IsNaN(top)) top = 0;
+
+                    var dist = DistanceToSegment(
+                        p,
+                        new Point(line.X1 + left, line.Y1 + top),
+                        new Point(line.X2 + left, line.Y2 + top));
+
+                    if (dist <= minDist)
+                    {
+                        minDist = dist;
+                        closest = line;
+                    }
+                }
+                else if (el is Polyline polyline)
+                {
+                    var points = polyline.Points;
+                    if (points != null && points.Count > 1)
+                    {
+                        var left = Canvas.GetLeft(polyline); if (double.IsNaN(left)) left = 0;
+                        var top = Canvas.GetTop(polyline); if (double.IsNaN(top)) top = 0;
+
+                        for (int i = 0; i < points.Count - 1; i++)
+                        {
+                            var p1 = points[i];
+                            var p2 = points[i + 1];
+                            var dist = DistanceToSegment(
+                                p,
+                                new Point(p1.X + left, p1.Y + top),
+                                new Point(p2.X + left, p2.Y + top));
+
+                            if (dist <= minDist)
+                            {
+                                minDist = dist;
+                                closest = polyline;
+                            }
+                        }
+                    }
+                }
+                else if (el is Canvas canvas)
+                {
+                    var canvasPolyline = canvas.Children.OfType<Polyline>().FirstOrDefault();
+                    var points = canvasPolyline?.Points;
+                    if (points != null && points.Count > 1)
+                    {
+                        var left = Canvas.GetLeft(canvas); if (double.IsNaN(left)) left = 0;
+                        var top = Canvas.GetTop(canvas); if (double.IsNaN(top)) top = 0;
+
+                        for (int i = 0; i < points.Count - 1; i++)
+                        {
+                            var p1 = points[i];
+                            var p2 = points[i + 1];
+                            var dist = DistanceToSegment(
+                                p,
+                                new Point(p1.X + left, p1.Y + top),
+                                new Point(p2.X + left, p2.Y + top));
+
+                            if (dist <= minDist)
+                            {
+                                minDist = dist;
+                                closest = canvas;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return closest;
         }
 
         private void PokazatRamuMashtabirovaniya(UIElement element)
@@ -4628,7 +4726,7 @@ namespace UseCaseApplication
             if (!string.Equals(extension, SupportedExtension, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
-            }
+        }
 
             // Должно быть хотя бы имя файла до расширения (".uca" без имени — невалидно)
             var nameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(trimmed);
