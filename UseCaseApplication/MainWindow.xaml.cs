@@ -647,7 +647,7 @@ namespace UseCaseApplication
                     // docherniy.StrokeThickness остается без изменений
                 }
             }
-            else if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
+            else if (element is Border border && IsTextContainer(border))
             {
                 border.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#CD853F"));
                 border.BorderThickness = new Thickness(2);
@@ -712,7 +712,7 @@ namespace UseCaseApplication
                 var p2 = points[i + 1];
 
                 // Вычисляем расстояние от точки до сегмента
-                var distance = RasstoyanieDoSegmenta(relativePosition, p1, p2);
+                var distance = DistanceToSegment(relativePosition, p1, p2);
                 if (distance < minDistance)
                 {
                     minDistance = distance;
@@ -1833,7 +1833,7 @@ namespace UseCaseApplication
                         }
                     }
                 }
-                else if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
+                else if (element is Border border && IsTextContainer(border))
                 {
                     border.BorderBrush = Brushes.Transparent;
                     border.BorderThickness = new Thickness(0);
@@ -3076,7 +3076,7 @@ namespace UseCaseApplication
 
             if (IsTextContainer(element))
             {
-                var textBlock = PoluchitTextBlockIzElementa(element);
+                var textBlock = GetTextBlockFromElement(element);
                 if (textBlock != null)
                 {
                     NastroitTekstovyElement(textBlock, nachatRedaktirovanieTeksta);
@@ -3589,7 +3589,7 @@ namespace UseCaseApplication
                 return true;
             }
 
-            var container = PoluchitKontainerTeksta(textBlock);
+            var container = GetTextContainer(textBlock);
             return container != null;
         }
 
@@ -3613,7 +3613,7 @@ namespace UseCaseApplication
             return null;
         }
 
-        private TextBlock PoluchitTextBlockIzElementa(UIElement element)
+        private TextBlock GetTextBlockFromElement(UIElement element)
         {
             if (element is TextBlock tb && IsUserText(tb))
             {
@@ -3693,7 +3693,7 @@ namespace UseCaseApplication
 
         private void ObnovitRazmerTekstovogoKontainera(TextBlock textBlock)
         {
-            var container = PoluchitKontainerTeksta(textBlock);
+            var container = GetTextContainer(textBlock);
             if (container == null)
             {
                 return;
@@ -3741,7 +3741,7 @@ namespace UseCaseApplication
             textBlock.MouseLeftButtonDown += TekstovyElement_MouseLeftButtonDown;
             ApplyTextScaleCompensation(textBlock);
 
-            var container = PoluchitKontainerTeksta(textBlock);
+            var container = GetTextContainer(textBlock);
             if (container != null)
             {
                 container.Cursor = Cursors.IBeam;
@@ -3786,12 +3786,12 @@ namespace UseCaseApplication
             var factor = GetTextScaleCompensation();
             if (textBlock.RenderTransform is ScaleTransform scale)
             {
-                scale.ScaleX = faktor;
-                scale.ScaleY = faktor;
+                scale.ScaleX = factor;
+                scale.ScaleY = factor;
             }
             else
             {
-                scale = new ScaleTransform(faktor, faktor);
+                scale = new ScaleTransform(factor, factor);
                 textBlock.RenderTransform = scale;
             }
             textBlock.RenderTransformOrigin = new Point(0.5, 0.5);
@@ -3807,12 +3807,12 @@ namespace UseCaseApplication
             var factor = GetTextScaleCompensation();
             if (editor.RenderTransform is ScaleTransform scale)
             {
-                scale.ScaleX = faktor;
-                scale.ScaleY = faktor;
+                scale.ScaleX = factor;
+                scale.ScaleY = factor;
             }
             else
             {
-                scale = new ScaleTransform(faktor, faktor);
+                scale = new ScaleTransform(factor, factor);
                 editor.RenderTransform = scale;
             }
             editor.RenderTransformOrigin = new Point(0.5, 0.5);
@@ -3824,7 +3824,7 @@ namespace UseCaseApplication
             {
                 foreach (UIElement child in HolstSoderzhanie.Children)
                 {
-                    var textBlock = PoluchitTextBlockIzElementa(child);
+                    var textBlock = GetTextBlockFromElement(child);
                     if (textBlock != null)
                     {
                         ApplyTextScaleCompensation(textBlock);
@@ -3973,7 +3973,7 @@ namespace UseCaseApplication
 
             redaktiruemyTextovyElement = textBlock;
 
-            var container = PoluchitKontainerTeksta(textBlock);
+            var container = GetTextContainer(textBlock);
 
             double left = container != null ? Canvas.GetLeft(container) : Canvas.GetLeft(textBlock);
             double top = container != null ? Canvas.GetTop(container) : Canvas.GetTop(textBlock);
@@ -4160,7 +4160,7 @@ namespace UseCaseApplication
                 return;
             }
 
-            var container = PoluchitKontainerTeksta(textBlock);
+            var container = GetTextContainer(textBlock);
 
             if (sohranitIzmeneniya)
             {
