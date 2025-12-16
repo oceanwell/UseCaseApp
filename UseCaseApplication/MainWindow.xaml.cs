@@ -29,20 +29,21 @@ namespace UseCaseApplication
     public partial class MainWindow : Window
     {
         private const double standartnayaTolschinaLinii = 1.0;
-        private const string TagPolzovatelskogoTeksta = "uca-user-text";
+        private const string UserTextTag = "uca-user-text";
         private const string TagAktora = "uca-actor";
         private const double ShirinaAktoraPoUmolchaniyu = 60.0;
         private const double VysotaAktoraPoUmolchaniyu = 120.0;
-        private const string PodderzhivaemoeRasshirenie = ".uca";
+        private const string SupportedExtension = ".uca";
         private const double DefaultTextModuleWidth = 220.0;
         private const double DefaultTextModuleHeight = 84.0;
         private const double MinTextModuleWidth = 120.0;
         private const double MinTextModuleHeight = 42.0;
         private const double MaxTextModuleWidth = 480.0;
+        private const double TextWidthSafetyMargin = 2.0; // небольшая дельта, чтобы не резать текст по правому краю
         private double tekushayaTolschinaLinii = 2.0;
-        private double tekushiyMashtab = 1.0;
-        private const int MaksimalnayaDlinaStrokiTeksta = 20;
-        private const int MaksimalnayaDlinaVsegoTeksta = 255;
+        private double currentZoom = 1.0;
+        private const int MaxTextLength = 255;
+        private const double MinFinalTextScale = 0.5;
 
         private Point tochkaNachalaPeretaskivaniya;
         private Button istochnikKnopki;
@@ -344,7 +345,7 @@ namespace UseCaseApplication
             }
             
             // Получаем текущий масштаб (используем сохраненное значение для стабильности)
-            var stariyMashtab = tekushiyMashtab > 0 ? tekushiyMashtab : TransformMashtaba.ScaleX;
+            var stariyMashtab = currentZoom > 0 ? currentZoom : TransformMashtaba.ScaleX;
             if (Math.Abs(stariyMashtab) < 0.0001 || double.IsNaN(stariyMashtab)) stariyMashtab = 1.0;
 
             // Вычисляем центр видимой области Canvas (центр PoleDlyaRisovaniya)
@@ -375,7 +376,7 @@ namespace UseCaseApplication
             var noviySdvigaX = tsentrX - tochkaVHolsteX * noviyMashtab;
             var noviySdvigaY = tsentrY - tochkaVHolsteY * noviyMashtab;
 
-            tekushiyMashtab = noviyMashtab;
+            currentZoom = noviyMashtab;
 
             // Применяем изменения напрямую без анимации для плавности при движении слайдера
             // Анимация вызывает дергание при быстром изменении значения
@@ -393,7 +394,7 @@ namespace UseCaseApplication
             }
 
             MetkaMashtaba.Text = $"{(int)e.NewValue}%";
-            ObnovitMashtabTeksta();
+            RefreshTextScale();
             
             // Обновляем скроллбары после изменения масштаба
             ObnovitScrollBary();
@@ -836,7 +837,7 @@ namespace UseCaseApplication
             }
         }
 
-        private double RasstoyanieDoSegmenta(Point p, Point p1, Point p2)
+        public static double DistanceToSegment(Point p, Point p1, Point p2)
         {
             var dx = p2.X - p1.X;
             var dy = p2.Y - p1.Y;
@@ -1985,7 +1986,7 @@ namespace UseCaseApplication
             }
         }
 
-        private void MashtabirovatElement(UIElement element, double left, double top, double width, double height)
+        private void MashtabirovatElement(UIElement element, double left, double top, double width, double height, bool preserveBottomEdge = false)
         {
             if (element == null || width <= 0 || height <= 0) return;
 
@@ -2080,18 +2081,33 @@ namespace UseCaseApplication
                 canvas.UpdateLayout();
             }
             // Текстовые контейнеры масштабируем как карточки
-            else if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
+            else if (element is Border border && IsTextContainer(border))
             {
                 var clampedWidth = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, width));
                 var clampedHeight = Math.Max(MinTextModuleHeight, height);
+                // Фиксируем центр, чтобы контейнер не смещался при масштабировании
+                var centerX = originalniyRazmer.Left + originalniyRazmer.Width / 2.0;
+                var centerY = originalniyRazmer.Top + originalniyRazmer.Height / 2.0;
+                double paddingWidth = border.Padding.Left + border.Padding.Right;
+                double paddingHeight = border.Padding.Top + border.Padding.Bottom;
+
+                if (border.Child is TextBlock innerForMeasure)
+                {
+                    var contentWidth = Math.Max(16, clampedWidth - paddingWidth);
+                    var measured = MeasureTextContent(innerForMeasure.Text, innerForMeasure.FontFamily, innerForMeasure.FontSize, innerForMeasure.FontWeight, contentWidth);
+                    // Гарантируем высоту не меньше, чем требуется для текста с новой шириной
+                    clampedHeight = Math.Max(clampedHeight, measured.Height + paddingHeight);
+                }
+
                 border.Width = clampedWidth;
                 border.Height = clampedHeight;
-                Canvas.SetLeft(border, left);
-                Canvas.SetTop(border, top);
+                // Центр остаётся на месте
+                Canvas.SetLeft(border, centerX - clampedWidth / 2.0);
+                Canvas.SetTop(border, centerY - clampedHeight / 2.0);
 
                 if (border.Child is TextBlock inner)
                 {
-                    var contentWidth = Math.Max(16, clampedWidth - (border.Padding.Left + border.Padding.Right));
+            var contentWidth = Math.Max(16, clampedWidth - paddingWidth - TextWidthSafetyMargin);
                     inner.Width = contentWidth;
                     inner.TextWrapping = TextWrapping.Wrap;
                     inner.TextAlignment = TextAlignment.Center;
@@ -2465,7 +2481,8 @@ namespace UseCaseApplication
                         // Применяем масштабирование только если размеры валидны
                         if (newWidth > 0 && newHeight > 0 && originalniyRazmer.Width > 0 && originalniyRazmer.Height > 0)
                         {
-                            MashtabirovatElement(elementDlyaMashtabirovaniya, newLeft, newTop, newWidth, newHeight);
+                            bool preserveBottom = markerIndex == 4; // только для верхнего центрального маркера фиксируем нижнюю границу
+                            MashtabirovatElement(elementDlyaMashtabirovaniya, newLeft, newTop, newWidth, newHeight, preserveBottom);
                             if (!YavlyaetsyaStrelkoy(elementDlyaMashtabirovaniya))
                                 ObnovitStrelkiDlyaObekta(elementDlyaMashtabirovaniya);
                             PokazatRamuMashtabirovaniya(elementDlyaMashtabirovaniya);
@@ -3057,7 +3074,7 @@ namespace UseCaseApplication
 
             HolstSoderzhanie.Children.Add(element);
 
-            if (YavlyaetsyaTekstovymKontainerom(element))
+            if (IsTextContainer(element))
             {
                 var textBlock = PoluchitTextBlockIzElementa(element);
                 if (textBlock != null)
@@ -3115,8 +3132,8 @@ namespace UseCaseApplication
         private bool EtoPolzovatelskogoTekstaLegacy(TextBlock textBlock)
         {
             return textBlock != null &&
-                   textBlock.Tag as string == TagPolzovatelskogoTeksta &&
-                   PoluchitKontainerTeksta(textBlock) == null;
+                   textBlock.Tag as string == UserTextTag &&
+                   GetTextContainer(textBlock) == null;
         }
 
         private UIElement PreobrazovatLegacyTextElement(TextBlock oldText)
@@ -3522,7 +3539,7 @@ namespace UseCaseApplication
         {
             var container = new Border
             {
-                Tag = TagPolzovatelskogoTeksta,
+                Tag = UserTextTag,
                 Background = Brushes.Transparent,
                 BorderBrush = Brushes.Transparent,
                 BorderThickness = new Thickness(0),
@@ -3549,7 +3566,7 @@ namespace UseCaseApplication
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
-                Tag = TagPolzovatelskogoTeksta,
+                Tag = UserTextTag,
                 Cursor = Cursors.IBeam
             };
 
@@ -3559,7 +3576,7 @@ namespace UseCaseApplication
             return container;
         }
 
-        private bool EtoPolzovatelskiyTekst(TextBlock textBlock)
+        public static bool IsUserText(TextBlock textBlock)
         {
             if (textBlock == null)
             {
@@ -3567,7 +3584,7 @@ namespace UseCaseApplication
             }
 
             var tag = textBlock.Tag as string;
-            if (!string.IsNullOrEmpty(tag) && tag == TagPolzovatelskogoTeksta)
+            if (!string.IsNullOrEmpty(tag) && tag == UserTextTag)
             {
                 return true;
             }
@@ -3576,20 +3593,20 @@ namespace UseCaseApplication
             return container != null;
         }
 
-        private bool YavlyaetsyaTekstovymKontainerom(UIElement element)
+        public static bool IsTextContainer(UIElement element)
         {
             if (element is Border border && border.Tag is string tag)
             {
-                return string.Equals(tag, TagPolzovatelskogoTeksta, StringComparison.Ordinal);
+                return string.Equals(tag, UserTextTag, StringComparison.Ordinal);
             }
             return false;
         }
 
-        private Border PoluchitKontainerTeksta(TextBlock textBlock)
+        public static Border GetTextContainer(TextBlock textBlock)
         {
             if (textBlock == null) return null;
             var parent = VisualTreeHelper.GetParent(textBlock) as Border;
-            if (parent != null && YavlyaetsyaTekstovymKontainerom(parent))
+            if (parent != null && IsTextContainer(parent))
             {
                 return parent;
             }
@@ -3598,12 +3615,12 @@ namespace UseCaseApplication
 
         private TextBlock PoluchitTextBlockIzElementa(UIElement element)
         {
-            if (element is TextBlock tb && EtoPolzovatelskiyTekst(tb))
+            if (element is TextBlock tb && IsUserText(tb))
             {
                 return tb;
             }
 
-            if (element is Border border && YavlyaetsyaTekstovymKontainerom(border))
+            if (element is Border border && IsTextContainer(border))
             {
                 return border.Child as TextBlock;
             }
@@ -3611,7 +3628,7 @@ namespace UseCaseApplication
             return null;
         }
 
-        private Size IzmeritTekstovoeSoderzhimoe(string text, FontFamily fontFamily, double fontSize, FontWeight fontWeight, double maxWidth)
+        public static Size MeasureTextContent(string text, FontFamily fontFamily, double fontSize, FontWeight fontWeight, double maxWidth)
         {
             if (fontFamily == null)
             {
@@ -3651,7 +3668,7 @@ namespace UseCaseApplication
             double baseWidth = editor.Width;
             if (redaktiruemyTextovyElement != null)
             {
-                var container = PoluchitKontainerTeksta(redaktiruemyTextovyElement);
+                var container = GetTextContainer(redaktiruemyTextovyElement);
                 if (container != null && !double.IsNaN(container.Width) && container.Width > 0)
                 {
                     baseWidth = container.Width;
@@ -3670,7 +3687,7 @@ namespace UseCaseApplication
             var paddingHeight = editor.Padding.Top + editor.Padding.Bottom + editor.BorderThickness.Top + editor.BorderThickness.Bottom;
             var contentWidth = Math.Max(16, clampedWidth - paddingWidth);
 
-            var measured = IzmeritTekstovoeSoderzhimoe(editor.Text, editor.FontFamily, editor.FontSize, editor.FontWeight, contentWidth);
+            var measured = MeasureTextContent(editor.Text, editor.FontFamily, editor.FontSize, editor.FontWeight, contentWidth);
             editor.Height = Math.Max(MinTextModuleHeight, measured.Height + paddingHeight);
         }
 
@@ -3692,8 +3709,8 @@ namespace UseCaseApplication
             }
             targetWidth = Math.Max(MinTextModuleWidth, Math.Min(MaxTextModuleWidth, targetWidth));
 
-            var contentWidth = Math.Max(20, targetWidth - paddingWidth);
-            var measured = IzmeritTekstovoeSoderzhimoe(textBlock.Text, textBlock.FontFamily, textBlock.FontSize, textBlock.FontWeight, contentWidth);
+            var contentWidth = Math.Max(20, targetWidth - paddingWidth - TextWidthSafetyMargin);
+            var measured = MeasureTextContent(textBlock.Text, textBlock.FontFamily, textBlock.FontSize, textBlock.FontWeight, contentWidth);
 
             container.Width = targetWidth;
             container.Height = Math.Max(MinTextModuleHeight, measured.Height + paddingHeight);
@@ -3710,7 +3727,7 @@ namespace UseCaseApplication
                 return;
             }
 
-            if (!EtoPolzovatelskiyTekst(textBlock))
+            if (!IsUserText(textBlock))
             {
                 return;
             }
@@ -3722,7 +3739,7 @@ namespace UseCaseApplication
             textBlock.TextWrapping = TextWrapping.Wrap;
             textBlock.MouseLeftButtonDown -= TekstovyElement_MouseLeftButtonDown;
             textBlock.MouseLeftButtonDown += TekstovyElement_MouseLeftButtonDown;
-            PrimeniKompensiruyushchiyMashtabKTextu(textBlock);
+            ApplyTextScaleCompensation(textBlock);
 
             var container = PoluchitKontainerTeksta(textBlock);
             if (container != null)
@@ -3742,15 +3759,31 @@ namespace UseCaseApplication
             }
         }
 
-        private void PrimeniKompensiruyushchiyMashtabKTextu(TextBlock textBlock)
+        private double GetTextScaleCompensation()
+        {
+            var scale = currentZoom;
+            if (scale <= 0 || double.IsNaN(scale))
+            {
+                scale = 1.0;
+            }
+
+            if (scale < MinFinalTextScale)
+            {
+                // Keep text legible when zoomed out heavily by preventing further downscale
+                return MinFinalTextScale / scale;
+            }
+
+            return 1.0;
+        }
+
+        private void ApplyTextScaleCompensation(TextBlock textBlock)
         {
             if (textBlock == null)
             {
                 return;
             }
 
-            // Текст масштабируется вместе с холстом, без обратной компенсации
-            var faktor = 1.0;
+            var factor = GetTextScaleCompensation();
             if (textBlock.RenderTransform is ScaleTransform scale)
             {
                 scale.ScaleX = faktor;
@@ -3764,15 +3797,14 @@ namespace UseCaseApplication
             textBlock.RenderTransformOrigin = new Point(0.5, 0.5);
         }
 
-        private void PrimeniKompensiruyushchiyMashtabKEditoru(TextBox editor)
+        private void ApplyEditorScaleCompensation(TextBox editor)
         {
             if (editor == null)
             {
                 return;
             }
 
-            // Редактор текста тоже масштабируется вместе с холстом
-            var faktor = 1.0;
+            var factor = GetTextScaleCompensation();
             if (editor.RenderTransform is ScaleTransform scale)
             {
                 scale.ScaleX = faktor;
@@ -3786,7 +3818,7 @@ namespace UseCaseApplication
             editor.RenderTransformOrigin = new Point(0.5, 0.5);
         }
 
-        private void ObnovitMashtabTeksta()
+        private void RefreshTextScale()
         {
             if (HolstSoderzhanie != null)
             {
@@ -3795,14 +3827,14 @@ namespace UseCaseApplication
                     var textBlock = PoluchitTextBlockIzElementa(child);
                     if (textBlock != null)
                     {
-                        PrimeniKompensiruyushchiyMashtabKTextu(textBlock);
+                        ApplyTextScaleCompensation(textBlock);
                     }
                 }
             }
 
             if (aktivnyTextovyEditor != null)
             {
-                PrimeniKompensiruyushchiyMashtabKEditoru(aktivnyTextovyEditor);
+                ApplyEditorScaleCompensation(aktivnyTextovyEditor);
             }
         }
 
@@ -3845,7 +3877,7 @@ namespace UseCaseApplication
             return false;
         }
 
-        private bool TekstUdovletvoryaetOgranicheniya(string text)
+        public static bool IsTextWithinLimits(string text)
         {
             if (text == null)
             {
@@ -3853,13 +3885,12 @@ namespace UseCaseApplication
             }
 
             var bezVozvrataKaretki = text.Replace("\r", string.Empty);
-            if (bezVozvrataKaretki.Length > MaksimalnayaDlinaVsegoTeksta)
+            if (bezVozvrataKaretki.Length > MaxTextLength)
             {
                 return false;
             }
 
-            var stroki = bezVozvrataKaretki.Split('\n');
-            return stroki.All(line => line.Length <= MaksimalnayaDlinaStrokiTeksta);
+            return true;
         }
 
         private bool MozhnoVstavitTekst(TextBox editor, string tekstDlyaVstavki)
@@ -3884,7 +3915,7 @@ namespace UseCaseApplication
                 : tekuschiy;
 
             var prospected = bezVybrannogo.Insert(selectionStart, tekstDlyaVstavki ?? string.Empty);
-            return TekstUdovletvoryaetOgranicheniya(prospected);
+            return IsTextWithinLimits(prospected);
         }
 
         private void TekstovyElement_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -3894,7 +3925,7 @@ namespace UseCaseApplication
                 return;
             }
 
-            if (sender is TextBlock textBlock && EtoPolzovatelskiyTekst(textBlock))
+            if (sender is TextBlock textBlock && IsUserText(textBlock))
             {
                 e.Handled = true;
                 NachatRedaktirovanieTeksta(textBlock, false);
@@ -3908,10 +3939,10 @@ namespace UseCaseApplication
                 return;
             }
 
-            if (sender is Border border && YavlyaetsyaTekstovymKontainerom(border))
+            if (sender is Border border && IsTextContainer(border))
             {
                 var textBlock = border.Child as TextBlock;
-                if (textBlock != null && EtoPolzovatelskiyTekst(textBlock))
+                if (textBlock != null && IsUserText(textBlock))
                 {
                     e.Handled = true;
                     NachatRedaktirovanieTeksta(textBlock, false);
@@ -3926,7 +3957,7 @@ namespace UseCaseApplication
                 return;
             }
 
-            if (!EtoPolzovatelskiyTekst(textBlock))
+            if (!IsUserText(textBlock))
             {
                 return;
             }
@@ -3989,7 +4020,7 @@ namespace UseCaseApplication
             textBlock.Visibility = Visibility.Collapsed;
 
             HolstSoderzhanie.Children.Add(editor);
-            PrimeniKompensiruyushchiyMashtabKEditoru(editor);
+            ApplyEditorScaleCompensation(editor);
             AktualizirovatRazmerEditora(editor);
 
             editor.LostKeyboardFocus += TextEditor_LostKeyboardFocus;
@@ -4049,7 +4080,7 @@ namespace UseCaseApplication
             if (sender is TextBox editor)
             {
                 var text = editor.Text ?? string.Empty;
-                if (TekstUdovletvoryaetOgranicheniya(text))
+                if (IsTextWithinLimits(text))
                 {
                     posledniyKorrektnyyTekstRedaktora = text;
                 }
@@ -4152,7 +4183,7 @@ namespace UseCaseApplication
             {
                 container.Visibility = Visibility.Visible;
             }
-            PrimeniKompensiruyushchiyMashtabKTextu(textBlock);
+            ApplyTextScaleCompensation(textBlock);
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -4585,22 +4616,35 @@ namespace UseCaseApplication
             }
         }
 
-        private static bool YavlyaetsyaFailomFormataUca(string path)
+        public static bool IsUcaFormatFile(string path)
         {
-            return !string.IsNullOrWhiteSpace(path) &&
-                   string.Equals(System.IO.Path.GetExtension(path), PodderzhivaemoeRasshirenie, StringComparison.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return false;
+            }
+
+            var trimmed = path.Trim(); // учитываем пробелы в конце/начале пути
+            var extension = System.IO.Path.GetExtension(trimmed);
+            if (!string.Equals(extension, SupportedExtension, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // Должно быть хотя бы имя файла до расширения (".uca" без имени — невалидно)
+            var nameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(trimmed);
+            return !string.IsNullOrEmpty(nameWithoutExtension);
         }
 
-        private static string PoluchitPathSPravilnymRasshireniem(string path)
+        public static string GetPathWithCorrectExtension(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
                 return path;
             }
 
-            return YavlyaetsyaFailomFormataUca(path)
+            return IsUcaFormatFile(path)
                 ? path
-                : System.IO.Path.ChangeExtension(path, PodderzhivaemoeRasshirenie);
+                : System.IO.Path.ChangeExtension(path, SupportedExtension);
         }
 
         private void NewFile_Click(object sender, RoutedEventArgs e)
@@ -4623,7 +4667,7 @@ namespace UseCaseApplication
             var dialog = new OpenFileDialog
             {
                 Filter = "Use Case App (*.uca)|*.uca",
-                DefaultExt = PodderzhivaemoeRasshirenie.TrimStart('.'),
+                DefaultExt = SupportedExtension.TrimStart('.'),
                 Multiselect = false,
                 Title = "Открыть диаграмму"
             };
@@ -4631,7 +4675,7 @@ namespace UseCaseApplication
             if (dialog.ShowDialog() == true)
             {
                 var filePath = dialog.FileName;
-                if (!YavlyaetsyaFailomFormataUca(filePath))
+                if (!IsUcaFormatFile(filePath))
                 {
                     MessageBox.Show("Поддерживается только формат файлов .uca.", "Недопустимый формат", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
@@ -4740,7 +4784,7 @@ namespace UseCaseApplication
                 var dialog = new SaveFileDialog
                 {
                     Filter = "Use Case App (*.uca)|*.uca",
-                    DefaultExt = PodderzhivaemoeRasshirenie.TrimStart('.'),
+                DefaultExt = SupportedExtension.TrimStart('.'),
                     AddExtension = true,
                     Title = "Сохранить диаграмму",
                     FileName = string.IsNullOrWhiteSpace(tekushiyPutFayla) ? "Диаграмма" : System.IO.Path.GetFileName(tekushiyPutFayla)
@@ -4756,7 +4800,7 @@ namespace UseCaseApplication
                 }
             }
 
-            targetPath = PoluchitPathSPravilnymRasshireniem(targetPath);
+            targetPath = GetPathWithCorrectExtension(targetPath);
 
             if (!EksportDiagrammy(targetPath))
             {
@@ -5172,8 +5216,8 @@ namespace UseCaseApplication
                 {
                     PolzunokMashtaba.Value = 100;
                 }
-                tekushiyMashtab = 1.0;
-                ObnovitMashtabTeksta();
+                currentZoom = 1.0;
+                RefreshTextScale();
 
                 if (PerekyuchatelSetki != null)
                 {
